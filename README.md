@@ -13,7 +13,7 @@
 
 <div align="center">
 
-[![circleci-image]][circleci-url] [![typescript-image]][typescript-url] [![npm-image]][npm-url] [![license-image]][license-url]
+[![npm-image]][npm-url] ![][typescript-image] [![license-image]][license-url]
 
 </div>
 
