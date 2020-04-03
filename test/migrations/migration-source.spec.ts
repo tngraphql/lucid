@@ -15,7 +15,7 @@ import { Filesystem } from '@poppinss/dev-utils'
 
 import { MigrationSource } from '../../src/Migrator/MigrationSource'
 import { setup, cleanup, getDb, resetTables } from '../../test-helpers'
-import { Application } from 'tn-illuminate';
+import { Application } from '@tngraphql/illuminate';
 
 let db: ReturnType<typeof getDb>
 const fs = new Filesystem(join(__dirname, 'app'))

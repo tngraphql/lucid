@@ -13,7 +13,7 @@ import { esmRequire, fsReadAll } from '@poppinss/utils'
 import { join, isAbsolute, extname } from 'path'
 import { MigrationNode } from '@ioc:Adonis/Lucid/Migrator'
 import { ConnectionConfigContract } from '@ioc:Adonis/Lucid/Database'
-import { ApplicationContract } from 'tn-illuminate/dist/Contracts/ApplicationContract';
+import { ApplicationContract } from '@tngraphql/illuminate/dist/Contracts/ApplicationContract';
 
 /**
  * Migration source exposes the API to read the migration files

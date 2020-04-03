@@ -5,7 +5,7 @@ const { configure } = require('japa')
 configure({
   files: [
     'test/**/*.spec.ts',
-    // 'test/console/seed/*.spec.ts',
+    // 'test/console/seed/seed.spec.ts',
     // 'test/factory/factory.spec.ts',
     // 'test/factory/database.spec.ts',
     // 'test/factory/model-factory.spec.ts',

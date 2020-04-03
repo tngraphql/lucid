@@ -8,12 +8,12 @@
 */
 
 import CliTable from 'cli-table3'
-import { flags, Kernel } from 'tn-console'
+import { flags, Kernel } from '@tngraphql/console'
 import { DatabaseContract } from '@ioc:Adonis/Lucid/Database'
 import { MigrationListNode } from '@ioc:Adonis/Lucid/Migrator'
 import { MigrationsBaseCommand } from './MigrationsBaseCommand'
-import { ApplicationContract } from 'tn-illuminate/dist/Contracts/ApplicationContract'
-import { Inject } from 'tn-illuminate'
+import { ApplicationContract } from '@tngraphql/illuminate/dist/Contracts/ApplicationContract'
+import { Inject } from '@tngraphql/illuminate'
 
 interface DBInterface extends DatabaseContract {
 

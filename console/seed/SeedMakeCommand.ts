@@ -8,8 +8,8 @@
  * file that was distributed with this source code.
  */
 import path from 'path'
-import { args } from 'tn-console'
-import { GeneratorCommand } from 'tn-illuminate/dist/Foundation'
+import { args } from '@tngraphql/console'
+import { GeneratorCommand } from '@tngraphql/illuminate/dist/Foundation'
 
 export class SeedMakeCommand extends GeneratorCommand {
   public static commandName = 'make:seeder'

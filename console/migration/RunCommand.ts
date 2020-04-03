@@ -7,9 +7,9 @@
  * file that was distributed with this source code.
 */
 
-import { flags } from 'tn-console'
+import { flags } from '@tngraphql/console'
 import { MigrationsBaseCommand } from './MigrationsBaseCommand'
-import { Inject } from 'tn-illuminate'
+import { Inject } from '@tngraphql/illuminate'
 
 /**
  * The command is meant to migrate the database by execute migrations

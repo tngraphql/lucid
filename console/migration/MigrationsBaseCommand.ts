@@ -11,9 +11,9 @@ import { relative } from 'path'
 import logUpdate from 'log-update'
 import { DateTime } from 'luxon'
 import { MigratedFileNode, MigratorContract } from '@ioc:Adonis/Lucid/Migrator'
-import { BaseCommand } from 'tn-console'
-import { KernelContract } from 'tn-console/dist/Contracts'
-import { Application } from 'tn-illuminate'
+import { BaseCommand } from '@tngraphql/console'
+import { KernelContract } from '@tngraphql/console/dist/Contracts'
+import { Application } from '@tngraphql/illuminate'
 
 /**
  * Base class to execute migrations and print logs

@@ -11,7 +11,7 @@ import test from 'japa'
 
 import { Filesystem } from '@poppinss/dev-utils/build'
 import { join } from 'path'
-import { Application, ConsoleKernel } from 'tn-illuminate'
+import { Application, ConsoleKernel } from '@tngraphql/illuminate'
 import { SeedMakeCommand } from '../../../console/seed/SeedMakeCommand'
 import { toNewlineArray } from '../../../test-helpers'
 
@@ -24,7 +24,7 @@ test.group('Seed | make', (group) => {
   })
 
   test('Create a new seeder class', async (assert) => {
-    const app = new Application(fs.basePath)
+    const app: any = new Application(fs.basePath)
     app.inProduction = false
     app.environment = 'test'
     const kernel = new ConsoleKernel(app)

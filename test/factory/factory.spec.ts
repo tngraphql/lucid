@@ -213,7 +213,7 @@ test.group('Factory | Model', (group) => {
       }
     })
 
-    const users = await model.createMany(2)
+    const users: any = await model.createMany(2)
 
     const created = await db.connection().from('factory').select('*')
 
@@ -241,7 +241,7 @@ test.group('Factory | Model', (group) => {
       }
     })
 
-    const users = await model.makeMany(2)
+    const users: any = await model.makeMany(2)
 
     assert.equal(users[0].name, 'nguyen23')
     assert.equal(users[1].name, 'nguyen23')
@@ -278,7 +278,7 @@ test.group('Factory | Model', (group) => {
       }
     })
 
-    const users = await model.makeMany(2, [{ name: 'user' }, { name: 'user2' }])
+    const users: any = await model.makeMany(2, [{ name: 'user' }, { name: 'user2' }])
 
     assert.equal(users[0].name, 'user')
     assert.equal(users[1].name, 'user2')

@@ -8,12 +8,12 @@
  * file that was distributed with this source code.
  */
 import test from 'japa'
-import { Kernel } from 'tn-console'
+import { Kernel } from '@tngraphql/console'
 import { Filesystem } from '@poppinss/dev-utils/build'
 import { join } from 'path'
 import { cleanup, getDb, setup } from '../../../test-helpers'
-import { Application } from 'tn-illuminate'
-import { Facade } from 'tn-illuminate/dist/Support/Facade'
+import { Application } from '@tngraphql/illuminate'
+import { Facade } from '@tngraphql/illuminate/dist/Support/Facade'
 import { SeedCommand } from '../../../console/seed/SeedCommand'
 
 let db: ReturnType<typeof getDb>
@@ -32,7 +32,7 @@ test.group('Seed', (group) => {
 
   test('Seed database using seed files', async (assert) => {
     await fs.add('database/seeds/UserSeeder.ts', `
-import { Facade } from 'tn-illuminate/dist/Support/Facade'
+import { Facade } from '@tngraphql/illuminate/dist/Support/Facade'
 import { DBFactory } from '../../../../../../src/Factory/DBFactory'
 
 const Factory: DBFactory = Facade.create('factory')
@@ -52,7 +52,7 @@ export class UserSeeder {
 }
     `)
 
-    const app = new Application(fs.basePath)
+    const app: any = new Application(fs.basePath)
     app.inProduction = false
     app.environment = 'test'
     const kernel = new Kernel(app)
@@ -77,7 +77,7 @@ export class UserSeeder {
 
   test('Seed database using Factory files', async (assert) => {
     await fs.add('database/factories/UserFactory.ts',`
-import { Facade } from 'tn-illuminate/dist/Support/Facade'
+import { Facade } from '@tngraphql/illuminate/dist/Support/Facade'
 import { DBFactory } from '../../../../../../src/Factory/DBFactory'
 
 const Factory: DBFactory = Facade.create('factory')
@@ -89,7 +89,7 @@ Factory.blueprint('factory', () => {
 })
     `)
     await fs.add('database/seeds/UserSeeder.ts', `
-import { Facade } from 'tn-illuminate/dist/Support/Facade'
+import { Facade } from '@tngraphql/illuminate/dist/Support/Facade'
 import { DBFactory } from '../../../../../../src/Factory/DBFactory'
 
 const Factory: DBFactory = Facade.create('factory')
@@ -103,7 +103,7 @@ export class UserSeeder {
 }
     `)
 
-    const app = new Application(fs.basePath)
+    const app: any = new Application(fs.basePath)
     app.inProduction = false
     app.environment = 'test'
     const kernel = new Kernel(app)

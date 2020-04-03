@@ -11,15 +11,15 @@
 import test from 'japa'
 import { Filesystem } from '@poppinss/dev-utils/build'
 import { join } from 'path'
-import { Application, ConsoleKernel } from 'tn-illuminate'
+import { Application, ConsoleKernel } from '@tngraphql/illuminate'
 import { cleanup, getDb, setup } from '../../test-helpers'
 import { ResetCommand } from '../../console/migration/ResetCommand'
 import { RunCommand } from '../../console/migration/RunCommand'
 import { RollbackCommand } from '../../console/migration/RollbackCommand'
 import { FreshCommand } from '../../console/migration/FreshCommand'
-import { Kernel } from 'tn-console'
+import { Kernel } from '@tngraphql/console'
 import { SeedCommand } from '../../console/seed/SeedCommand'
-import { Facade } from 'tn-illuminate/dist/Support/Facade'
+import { Facade } from '@tngraphql/illuminate/dist/Support/Facade'
 import { RefreshCommand } from '../../console/migration/RefreshCommand'
 import { StatusCommand } from '../../console/migration/StatusCommand'
 
@@ -39,7 +39,7 @@ test.group('Migrate | Fresh', group => {
   })
   test('Reset and re-run all migrations', async (assert) => {
     await fs.add('database/migrations/users.ts', `
-import { Schema } from 'tn-lucid/build/src/Schema'
+import { Schema } from '../../../../../src/Schema'
 
 module.exports = class User extends Schema {
   public async up () {
@@ -64,7 +64,7 @@ module.exports = class User extends Schema {
     await migrate.handle()
 
     await fs.add('database/migrations/users2.ts', `
-import { Schema } from 'tn-lucid/build/src/Schema'
+import { Schema } from '../../../../../src/Schema'
 module.exports = class User2 extends Schema {
   public async up () {
     this.schema.createTable('schema_users2', (table) => {
@@ -107,15 +107,16 @@ test.group('Migrate', (group) => {
 
   test('run migrations from default directory', async (assert) => {
     await fs.add('database/migrations/users.ts', `
-      import { Schema } from 'tn-lucid/build/src/Schema';
-      module.exports = class User extends Schema {
-        public async up () {
-          this.schema.createTable('schema_users', (table) => {
-            table.increments()
-          })
-        }
-      }
-    `)
+import { Schema } from '../../../../../src/Schema'
+
+module.exports = class User extends Schema {
+  public async up () {
+    this.schema.createTable('schema_users', (table) => {
+      table.increments()
+    })
+  }
+}
+`)
 
     const app = new Application(fs.basePath)
     const migrate = new RunCommand(app, new Kernel(app), db)
@@ -147,15 +148,15 @@ test.group('Migrate', (group) => {
 
   test('print sql queries in dryRun', async (assert) => {
     await fs.add('database/migrations/users.ts', `
-      import { Schema } from '../../../../../../src/Schema'
-      module.exports = class User extends Schema {
-        public async up () {
-          this.schema.createTable('schema_users', (table) => {
-            table.increments()
-          })
-        }
-      }
-    `)
+import { Schema } from '../../../../../src/Schema'
+module.exports = class User extends Schema {
+public async up () {
+  this.schema.createTable('schema_users', (table) => {
+    table.increments()
+  })
+}
+}
+`)
 
     const app = new Application(fs.basePath)
     const migrate = new RunCommand(app, new Kernel(app), db)
@@ -172,17 +173,17 @@ test.group('Migrate', (group) => {
     assert.plan(1)
 
     await fs.add('database/migrations/users.ts', `
-      import { Schema } from '../../../../../../src/Schema'
-      module.exports = class User extends Schema {
-        public async up () {
-          this.schema.createTable('schema_users', (table) => {
-            table.increments()
-          })
-        }
-      }
-    `)
+import { Schema } from '../../../../../src/Schema'
+module.exports = class User extends Schema {
+public async up () {
+  this.schema.createTable('schema_users', (table) => {
+    table.increments()
+  })
+}
+}
+`)
 
-    const app = new Application(fs.basePath)
+    const app: any = new Application(fs.basePath)
     app.inProduction = true
     app.environment = 'test'
 
@@ -209,7 +210,7 @@ module.exports = class User extends Schema {
 }
 `)
     await fs.add('database/seeds/UserSeeder.ts', `
-import { Facade } from 'tn-illuminate/dist/Support/Facade'
+import { Facade } from '@tngraphql/illuminate/dist/Support/Facade'
 import { DBFactory } from '../../../../../src/Factory/DBFactory'
 
 const Factory: DBFactory = Facade.create('factory')
@@ -229,7 +230,7 @@ export class UserSeeder {
 }
 `)
 
-    const app = new Application(fs.basePath)
+    const app: any = new Application(fs.basePath)
     app.inProduction = true
     app.environment = 'test'
     const kernel = new Kernel(app)
@@ -262,17 +263,17 @@ export class UserSeeder {
     assert.plan(2)
 
     await fs.add('database/migrations/users.ts', `
-      import { Schema } from '../../../../../../src/Schema'
-      module.exports = class User extends Schema {
-        public async up () {
-          this.schema.createTable('schema_users', (table) => {
-            table.increments()
-          })
-        }
-      }
-    `)
+import { Schema } from '../../../../../src/Schema'
+module.exports = class User extends Schema {
+public async up () {
+  this.schema.createTable('schema_users', (table) => {
+    table.increments()
+  })
+}
+}
+`)
 
-    const app = new Application(fs.basePath)
+    const app: any = new Application(fs.basePath)
     app.inProduction = true
     app.environment = 'test'
 
@@ -288,17 +289,17 @@ export class UserSeeder {
 
   test('do not prompt during migration when force flag is defined', async () => {
     await fs.add('database/migrations/users.ts', `
-      import { Schema } from '../../../../../../src/Schema'
-      module.exports = class User extends Schema {
-        public async up () {
-          this.schema.createTable('schema_users', (table) => {
-            table.increments()
-          })
-        }
-      }
-    `)
+import { Schema } from '../../../../../src/Schema'
+module.exports = class User extends Schema {
+public async up () {
+  this.schema.createTable('schema_users', (table) => {
+    table.increments()
+  })
+}
+}
+`)
 
-    const app = new Application(fs.basePath)
+    const app: any = new Application(fs.basePath)
     app.inProduction = true
     app.environment = 'test'
 
@@ -314,14 +315,14 @@ export class UserSeeder {
     assert.plan(1)
 
     await fs.add('database/migrations/users.ts', `
-      import { Schema } from '../../../../../../src/Schema'
-      module.exports = class User extends Schema {
-        public async down () {
-        }
-      }
-    `)
+import { Schema } from '../../../../../src/Schema'
+module.exports = class User extends Schema {
+ public async down () {
+ }
+}
+`)
 
-    const app = new Application(fs.basePath)
+    const app: any = new Application(fs.basePath)
     app.inProduction = true
     app.environment = 'test'
 
@@ -335,14 +336,14 @@ export class UserSeeder {
 
   test('do not prompt during rollback in production when force flag is defined', async () => {
     await fs.add('database/migrations/users.ts', `
-      import { Schema } from '../../../../../../src/Schema'
-      module.exports = class User extends Schema {
-        public async down () {
-        }
-      }
-    `)
+import { Schema } from '../../../../../src/Schema'
+module.exports = class User extends Schema {
+  public async down () {
+  }
+}
+`)
 
-    const app = new Application(fs.basePath)
+    const app: any = new Application(fs.basePath)
     app.inProduction = true
     app.environment = 'test'
 
@@ -368,18 +369,19 @@ test.group('Migrate | Refresh', (group) => {
   })
   test('Reset and re-run all migrations', async (assert) => {
     await fs.add('database/migrations/users.ts', `
-      import { Schema } from 'tn-lucid/build/src/Schema';
-      module.exports = class User extends Schema {
-        public async up () {
-          this.schema.createTable('schema_users', (table) => {
-            table.increments()
-          })
-        }
-        public async down () {
-        this.schema.dropTable('schema_users')
-    }
-      }
-    `)
+import { Schema } from '../../../../../src/Schema'
+
+module.exports = class User extends Schema {
+  public async up () {
+    this.schema.createTable('schema_users', (table) => {
+      table.increments()
+    })
+  }
+  public async down () {
+    this.schema.dropTable('schema_users')
+  }
+}
+`)
 
     const app = new Application(fs.basePath)
     app.singleton('db', () => db)
@@ -391,18 +393,19 @@ test.group('Migrate | Refresh', (group) => {
     await migrate.handle()
 
     await fs.add('database/migrations/users2.ts', `
-      import { Schema } from 'tn-lucid/build/src/Schema';
-      module.exports = class User2 extends Schema {
-        public async up () {
-          this.schema.createTable('schema_users2', (table) => {
-            table.increments()
-          })
-        }
-        public async down () {
-        this.schema.dropTable('schema_users2')
-    }
-      }
-    `)
+import { Schema } from '../../../../../src/Schema'
+
+module.exports = class User2 extends Schema {
+  public async up () {
+    this.schema.createTable('schema_users2', (table) => {
+      table.increments()
+    })
+  }
+  public async down () {
+    this.schema.dropTable('schema_users2')
+  }
+}
+`)
     await migrate.handle()
 
     kernel.registerCommand([RunCommand, ResetCommand, RollbackCommand])
@@ -431,7 +434,7 @@ test.group('Migrate | Reset', (group) => {
   })
   test('Rollback all database migrations', async (assert) => {
     await fs.add('database/migrations/users.ts', `
-      import { Schema } from 'tn-lucid/build/src/Schema';
+      import { Schema } from '../../../../../src/Schema'
       module.exports = class User extends Schema {
         public async up () {
           this.schema.createTable('schema_users', (table) => {
@@ -454,7 +457,7 @@ test.group('Migrate | Reset', (group) => {
     await migrate.handle()
 
     await fs.add('database/migrations/users2.ts', `
-      import { Schema } from 'tn-lucid/build/src/Schema';
+      import { Schema } from '../../../../../src/Schema'
       module.exports = class User2 extends Schema {
         public async up () {
           this.schema.createTable('schema_users2', (table) => {
@@ -497,7 +500,7 @@ test.group('Migrate | Rollback', (group) => {
 
   test('Rollback all database migrations', async (assert) => {
     await fs.add('database/migrations/users.ts', `
-      import { Schema } from 'tn-lucid/build/src/Schema';
+      import { Schema } from '../../../../../src/Schema'
       module.exports = class User extends Schema {
         public async up () {
           this.schema.createTable('schema_users', (table) => {
@@ -520,7 +523,7 @@ test.group('Migrate | Rollback', (group) => {
     await migrate.handle()
 
     await fs.add('database/migrations/users2.ts', `
-      import { Schema } from 'tn-lucid/build/src/Schema';
+      import { Schema } from '../../../../../src/Schema'
       module.exports = class User2 extends Schema {
         public async up () {
           this.schema.createTable('schema_users2', (table) => {
@@ -562,7 +565,7 @@ test.group('Migration | Status', (group) => {
   })
   test('list migrations current status', async (assert) => {
     await fs.add('database/migrations/users.ts', `
-      import { Schema } from 'tn-lucid/build/src/Schema';
+      import { Schema } from '../../../../../src/Schema'
       module.exports = class User extends Schema {
         public async up () {
           this.schema.createTable('schema_users', (table) => {
@@ -581,9 +584,9 @@ test.group('Migration | Status', (group) => {
     await migrate.handle()
 
     await fs.add('database/migrations/users2.ts', `
-      import { Schema } from 'tn-lucid/build/src/Schema';
+      import { Schema } from '../../../../../src/Schema'
       module.exports = class User2 extends Schema {
-        
+
       }
     `)
 

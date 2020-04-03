@@ -7,7 +7,7 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-import { BaseCommand, flags } from 'tn-console'
+import { BaseCommand, flags } from '@tngraphql/console'
 
 export class ResetCommand extends BaseCommand {
   public static commandName = 'migration:reset'

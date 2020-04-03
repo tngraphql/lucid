@@ -14,7 +14,7 @@ import { join } from 'path'
 import { Filesystem } from '@poppinss/dev-utils'
 
 import { setup, cleanup, getDb, resetTables, getMigrator } from '../../test-helpers'
-import { Application } from 'tn-illuminate';
+import { Application } from '@tngraphql/illuminate'
 
 let db: ReturnType<typeof getDb>
 const fs = new Filesystem(join(__dirname, 'app'))
@@ -889,7 +889,7 @@ test.group('Migrator', (group) => {
   })
 
   test('raise exception when rollbacks in production are disabled', async (assert) => {
-    const app = new Application(fs.basePath)
+    const app: any = new Application(fs.basePath)
     app.inProduction = true
     const originalConfig = Object.assign({}, db.getRawConnection('primary')!.config)
 

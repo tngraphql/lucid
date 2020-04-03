@@ -27,7 +27,7 @@ import {
 } from '@ioc:Adonis/Lucid/Database'
 
 import { MigrationSource } from './MigrationSource'
-import { ApplicationContract } from 'tn-illuminate/dist/Contracts/ApplicationContract';
+import { ApplicationContract } from '@tngraphql/illuminate/dist/Contracts/ApplicationContract';
 
 /**
  * Migrator exposes the API to execute migrations using the schema files

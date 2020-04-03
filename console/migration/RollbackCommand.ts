@@ -7,10 +7,10 @@
  * file that was distributed with this source code.
 */
 
-import { flags, Kernel } from 'tn-console'
+import { flags, Kernel } from '@tngraphql/console'
 import { MigrationsBaseCommand } from './MigrationsBaseCommand'
-import { ApplicationContract } from 'tn-illuminate/dist/Contracts/ApplicationContract'
-import { Inject } from 'tn-illuminate'
+import { ApplicationContract } from '@tngraphql/illuminate/dist/Contracts/ApplicationContract'
+import { Inject } from '@tngraphql/illuminate'
 
 /**
  * The command is meant to migrate the database by execute migrations

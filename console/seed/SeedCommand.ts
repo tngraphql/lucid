@@ -1,8 +1,8 @@
-import { BaseCommand, flags } from 'tn-console'
+import { BaseCommand, flags } from '@tngraphql/console'
 import path from 'path'
 import _ = require('lodash')
-import { isClass } from 'tn-illuminate'
-import { ApplicationContract } from 'tn-illuminate/dist/Contracts/ApplicationContract'
+import { isClass } from '@tngraphql/illuminate'
+import { ApplicationContract } from '@tngraphql/illuminate/dist/Contracts/ApplicationContract'
 import { requireAll } from '@poppinss/utils/build'
 
 const prettyHrTime = require('pretty-hrtime')
