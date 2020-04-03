@@ -1,6 +1,6 @@
 {
-  "name": "lucid",
-  "version": "1.0.0",
+  "name": "@tngraphql/lucid",
+  "version": "1.0.1",
   "description": "SQL ORM built on top of Active Record pattern",
   "main": "build/src/Database/index.d.ts",
   "files": [
@@ -12,7 +12,6 @@
     "build/templates"
   ],
   "publishConfig": {
-    "tag": "alpha",
     "access": "public"
   },
   "scripts": {
@@ -89,5 +88,13 @@
     "typescript": "^3.8.3"
   },
   "author": "Nguyenpl117,TNGraphQL",
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tngraphql/lucid.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tngraphql/lucid/issues"
+  },
+  "homepage": "https://github.com/tngraphql/lucid#readme"
 }
