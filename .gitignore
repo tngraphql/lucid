@@ -14,5 +14,4 @@ test/functional/database
 *.log
 build
 dist
-yarn.lock
 shrinkwrap.yaml
