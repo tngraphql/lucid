@@ -111,6 +111,7 @@ export class Connection extends EventEmitter implements ConnectionContract {
          * Pool has destroyed and hence we must cleanup resources
          * as well.
          */
+        // @ts-ignore
         this.pool!.on('poolDestroySuccess', () => {
             this.logger.trace({ connection: this.name }, 'pool destroyed, cleaning up resource')
             this.cleanup()
@@ -119,6 +120,7 @@ export class Connection extends EventEmitter implements ConnectionContract {
         })
 
         if ( this.readPool !== this.pool ) {
+            // @ts-ignore
             this.readPool!.on('poolDestroySuccess', () => {
                 this.logger.trace({ connection: this.name }, 'pool destroyed, cleaning up resource')
                 this.cleanup()

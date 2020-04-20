@@ -13,7 +13,7 @@ import { Exception } from '@poppinss/utils/build';
 import { EmitterContract } from '@tngraphql/illuminate/dist/Contracts/Events/EmitterContract';
 import * as Knex from 'knex';
 
-import { resolveClientNameWithAliases } from 'Knex/lib/helpers'
+import { resolveClientNameWithAliases } from 'knex/lib/helpers'
 import { ConnectionContract } from '../Contracts/Connection/ConnectionContract';
 import { DialectContract } from '../Contracts/Database/DialectContract';
 import { QueryClientContract } from '../Contracts/Database/QueryClientContract';
