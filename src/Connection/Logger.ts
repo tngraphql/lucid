@@ -11,7 +11,7 @@
 import { LoggerContract } from '@ioc:Adonis/Core/Logger'
 
 /**
- * Custom Knex logger that uses adonisjs logger under the
+ * Custom Knex logger that uses logger under the
  * hood.
  */
 export class Logger {
