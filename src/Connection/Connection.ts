@@ -12,7 +12,7 @@ import { LoggerContract } from '@ioc:Adonis/Core/Logger'
 import { Exception } from '@poppinss/utils'
 import { EventEmitter } from 'events'
 import * as Knex from 'knex'
-import { patchKnex } from 'Knex-dynamic-connection'
+import { patchKnex } from 'knex-dynamic-connection'
 import { Pool } from 'tarn'
 import { ConnectionContract } from '../Contracts/Connection/ConnectionContract';
 import { ConnectionConfig, ReportNode } from '../Contracts/Connection/types';
