@@ -1,0 +1,28 @@
+version: '3.4'
+services:
+  test:
+    build:
+      context: .
+      target: build-deps
+    links:
+      - mysql
+      - pg
+      - mssql
+    command: ["npm", "run", "test:docker"]
+    environment:
+      DB: pg
+      DB_NAME: lucid
+
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: virk
+      MYSQL_PASSWORD: password
+
+      PG_HOST: pg
+      PG_PORT: 5432
+      PG_USER: virk
+      PG_PASSWORD: password
+
+      MSSQL_SERVER: mssql
+      MSSQL_USER: sa
+      MSSQL_PASSWORD: arandom&233password
