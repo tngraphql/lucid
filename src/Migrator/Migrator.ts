@@ -36,7 +36,7 @@ export class Migrator extends EventEmitter implements MigratorContract {
      * Reference to the migrations config for the given connection
      */
     private migrationsConfig = Object.assign({
-        tableName: 'adonis_schema',
+        tableName: 'tngraphql_schema',
         disableTransactions: false
     }, this.config.migrations)
 

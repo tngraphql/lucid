@@ -29,7 +29,7 @@ describe('Migrator', () => {
 
     afterEach(async () => {
         await resetTables()
-        await cleanup(['adonis_schema', 'schema_users', 'schema_accounts'])
+        await cleanup(['tngraphql.com', 'schema_users', 'schema_accounts'])
         await fs.cleanup();
         jest.resetModules();
     })
@@ -44,7 +44,7 @@ describe('Migrator', () => {
         })
 
         await migrator.run()
-        const hasSchemaTable = await db.connection().schema.hasTable('adonis_schema')
+        const hasSchemaTable = await db.connection().schema.hasTable('tngraphql_schema')
         expect(hasSchemaTable).toBeTruthy()
         expect(migrator.migratedFiles).toEqual({})
         expect(migrator.status).toBe('skipped')
@@ -71,7 +71,7 @@ describe('Migrator', () => {
 
         await migrator.run()
 
-        const migrated = await db.connection().from('adonis_schema').select('*')
+        const migrated = await db.connection().from('tngraphql_schema').select('*')
         const hasUsersTable = await db.connection().schema.hasTable('schema_users')
         const migratedFiles = Object.keys(migrator.migratedFiles).map((file) => {
             return {
@@ -127,7 +127,7 @@ describe('Migrator', () => {
 
         await migrator.run()
 
-        const migrated = await db.connection().from('adonis_schema').select('*')
+        const migrated = await db.connection().from('tngraphql_schema').select('*')
         const hasUsersTable = await db.connection().schema.hasTable('schema_users')
         const hasAccountsTable = await db.connection().schema.hasTable('schema_accounts')
         const migratedFiles = Object.keys(migrator.migratedFiles).map((file) => {
@@ -194,7 +194,7 @@ describe('Migrator', () => {
 
         await migrator.run()
 
-        const migrated = await db.connection().from('adonis_schema').select('*')
+        const migrated = await db.connection().from('tngraphql_schema').select('*')
         const hasUsersTable = await db.connection().schema.hasTable('schema_users')
         const hasAccountsTable = await db.connection().schema.hasTable('schema_accounts')
         const migratedFiles = Object.keys(migrator.migratedFiles).map((file) => {
@@ -267,7 +267,7 @@ describe('Migrator', () => {
 
         await migrator.run()
 
-        const migrated = await db.connection().from('adonis_schema').select('*')
+        const migrated = await db.connection().from('tngraphql_schema').select('*')
         const hasUsersTable = await db.connection().schema.hasTable('schema_users')
         const hasAccountsTable = await db.connection().schema.hasTable('schema_accounts')
         const migratedFiles = Object.keys(migrator.migratedFiles).map((file) => {
@@ -335,7 +335,7 @@ describe('Migrator', () => {
 
         expect(migrator2.status).toBe('skipped')
 
-        const migrated = await db.connection().from('adonis_schema').select('*')
+        const migrated = await db.connection().from('tngraphql_schema').select('*')
         const hasUsersTable = await db.connection().schema.hasTable('schema_users')
         const hasAccountsTable = await db.connection().schema.hasTable('schema_accounts')
 
@@ -392,7 +392,7 @@ describe('Migrator', () => {
         const migrator2 = getMigrator(db, app, { direction: 'down', batch: 1, connectionName: 'primary' })
         await migrator2.run()
 
-        const migrated = await db.connection().from('adonis_schema').select('*')
+        const migrated = await db.connection().from('tngraphql_schema').select('*')
         const hasUsersTable = await db.connection().schema.hasTable('schema_users')
         const hasAccountsTable = await db.connection().schema.hasTable('schema_accounts')
         const migratedFiles = Object.keys(migrator2.migratedFiles).map((file) => {
@@ -455,7 +455,7 @@ describe('Migrator', () => {
         const migrator2 = getMigrator(db, app, { direction: 'down', connectionName: 'primary' })
         await migrator2.run()
 
-        const migrated = await db.connection().from('adonis_schema').select('*')
+        const migrated = await db.connection().from('tngraphql_schema').select('*')
         const hasUsersTable = await db.connection().schema.hasTable('schema_users')
         const hasAccountsTable = await db.connection().schema.hasTable('schema_accounts')
         const migratedFiles = Object.keys(migrator2.migratedFiles).map((file) => {
@@ -518,7 +518,7 @@ describe('Migrator', () => {
         const migrator2 = getMigrator(db, app, { direction: 'down', batch: 0, connectionName: 'primary' })
         await migrator2.run()
 
-        const migrated = await db.connection().from('adonis_schema').select('*')
+        const migrated = await db.connection().from('tngraphql_schema').select('*')
         const hasUsersTable = await db.connection().schema.hasTable('schema_users')
         const hasAccountsTable = await db.connection().schema.hasTable('schema_accounts')
         const migratedFiles = Object.keys(migrator2.migratedFiles).map((file) => {
@@ -593,7 +593,7 @@ describe('Migrator', () => {
         const migrator3 = getMigrator(db, app, { direction: 'down', batch: 0, connectionName: 'primary' })
         await migrator3.run()
 
-        const migrated = await db.connection().from('adonis_schema').select('*')
+        const migrated = await db.connection().from('tngraphql_schema').select('*')
         const hasUsersTable = await db.connection().schema.hasTable('schema_users')
         const hasAccountsTable = await db.connection().schema.hasTable('schema_accounts')
 
@@ -681,7 +681,7 @@ describe('Migrator', () => {
         })
         await migrator2.run()
 
-        const migrated = await db.connection().from('adonis_schema').select('*')
+        const migrated = await db.connection().from('tngraphql_schema').select('*')
         const hasUsersTable = await db.connection().schema.hasTable('schema_users')
         const hasAccountsTable = await db.connection().schema.hasTable('schema_accounts')
         const migrator2Files = Object.keys(migrator2.migratedFiles).map((file) => {
@@ -762,7 +762,7 @@ describe('Migrator', () => {
 
         await migrator1.run()
 
-        const migrated = await db.connection().from('adonis_schema').select('*')
+        const migrated = await db.connection().from('tngraphql_schema').select('*')
         const hasUsersTable = await db.connection().schema.hasTable('schema_users')
         const hasAccountsTable = await db.connection().schema.hasTable('schema_accounts')
 
@@ -854,7 +854,7 @@ describe('Migrator', () => {
             expect(error).toBeDefined();
         }
 
-        const migrated = await db.connection().from('adonis_schema').select('*')
+        const migrated = await db.connection().from('tngraphql_schema').select('*')
         const hasUsersTable = await db.connection().schema.hasTable('schema_users')
         const hasAccountsTable = await db.connection().schema.hasTable('schema_accounts')
         const migratedFiles = Object.keys(migrator.migratedFiles).map((file) => {
@@ -936,7 +936,7 @@ describe('Migrator', () => {
             migrator2.error!.message).toBe(            'Rollback in production environment is disabled. Check "config/database" file for options.',
         )
 
-        const migrated = await db.connection().from('adonis_schema').select('*')
+        const migrated = await db.connection().from('tngraphql_schema').select('*')
         const hasUsersTable = await db.connection().schema.hasTable('schema_users')
         const hasAccountsTable = await db.connection().schema.hasTable('schema_accounts')
 

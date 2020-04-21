@@ -47,21 +47,31 @@ describe('Base model', () => {
         });
 
         it('boot event', async () => {
-            expect.assertions(2);
+            expect.assertions(3);
+            const stack = [];
 
             class User extends BaseModel {
 
             }
+            class User2 extends BaseModel {
+
+            }
 
             User.on('booting', (data) => {
+                stack.push('booting');
                 expect(data).toBeTruthy();
             });
 
             User.on('booted', (data) => {
+                stack.push('booted');
                 expect(data).toBeTruthy();
             });
 
             User.bootIfNotBooted();
+
+            User2.bootIfNotBooted();
+
+            expect(stack).toEqual(['booting', 'booted']);
         });
 
         it('should create table name when no settings table name', async () => {
@@ -2188,6 +2198,7 @@ describe('Base model', () => {
 
                 @beforeCreate()
                 public static beforeCreateHook(model: User) {
+                    console.log('beforeCreateHook')
                     stack.push('beforeCreateHook')
                     expect(model).toBeInstanceOf(User)
                     expect(model.$isPersisted).toBeFalsy()
@@ -2195,6 +2206,7 @@ describe('Base model', () => {
 
                 @beforeSave()
                 public static beforeSaveHook(model: User) {
+                    console.log('beforeSaveHook')
                     stack.push('beforeSaveHook')
                     expect(model).toBeInstanceOf(User)
                     expect(model.$isPersisted).toBeFalsy()
@@ -2202,6 +2214,7 @@ describe('Base model', () => {
 
                 @afterCreate()
                 public static afterCreateHook(model: User) {
+                    console.log('afterCreateHook');
                     stack.push('afterCreateHook')
                     expect(model).toBeInstanceOf(User)
                     expect(model.$isPersisted).toBeTruthy()
@@ -2209,6 +2222,7 @@ describe('Base model', () => {
 
                 @afterSave()
                 public static afterSaveHook(model: User) {
+                    console.log('afterSaveHook');
                     stack.push('afterSaveHook')
                     expect(model).toBeInstanceOf(User)
                     expect(model.$isPersisted).toBeTruthy()
@@ -2218,6 +2232,8 @@ describe('Base model', () => {
             const user = new User()
             user.username = 'virk'
             await user.save()
+            console.log(stack);
+
             expect(stack).toEqual([
                 'beforeCreateHook',
                 'beforeSaveHook',
@@ -2243,12 +2259,14 @@ describe('Base model', () => {
                     super.boot()
 
                     this.before('create', (model) => {
+                        console.log('create');
                         expect(model).toBeInstanceOf(User)
                         expect(model.$isPersisted).toBeFalsy()
                         throw new Error('Wait')
                     })
 
                     this.before('save', (model) => {
+                        console.log('save');
                         expect(model).toBeInstanceOf(User)
                         expect(model.$isPersisted).toBeFalsy()
                     })
@@ -2271,6 +2289,7 @@ describe('Base model', () => {
             try {
                 await user.save()
             } catch ({ message }) {
+                console.log({message});
                 expect(message).toBe('Wait')
             }
         })
@@ -3938,7 +3957,7 @@ describe('Base model', () => {
 
             await db.insertQuery().table('users').insert({
                 username: 'virk',
-                email: 'virk@adonisjs.com',
+                email: 'virk@tngraphql.com',
                 points: 10
             })
 
@@ -3949,15 +3968,15 @@ describe('Base model', () => {
                 [
                     {
                         username: 'virk',
-                        email: 'virk@adonisjs.com'
+                        email: 'virk@tngraphql.com'
                     },
                     {
                         username: 'nikk',
-                        email: 'nikk@adonisjs.com'
+                        email: 'nikk@tngraphql.com'
                     },
                     {
                         username: 'romain',
-                        email: 'romain@adonisjs.com'
+                        email: 'romain@tngraphql.com'
                     }
                 ],
                 {
@@ -4049,7 +4068,7 @@ describe('Base model', () => {
 
             await db.insertQuery().table('users').insert({
                 username: 'virk',
-                email: 'virk@adonisjs.com',
+                email: 'virk@tngraphql.com',
                 points: 10
             })
 
@@ -4061,11 +4080,11 @@ describe('Base model', () => {
                     [
                         {
                             username: 'nikk',
-                            email: 'virk@adonisjs.com'
+                            email: 'virk@tngraphql.com'
                         },
                         {
                             username: 'romain',
-                            email: 'romain@adonisjs.com'
+                            email: 'romain@tngraphql.com'
                         }
                     ],
                     {
@@ -4100,7 +4119,7 @@ describe('Base model', () => {
 
             await db.insertQuery().table('users').insert({
                 username: 'virk',
-                email: 'virk@adonisjs.com',
+                email: 'virk@tngraphql.com',
                 points: 10
             })
 
@@ -4109,11 +4128,11 @@ describe('Base model', () => {
                     'username',
                     [
                         {
-                            email: 'virk@adonisjs.com'
+                            email: 'virk@tngraphql.com'
                         },
                         {
                             username: 'romain',
-                            email: 'romain@adonisjs.com'
+                            email: 'romain@tngraphql.com'
                         }
                     ]
                 )
@@ -4141,7 +4160,7 @@ describe('Base model', () => {
 
             await db.insertQuery().table('users').insert({
                 username: 'virk',
-                email: 'virk@adonisjs.com',
+                email: 'virk@tngraphql.com',
                 points: 10
             })
 
@@ -4150,11 +4169,11 @@ describe('Base model', () => {
                     'username' as any,
                     [
                         {
-                            email: 'virk@adonisjs.com'
+                            email: 'virk@tngraphql.com'
                         },
                         {
                             username: 'romain',
-                            email: 'romain@adonisjs.com'
+                            email: 'romain@tngraphql.com'
                         } as any
                     ]
                 )
@@ -4244,7 +4263,7 @@ describe('Base model', () => {
 
             await db.insertQuery().table('users').insert({
                 username: 'virk',
-                email: 'virk@adonisjs.com',
+                email: 'virk@tngraphql.com',
                 points: 10
             })
 
@@ -4255,15 +4274,15 @@ describe('Base model', () => {
                 [
                     {
                         username: 'virk',
-                        email: 'virk@adonisjs.com'
+                        email: 'virk@tngraphql.com'
                     },
                     {
                         username: 'nikk',
-                        email: 'nikk@adonisjs.com'
+                        email: 'nikk@tngraphql.com'
                     },
                     {
                         username: 'romain',
-                        email: 'romain@adonisjs.com'
+                        email: 'romain@tngraphql.com'
                     }
                 ],
                 {
@@ -4293,7 +4312,7 @@ describe('Base model', () => {
 
             await db.insertQuery().table('users').insert({
                 username: 'virk',
-                email: 'virk@adonisjs.com',
+                email: 'virk@tngraphql.com',
                 points: 10
             })
 
@@ -4304,16 +4323,16 @@ describe('Base model', () => {
                 [
                     {
                         username: 'virk',
-                        email: 'virk@adonisjs.com',
+                        email: 'virk@tngraphql.com',
                         points: 4
                     },
                     {
                         username: 'nikk',
-                        email: 'nikk@adonisjs.com'
+                        email: 'nikk@tngraphql.com'
                     },
                     {
                         username: 'romain',
-                        email: 'romain@adonisjs.com'
+                        email: 'romain@tngraphql.com'
                     }
                 ],
                 {

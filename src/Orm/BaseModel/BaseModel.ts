@@ -43,7 +43,7 @@ import { HasMany } from '../Relations/HasMany'
 import { HasManyThrough } from '../Relations/HasManyThrough'
 import { HasOne } from '../Relations/HasOne'
 import { ManyToMany } from '../Relations/ManyToMany'
-import { modelEvent } from './modelEvent';
+import { ModelEventEmitter } from './ModelEventEmitter';
 import { proxyHandler } from './proxyHandler'
 
 const MANY_RELATIONS = ['hasMany', 'manyToMany', 'hasManyThrough']
@@ -451,12 +451,22 @@ export class BaseModel implements LucidRow {
         this.emit('booted', true);
     }
 
+    private static _modelEvent: ModelEventEmitter;
+
+    protected static get modelEvent(): ModelEventEmitter {
+        if ( this._modelEvent ) {
+            return this._modelEvent;
+        }
+
+        return this._modelEvent = new ModelEventEmitter();
+    }
+
     public static emit(event: string, value: any) {
-        return modelEvent.emit(event, value);
+        return this.modelEvent.emit(event, value);
     }
 
     public static on(event: string, callback: (data: any) => void) {
-        return modelEvent.on(event, callback);
+        return this.modelEvent.on(event, callback);
     }
 
     /**

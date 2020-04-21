@@ -5,7 +5,7 @@ jobs:
   tests:
     docker:
       - image: bayesimpact/circleci
-    working_directory: /adonis-lucid
+    working_directory: /tngraphql-lucid
     steps:
       - checkout
       - setup_remote_docker

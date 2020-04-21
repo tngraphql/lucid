@@ -1875,15 +1875,15 @@ describe('Query Builder One', () => {
             await getInsertBuilder(getQueryClient(connection)).table('users').multiInsert([
                 {
                     username: 'virk',
-                    email: 'virk@adonisjs.com',
+                    email: 'virk@tngraphql.com',
                 },
                 {
                     username: 'romain',
-                    email: 'romain@adonisjs.com',
+                    email: 'romain@tngraphql.com',
                 },
                 {
                     username: 'nikk',
-                    email: 'nikk@adonisjs.com',
+                    email: 'nikk@tngraphql.com',
                 },
             ])
 
@@ -1922,15 +1922,15 @@ describe('Query Builder One', () => {
             await getInsertBuilder(getQueryClient(connection)).table('users').multiInsert([
                 {
                     username: 'virk',
-                    email: 'virk@adonisjs.com',
+                    email: 'virk@tngraphql.com',
                 },
                 {
                     username: 'romain',
-                    email: 'romain@adonisjs.com',
+                    email: 'romain@tngraphql.com',
                 },
                 {
                     username: 'nikk',
-                    email: 'nikk@adonisjs.com',
+                    email: 'nikk@tngraphql.com',
                 },
             ])
 
@@ -1973,15 +1973,15 @@ describe('Query Builder One', () => {
             await getInsertBuilder(getQueryClient(connection)).table('users').multiInsert([
                 {
                     username: 'virk',
-                    email: 'virk@adonisjs.com',
+                    email: 'virk@tngraphql.com',
                 },
                 {
                     username: 'romain',
-                    email: 'romain@adonisjs.com',
+                    email: 'romain@tngraphql.com',
                 },
                 {
                     username: 'nikk',
-                    email: 'nikk@adonisjs.com',
+                    email: 'nikk@tngraphql.com',
                 },
             ])
 
@@ -2017,15 +2017,15 @@ describe('Query Builder One', () => {
             await getInsertBuilder(getQueryClient(connection)).table('users').multiInsert([
                 {
                     username: 'virk',
-                    email: 'virk@adonisjs.com',
+                    email: 'virk@tngraphql.com',
                 },
                 {
                     username: 'romain',
-                    email: 'romain@adonisjs.com',
+                    email: 'romain@tngraphql.com',
                 },
                 {
                     username: 'nikk',
-                    email: 'nikk@adonisjs.com',
+                    email: 'nikk@tngraphql.com',
                 },
             ])
 

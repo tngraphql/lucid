@@ -9,9 +9,6 @@
  */
 import { EventEmitter } from 'events';
 
-export class ModelEvent extends EventEmitter {
+export class ModelEventEmitter extends EventEmitter {
 
 }
-
-const modelEvent = new ModelEvent();
-export { modelEvent };
