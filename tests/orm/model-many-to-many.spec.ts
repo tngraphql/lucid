@@ -37,7 +37,7 @@ describe('Model | ManyToMany', () => {
                     public skills: ManyToMany<typeof Skill>
                 }
 
-                User.boot()
+
                 User.$getRelation('skills')!.boot()
             } catch ({ message }) {
                 expect(
@@ -83,7 +83,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             User.$getRelation('skills')!.boot()
 
             expect(User.$getRelation('skills')!['localKey']).toBe('uid')
@@ -96,7 +96,8 @@ describe('Model | ManyToMany', () => {
             try {
                 class Skill extends BaseModel {
                 }
-                Skill.boot()
+
+                Skill.bootIfNotBooted();
 
                 class User extends BaseModel {
                     @column({ isPrimary: true })
@@ -106,7 +107,7 @@ describe('Model | ManyToMany', () => {
                     public skills: ManyToMany<typeof Skill>
                 }
 
-                User.boot()
+
                 User.$getRelation('skills')!.boot()
             } catch ({ message }) {
                 expect(
@@ -210,7 +211,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             User.$getRelation('skills')!.boot()
 
             expect(User.$getRelation('skills')!['pivotRelatedForeignKey']).toBe('skill_id')
@@ -230,7 +231,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             User.$getRelation('skills')!.boot()
 
             expect(User.$getRelation('skills')!['pivotRelatedForeignKey']).toBe('skill_uid')
@@ -728,7 +729,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             await db.insertQuery().table('users').insert([{ username: 'virk' }])
             await db.insertQuery().table('skills').insert([{ name: 'Programming' }, { name: 'Dancing' }])
             await db.insertQuery().table('skill_user').insert([
@@ -763,7 +764,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
 
             await db.insertQuery().table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
             await db.insertQuery().table('skills').insert([{ name: 'Programming' }, { name: 'Dancing' }])
@@ -817,7 +818,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
 
             await db.insertQuery().table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
             await db.insertQuery().table('skills').insert([{ name: 'Programming' }, { name: 'Dancing' }])
@@ -878,7 +879,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
 
             await db.insertQuery().table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
             await db.insertQuery().table('skills').insert([{ name: 'Programming' }, { name: 'Dancing' }])
@@ -941,7 +942,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
 
             await db.insertQuery().table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
             await db.insertQuery().table('skills').insert([{ name: 'Programming' }, { name: 'Dancing' }])
@@ -1004,7 +1005,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             await db.insertQuery().table('users').insert([{ username: 'virk' }])
             await db.insertQuery().table('skills').insert([{ name: 'Programming' }, { name: 'Dancing' }])
             await db.insertQuery().table('skill_user').insert([
@@ -1043,7 +1044,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
 
             await db.insertQuery().table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
             await db.insertQuery().table('skills').insert([{ name: 'Programming' }, { name: 'Dancing' }])
@@ -1086,7 +1087,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
 
             const users = await User.query().preload('skills', () => {
                 throw new Error('not expected to be here')
@@ -1121,7 +1122,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 
@@ -1154,7 +1155,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 
@@ -1187,7 +1188,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 
@@ -1220,7 +1221,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 
@@ -1257,7 +1258,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 
@@ -1292,7 +1293,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 
@@ -1336,7 +1337,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             await db.insertQuery().table('users').insert([{ username: 'virk' }])
             await db.insertQuery().table('skills').insert([{ name: 'Programming' }, { name: 'Dancing' }])
             await db.insertQuery().table('skill_user').insert([
@@ -1391,7 +1392,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 
@@ -1421,7 +1422,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 
@@ -1454,7 +1455,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 
@@ -1491,7 +1492,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 
@@ -1539,7 +1540,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 
@@ -1572,7 +1573,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 
@@ -1609,7 +1610,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 
@@ -1644,7 +1645,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 
@@ -1681,7 +1682,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 
@@ -1720,7 +1721,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 
@@ -1753,7 +1754,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 
@@ -1788,7 +1789,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 
@@ -1844,7 +1845,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 
@@ -1877,7 +1878,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 
@@ -1914,7 +1915,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 
@@ -1950,7 +1951,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 
@@ -1983,7 +1984,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 
@@ -2018,7 +2019,7 @@ describe('Model | ManyToMany', () => {
                 public skills: ManyToMany<typeof Skill>
             }
 
-            User.boot()
+
             const user = new User()
             const query = user!.related('skills').query()
 

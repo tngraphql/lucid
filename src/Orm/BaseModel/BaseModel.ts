@@ -43,12 +43,14 @@ import { HasMany } from '../Relations/HasMany'
 import { HasManyThrough } from '../Relations/HasManyThrough'
 import { HasOne } from '../Relations/HasOne'
 import { ManyToMany } from '../Relations/ManyToMany'
+import { modelEvent } from './modelEvent';
 import { proxyHandler } from './proxyHandler'
 
 const MANY_RELATIONS = ['hasMany', 'manyToMany', 'hasManyThrough']
 
-function StaticImplements<T> () {
-    return (_t: T) => {}
+function StaticImplements<T>() {
+    return (_t: T) => {
+    }
 }
 
 /**
@@ -86,7 +88,7 @@ export class BaseModel implements LucidRow {
      * Whether or not the model has been booted. Booting the model initializes it's
      * static properties. Base models must not be initialized.
      */
-    public static booted: boolean
+    public static _booted: boolean
 
     /**
      * Query scopes defined on the model
@@ -382,11 +384,6 @@ export class BaseModel implements LucidRow {
      * Boot the model
      */
     public static boot() {
-        if ( this.booted ) {
-            return
-        }
-
-        this.booted = true
         this.primaryKey = this.primaryKey || 'id'
 
         Object.defineProperty(this, '$keys', {
@@ -420,13 +417,46 @@ export class BaseModel implements LucidRow {
     }
 
     /**
+     * Perform any actions required before the model boots.
+     *
+     */
+    public static booting() {
+        //
+    }
+
+    /**
+     * Perform any actions required after the model boots.
+     *
+     */
+    public static booted() {
+        //
+    }
+
+    /**
      * Check if the model needs to be booted and if so, do it.
      */
     public static bootIfNotBooted() {
-        if ( this.booted ) {
+        if ( this._booted ) {
             return;
         }
+
+        this._booted = true;
+
+        this.emit('booting', true);
+
+        this.booting();
         this.boot();
+        this.booted();
+
+        this.emit('booted', true);
+    }
+
+    public static emit(event: string, value: any) {
+        return modelEvent.emit(event, value);
+    }
+
+    public static on(event: string, callback: (data: any) => void) {
+        return modelEvent.on(event, callback);
     }
 
     /**

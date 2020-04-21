@@ -46,6 +46,24 @@ describe('Base model', () => {
             await db.manager.closeAll();
         });
 
+        it('boot event', async () => {
+            expect.assertions(2);
+
+            class User extends BaseModel {
+
+            }
+
+            User.on('booting', (data) => {
+                expect(data).toBeTruthy();
+            });
+
+            User.on('booted', (data) => {
+                expect(data).toBeTruthy();
+            });
+
+            User.bootIfNotBooted();
+        });
+
         it('should create table name when no settings table name', async () => {
             class User extends BaseModel {
                 @column()
@@ -70,7 +88,7 @@ describe('Base model', () => {
             class User extends BaseModel {
             }
 
-            User.boot()
+
             expect(mapToObj(User.$columnsDefinitions)).toEqual({});
             // expect(mapToObj(User.$relationsDefinitions)).toEqual({});
             // expect(mapToObj(User.$computedDefinitions)).toEqual({});
@@ -146,7 +164,7 @@ describe('Base model', () => {
                 public username: string
             }
 
-            User.boot()
+
 
             const user = new User()
             user.username = 'virk'
@@ -2222,10 +2240,6 @@ describe('Base model', () => {
                 public email: string
 
                 public static boot() {
-                    if ( this.booted ) {
-                        return
-                    }
-
                     super.boot()
 
                     this.before('create', (model) => {
@@ -2390,10 +2404,6 @@ describe('Base model', () => {
                 public email: string
 
                 public static boot() {
-                    if ( this.booted ) {
-                        return
-                    }
-
                     super.boot()
 
                     this.before('update', (model) => {
@@ -2481,10 +2491,6 @@ describe('Base model', () => {
                 public email: string
 
                 public static boot() {
-                    if ( this.booted ) {
-                        return
-                    }
-
                     super.boot()
 
                     this.before('delete', (model) => {
@@ -2616,7 +2622,6 @@ describe('Base model', () => {
                 public username: string
             }
 
-            User.boot()
 
             db.ModelQueryBuilder.macro('whereActive', function() {
                 this.where('is_active', true)
@@ -2646,8 +2651,6 @@ describe('Base model', () => {
                     return client.insertQuery().table('users').withId()
                 }
             }
-
-            User.boot()
 
             db.InsertQueryBuilder.macro('withId', function() {
                 this.returning('id')

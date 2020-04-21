@@ -38,7 +38,7 @@ export interface LucidModel {
      * Whether or not model has been booted. After this model configurations
      * are ignored
      */
-    readonly booted: boolean
+    readonly _booted: boolean
 
     /**
      * A map of defined columns
@@ -168,6 +168,14 @@ export interface LucidModel {
      * Boot model
      */
     boot(): void
+
+    booting(): void
+
+    booted(): void
+
+    emit(event: string, value: any): void;
+
+    on(event: string, callback: (data: any) => void): void;
 
     /**
      * Get table name of model

@@ -41,7 +41,7 @@ describe('Model query builder', () => {
             public username: string
         }
 
-        User.boot()
+
         expect(User.query()).toBeInstanceOf(ModelQueryBuilder)
     })
 
@@ -54,7 +54,7 @@ describe('Model query builder', () => {
             public username: string
         }
 
-        User.boot()
+
         expect(User.query().knexQuery['_single'].table).toBe('users')
     })
 
@@ -67,7 +67,7 @@ describe('Model query builder', () => {
             public username: string
         }
 
-        User.boot()
+
         await db.insertQuery().table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
 
         const users = await User.query().where('username', 'virk')
@@ -85,7 +85,7 @@ describe('Model query builder', () => {
             public username: string
         }
 
-        User.boot()
+
         await db.insertQuery().table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
 
         const users = await User.query({ connection: 'secondary' }).where('username', 'virk')
@@ -104,7 +104,7 @@ describe('Model query builder', () => {
             public username: string
         }
 
-        User.boot()
+
         await db.insertQuery().table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
 
         const users = await User
@@ -127,7 +127,7 @@ describe('Model query builder', () => {
             public username: string
         }
 
-        User.boot()
+
         await db.insertQuery().table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
 
         const profiler = getProfiler()
@@ -147,7 +147,7 @@ describe('Model query builder', () => {
             public username: string
         }
 
-        User.boot()
+
         await db.insertQuery().table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
 
         const rows = await User.query().where('username', 'virk').update({ username: 'hvirk' })
@@ -167,7 +167,7 @@ describe('Model query builder', () => {
             public username: string
         }
 
-        User.boot()
+
         await db.insertQuery().table('users').insert([{ username: 'virk', points: 1 }])
 
         const rows = await User.query().where('username', 'virk').increment('points', 1)
@@ -187,7 +187,7 @@ describe('Model query builder', () => {
             public username: string
         }
 
-        User.boot()
+
         await db.insertQuery().table('users').insert([{ username: 'virk', points: 3 }])
 
         const rows = await User.query().where('username', 'virk').decrement('points', 1)
@@ -207,7 +207,7 @@ describe('Model query builder', () => {
             public username: string
         }
 
-        User.boot()
+
         await db.insertQuery().table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
 
         const rows = await User.query().where('username', 'virk').del()
@@ -227,7 +227,7 @@ describe('Model query builder', () => {
             public username: string
         }
 
-        User.boot()
+
 
         const query = User.query()
         const clonedQuery = query.clone()
@@ -243,7 +243,7 @@ describe('Model query builder', () => {
             public username: string
         }
 
-        User.boot()
+
 
         const query = User.query().groupBy('id')
         const clonedQuery = query.clone()
@@ -259,7 +259,7 @@ describe('Model query builder', () => {
             public username: string
         }
 
-        User.boot()
+
         await db.insertQuery().table('users').insert([{ username: 'virk', points: 3 }])
 
         const query = User.query().sideload({ username: 'virk' })
@@ -280,7 +280,7 @@ describe('Model query builder', () => {
             })
         }
 
-        User.boot()
+
         const { sql, bindings } = User.query().apply((scopes) => {
             scopes.active()
         }).toSQL()
@@ -308,7 +308,7 @@ describe('Model query builder', () => {
             })
         }
 
-        User.boot()
+
         const { sql, bindings } = User.query().where((builder) => {
             builder.apply((scopes) => scopes.active())
         }).toSQL()
@@ -332,7 +332,7 @@ describe('Model query builder', () => {
             public username: string
         }
 
-        User.boot()
+
         await db.insertQuery().table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
 
         const users = await User.query().count('* as total')

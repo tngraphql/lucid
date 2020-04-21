@@ -31,14 +31,14 @@ describe('Model | BelongsTo | Options', () => {
                 class User extends BaseModel {
                 }
 
-                User.boot()
+                User.bootIfNotBooted();
 
                 class Profile extends BaseModel {
                     @belongsTo(() => User)
                     public user: BelongsTo<typeof User>
                 }
 
-                Profile.boot()
+
                 Profile.$getRelation('user')!.boot()
             } catch ({ message }) {
                 expect(
@@ -56,14 +56,14 @@ describe('Model | BelongsTo | Options', () => {
                     public id: number
                 }
 
-                User.boot()
+
 
                 class Profile extends BaseModel {
                     @belongsTo(() => User)
                     public user: BelongsTo<typeof User>
                 }
 
-                Profile.boot()
+
                 Profile.$getRelation('user')!.boot()
             } catch ({ message }) {
                 expect(
@@ -432,7 +432,7 @@ describe('Model | BelongsTo | Options', () => {
             await db.insertQuery().table('users').insert({ username: 'virk' })
             await db.insertQuery().table('profiles').insert({ display_name: 'Hvirk', user_id: 1 })
 
-            Profile.boot()
+
 
             const profiles = await Profile.query().preload('user')
             expect(profiles).toHaveLength(1)
@@ -466,7 +466,7 @@ describe('Model | BelongsTo | Options', () => {
                 }
             ])
 
-            Profile.boot()
+
             const profiles = await Profile.query().preload('user')
 
             expect(profiles).toHaveLength(2)
@@ -500,7 +500,7 @@ describe('Model | BelongsTo | Options', () => {
                 }
             ])
 
-            Profile.boot()
+
             const profiles = await Profile.query().preload('user', (builder) => builder.where('username', 'foo'))
 
             expect(profiles).toHaveLength(2)
@@ -537,7 +537,7 @@ describe('Model | BelongsTo | Options', () => {
                 }
             ])
 
-            Profile.boot()
+
 
             const profiles = await Profile.query().preload('user', (builder) => {
                 return builder.select('username')
@@ -577,7 +577,7 @@ describe('Model | BelongsTo | Options', () => {
                 }
             ])
 
-            Profile.boot()
+
 
             const profiles = await Profile.query().preload('user', (builder) => {
                 return builder.select('username', 'id')
@@ -619,7 +619,7 @@ describe('Model | BelongsTo | Options', () => {
                 }
             ])
 
-            Profile.boot()
+
 
             try {
                 await Profile.query().select('display_name').preload('user')
@@ -927,7 +927,7 @@ describe('Model | BelongsTo | Options', () => {
 
             await db.insertQuery().table('profiles').insert({ display_name: 'Hvirk', user_id: null })
 
-            Profile.boot()
+
 
             const profiles = await Profile.query().preload('user')
             expect(profiles).toHaveLength(1)
@@ -949,7 +949,7 @@ describe('Model | BelongsTo | Options', () => {
                 public user: BelongsTo<typeof User>
             }
 
-            Profile.boot()
+
 
             const profiles = await Profile.query().preload('user', () => {
                 throw new Error('not expected to be here')
@@ -1169,7 +1169,7 @@ describe('Model | BelongsTo | Options', () => {
                 public username: string
             }
 
-            User.boot()
+
 
             class Profile extends BaseModel {
                 @column()
@@ -1182,7 +1182,7 @@ describe('Model | BelongsTo | Options', () => {
                 public user: BelongsTo<typeof User>
             }
 
-            Profile.boot()
+
 
             await db.insertQuery().table('users').insert({ username: 'virk' })
             await db.insertQuery().table('profiles').insert({ display_name: 'Hvirk', user_id: 1 })
@@ -1223,7 +1223,7 @@ describe('Model | BelongsTo | Options', () => {
                 })
             }
 
-            User.boot()
+
 
             class Profile extends BaseModel {
                 @column()
@@ -1236,7 +1236,7 @@ describe('Model | BelongsTo | Options', () => {
                 public user: BelongsTo<typeof User>
             }
 
-            Profile.boot()
+
 
             await db.insertQuery().table('users').insert({ username: 'virk' })
             await db.insertQuery().table('profiles').insert({ display_name: 'Hvirk', user_id: 1 })
@@ -1263,7 +1263,7 @@ describe('Model | BelongsTo | Options', () => {
                 })
             }
 
-            User.boot()
+
 
             class Profile extends BaseModel {
                 @column()
@@ -1276,7 +1276,7 @@ describe('Model | BelongsTo | Options', () => {
                 public user: BelongsTo<typeof User>
             }
 
-            Profile.boot()
+
 
             await db.insertQuery().table('users').insert({ username: 'virk' })
             await db.insertQuery().table('profiles').insert({ display_name: 'Hvirk', user_id: 1 })
@@ -1317,7 +1317,7 @@ describe('Model | BelongsTo | Options', () => {
                 public username: string
             }
 
-            User.boot()
+
 
             class Profile extends BaseModel {
                 @column()
@@ -1334,7 +1334,7 @@ describe('Model | BelongsTo | Options', () => {
                 public user: BelongsTo<typeof User>
             }
 
-            Profile.boot()
+
 
             await db.insertQuery().table('users').insert({ username: 'virk' })
             await db.insertQuery().table('profiles').insert({ display_name: 'Hvirk', user_id: 1 })
@@ -1354,7 +1354,7 @@ describe('Model | BelongsTo | Options', () => {
                 public username: string
             }
 
-            User.boot()
+
 
             class Profile extends BaseModel {
                 @column()
@@ -1372,7 +1372,7 @@ describe('Model | BelongsTo | Options', () => {
                 public user: BelongsTo<typeof User>
             }
 
-            Profile.boot()
+
 
             await db.insertQuery().table('users').insert({ username: 'virk' })
             await db.insertQuery().table('profiles').insert({ display_name: 'Hvirk', user_id: 1 })
@@ -1394,7 +1394,7 @@ describe('Model | BelongsTo | Options', () => {
                 public username: string
             }
 
-            User.boot()
+
 
             class Profile extends BaseModel {
                 @column()
@@ -1411,7 +1411,7 @@ describe('Model | BelongsTo | Options', () => {
                 public user: BelongsTo<typeof User>
             }
 
-            Profile.boot()
+
 
             await db.insertQuery().table('users').insert({ username: 'virk' })
             await db.insertQuery().table('profiles').insert({ display_name: 'Hvirk', user_id: 1 })
@@ -1429,7 +1429,7 @@ describe('Model | BelongsTo | Options', () => {
                 public username: string
             }
 
-            User.boot()
+
 
             class Profile extends BaseModel {
                 @column()
@@ -1446,7 +1446,7 @@ describe('Model | BelongsTo | Options', () => {
                 public user: BelongsTo<typeof User>
             }
 
-            Profile.boot()
+
 
             await db.insertQuery().table('users').insert({ username: 'virk' })
             await db.insertQuery().table('profiles').insert({ display_name: 'Hvirk', user_id: 1 })

@@ -36,7 +36,7 @@ describe('Model | HasMany', () => {
                     public posts: HasMany<typeof Post>
                 }
 
-                User.boot()
+
                 User.$getRelation('posts')!.boot()
             } catch ({ message }) {
                 expect(
@@ -51,7 +51,8 @@ describe('Model | HasMany', () => {
             try {
                 class Post extends BaseModel {
                 }
-                Post.boot()
+
+                Post.bootIfNotBooted();
 
                 class User extends BaseModel {
                     @column({ isPrimary: true })
@@ -61,7 +62,7 @@ describe('Model | HasMany', () => {
                     public posts: HasMany<typeof Post>
                 }
 
-                User.boot()
+
                 User.$getRelation('posts')!.boot()
             } catch ({ message }) {
                 expect(
@@ -84,7 +85,7 @@ describe('Model | HasMany', () => {
                 public posts: HasMany<typeof Post>
             }
 
-            User.boot()
+
             User.$getRelation('posts')!.boot()
 
             expect(User.$getRelation('posts')!['localKey']).toBe('id')
@@ -107,7 +108,7 @@ describe('Model | HasMany', () => {
                 public posts: HasMany<typeof Post>
             }
 
-            User.boot()
+
             User.$getRelation('posts')!.boot()
 
             expect(User.$getRelation('posts')!['localKey']).toBe('uid')
@@ -127,7 +128,7 @@ describe('Model | HasMany', () => {
                 public posts: HasMany<typeof Post>
             }
 
-            User.boot()
+
             User.$getRelation('posts')!.boot()
 
             expect(User.$getRelation('posts')!['foreignKey']).toBe('userId')
@@ -147,7 +148,7 @@ describe('Model | HasMany', () => {
                 public posts: HasMany<typeof Post>
             }
 
-            User.boot()
+
             User.$getRelation('posts')!.boot()
 
             expect(User.$getRelation('posts')!['foreignKey']).toBe('userUid')
@@ -174,7 +175,7 @@ describe('Model | HasMany', () => {
                 public posts: HasMany<typeof Post>
             }
 
-            User.boot()
+
             User.$getRelation('posts')!.boot()
 
             const user = new User()
@@ -201,7 +202,7 @@ describe('Model | HasMany', () => {
                 public posts: HasMany<typeof Post>
             }
 
-            User.boot()
+
             User.$getRelation('posts')!.boot()
 
             const user = new User()
@@ -233,7 +234,7 @@ describe('Model | HasMany', () => {
                 public posts: HasMany<typeof Post>
             }
 
-            User.boot()
+
             User.$getRelation('posts')!.boot()
 
             const user = new User()
@@ -291,7 +292,7 @@ describe('Model | HasMany', () => {
                 public posts: HasMany<typeof Post>
             }
 
-            User.boot()
+
             User.$getRelation('posts')!.boot()
 
             await db.table('users').insert({ username: 'virk' })
@@ -323,7 +324,7 @@ describe('Model | HasMany', () => {
                 public posts: HasMany<typeof Post>
             }
 
-            User.boot()
+
             User.$getRelation('posts')!.boot()
 
             await db.table('users').multiInsert([
@@ -360,7 +361,7 @@ describe('Model | HasMany', () => {
                 public posts: HasMany<typeof Post>
             }
 
-            User.boot()
+
             User.$getRelation('posts')!.boot()
 
             await db.table('users').insert({ username: 'virk' })
@@ -442,7 +443,7 @@ describe('Model | HasMany', () => {
                 public posts: HasMany<typeof Post>
             }
 
-            User.boot()
+
             User.$getRelation('posts')!.boot()
 
             await db.table('users').insert({ username: 'virk' })
@@ -502,7 +503,7 @@ describe('Model | HasMany', () => {
                 },
             ])
 
-            User.boot()
+
 
             const users = await User.query().preload('posts')
             expect(users).toHaveLength(2)
@@ -547,7 +548,7 @@ describe('Model | HasMany', () => {
                 },
             ])
 
-            User.boot()
+
             const users = await User.query().preload('posts')
 
             expect(users[0]!.posts).toHaveLength(2)
@@ -597,7 +598,7 @@ describe('Model | HasMany', () => {
                 },
             ])
 
-            User.boot()
+
 
             const users = await User.query().preload('posts', (builder) => builder.where('title', 'Lucid 101'))
             expect(users).toHaveLength(2)
@@ -643,7 +644,7 @@ describe('Model | HasMany', () => {
                 },
             ])
 
-            User.boot()
+
 
             const users = await User.query().preload('posts', (builder) => {
                 return builder.select('title')
@@ -690,7 +691,7 @@ describe('Model | HasMany', () => {
                 },
             ])
 
-            User.boot()
+
 
             const users = await User.query().preload('posts', (builder) => {
                 return builder.select('title', 'user_id')
@@ -1000,7 +1001,7 @@ describe('Model | HasMany', () => {
                 profilerPacketIndex++
             })
 
-            User.boot()
+
             await User.query({ profiler }).preload('posts')
         })
 
@@ -1018,7 +1019,7 @@ describe('Model | HasMany', () => {
                 public posts: HasMany<typeof Post>
             }
 
-            User.boot()
+
 
             const users = await User.query().preload('posts', () => {
                 throw new Error('not expected to be here')
@@ -1688,7 +1689,7 @@ describe('Model | HasMany', () => {
                 public posts: HasMany<typeof Post>
             }
 
-            User.boot()
+
             User.$getRelation('posts')!.boot()
 
             const [ userId ] = await db.table('users').insert({ username: 'virk' }).returning('id')
@@ -1737,7 +1738,7 @@ describe('Model | HasMany', () => {
                 public posts: HasMany<typeof Post>
             }
 
-            User.boot()
+
             User.$getRelation('posts')!.boot()
 
             await db.table('users').insert({ username: 'virk' })
@@ -1782,7 +1783,7 @@ describe('Model | HasMany', () => {
                 public posts: HasMany<typeof Post>
             }
 
-            User.boot()
+
             User.$getRelation('posts')!.boot()
 
             await db.table('users').insert({ username: 'virk' }).returning('id')
@@ -1830,7 +1831,7 @@ describe('Model | HasMany', () => {
                 public posts: HasMany<typeof Post>
             }
 
-            User.boot()
+
             User.$getRelation('posts')!.boot()
 
             const [ userId ] = await db.table('users').insert({ username: 'virk' }).returning('id')
@@ -1869,7 +1870,7 @@ describe('Model | HasMany', () => {
                 public posts: HasMany<typeof Post>
             }
 
-            User.boot()
+
             User.$getRelation('posts')!.boot()
 
             const [ userId ] = await db.table('users').insert({ username: 'virk' }).returning('id')
@@ -1922,7 +1923,7 @@ describe('Model | HasMany', () => {
                 public posts: HasMany<typeof Post>
             }
 
-            User.boot()
+
             User.$getRelation('posts')!.boot()
 
             const [ userId ] = await db.table('users').insert({ username: 'virk' }).returning('id')
@@ -1958,7 +1959,7 @@ describe('Model | HasMany', () => {
                 public posts: HasMany<typeof Post>
             }
 
-            User.boot()
+
             User.$getRelation('posts')!.boot()
 
             const [ userId ] = await db.table('users').insert({ username: 'virk' }).returning('id')
@@ -1989,7 +1990,7 @@ describe('Model | HasMany', () => {
                 public posts: HasMany<typeof Post>
             }
 
-            User.boot()
+
             User.$getRelation('posts')!.boot()
 
             const [ userId ] = await db.table('users').insert({ username: 'virk' }).returning('id')
@@ -2022,7 +2023,7 @@ describe('Model | HasMany', () => {
                 public posts: HasMany<typeof Post>
             }
 
-            User.boot()
+
             User.$getRelation('posts')!.boot()
 
             const [ userId ] = await db.table('users').insert({ username: 'virk' }).returning('id')

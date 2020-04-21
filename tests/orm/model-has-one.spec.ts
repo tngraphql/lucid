@@ -35,7 +35,6 @@ describe('Model | HasOne', () => {
                     public profile: HasOne<typeof Profile>
                 }
 
-                User.boot()
                 User.$getRelation('profile')!.boot()
             } catch ({ message }) {
                 expect(
@@ -51,7 +50,7 @@ describe('Model | HasOne', () => {
                 class Profile extends BaseModel {
                 }
 
-                Profile.boot()
+                Profile.bootIfNotBooted();
 
                 class User extends BaseModel {
                     @column({ isPrimary: true })
@@ -61,7 +60,6 @@ describe('Model | HasOne', () => {
                     public profile: HasOne<typeof Profile>
                 }
 
-                User.boot()
                 User.$getRelation('profile')!.boot()
             } catch ({ message }) {
                 expect(
@@ -76,7 +74,7 @@ describe('Model | HasOne', () => {
                 public userId: number
             }
 
-            Profile.boot()
+
 
             class User extends BaseModel {
                 @column({ isPrimary: true })
@@ -86,7 +84,6 @@ describe('Model | HasOne', () => {
                 public profile: HasOne<typeof Profile>
             }
 
-            User.boot()
             User.$getRelation('profile')!.boot()
 
             expect(User.$getRelation('profile')!['localKey']).toBe('id')
@@ -98,7 +95,7 @@ describe('Model | HasOne', () => {
                 public userId: number
             }
 
-            Profile.boot()
+
 
             class User extends BaseModel {
                 @column({ isPrimary: true })
@@ -111,7 +108,6 @@ describe('Model | HasOne', () => {
                 public profile: HasOne<typeof Profile>
             }
 
-            User.boot()
             User.$getRelation('profile')!.boot()
 
             expect(User.$getRelation('profile')!['localKey']).toBe('uid')
@@ -123,7 +119,7 @@ describe('Model | HasOne', () => {
                 public userId: number
             }
 
-            Profile.boot()
+
 
             class User extends BaseModel {
                 @column({ isPrimary: true })
@@ -133,7 +129,6 @@ describe('Model | HasOne', () => {
                 public profile: HasOne<typeof Profile>
             }
 
-            User.boot()
             User.$getRelation('profile')!.boot()
 
             expect(User.$getRelation('profile')!['foreignKey']).toBe('userId')
@@ -145,7 +140,7 @@ describe('Model | HasOne', () => {
                 public userUid: number
             }
 
-            Profile.boot()
+
 
             class User extends BaseModel {
                 @column({ isPrimary: true })
@@ -155,7 +150,6 @@ describe('Model | HasOne', () => {
                 public profile: HasOne<typeof Profile>
             }
 
-            User.boot()
             User.$getRelation('profile')!.boot()
 
             expect(User.$getRelation('profile')!['foreignKey']).toBe('userUid')
@@ -182,7 +176,6 @@ describe('Model | HasOne', () => {
                 public profile: HasOne<typeof Profile>
             }
 
-            User.boot()
             User.$getRelation('profile')!.boot()
 
             const user = new User()
@@ -205,7 +198,6 @@ describe('Model | HasOne', () => {
                 public profile: HasOne<typeof Profile>
             }
 
-            User.boot()
             User.$getRelation('profile')!.boot()
 
             const user = new User()
@@ -228,7 +220,6 @@ describe('Model | HasOne', () => {
                 public profile: HasOne<typeof Profile>
             }
 
-            User.boot()
             User.$getRelation('profile')!.boot()
 
             const user = new User()
@@ -483,7 +474,6 @@ describe('Model | HasOne', () => {
                 }
             ])
 
-            User.boot()
 
             const users = await User.query().preload('profile')
             expect(users).toHaveLength(2)
@@ -549,7 +539,6 @@ describe('Model | HasOne', () => {
                 }
             ])
 
-            User.boot()
 
             const user = await User.query()
                                    .preload('profile', (builder) => builder.preload('identity'))
@@ -597,7 +586,6 @@ describe('Model | HasOne', () => {
                 }
             ])
 
-            User.boot()
 
             const users = await User.query().preload('profile', (builder) => builder.preload('user'))
             expect(users).toHaveLength(2)
@@ -640,7 +628,6 @@ describe('Model | HasOne', () => {
                 }
             ])
 
-            User.boot()
 
             const users = await User.query().preload('profile', (builder) => builder.where('display_name', 'foo'))
             expect(users).toHaveLength(2)
@@ -683,7 +670,6 @@ describe('Model | HasOne', () => {
                 }
             ])
 
-            User.boot()
 
             const users = await User.query().preload('profile', (builder) => {
                 return builder.select('display_name')
@@ -728,7 +714,6 @@ describe('Model | HasOne', () => {
                 }
             ])
 
-            User.boot()
 
             const users = await User.query().preload('profile', (builder) => {
                 return builder.select('display_name', 'user_id')
@@ -773,7 +758,6 @@ describe('Model | HasOne', () => {
                 }
             ])
 
-            User.boot()
 
             const users = await User.query().preload('profile').sideload({ id: 1 })
             expect(users).toHaveLength(2)
@@ -816,7 +800,6 @@ describe('Model | HasOne', () => {
                 }
             ])
 
-            User.boot()
 
             const users = await User.all()
             expect(users).toHaveLength(2)
@@ -928,7 +911,6 @@ describe('Model | HasOne', () => {
                 }
             ])
 
-            User.boot()
 
             const users = await User.all()
             expect(users).toHaveLength(2)
@@ -1005,7 +987,6 @@ describe('Model | HasOne', () => {
                 }
             ])
 
-            User.boot()
 
             const query = User.query({ connection: 'secondary' })
                               .preload('profile', (builder) => builder.preload('identity'))
@@ -1066,7 +1047,6 @@ describe('Model | HasOne', () => {
                 profilerPacketIndex++
             })
 
-            User.boot()
             await User.query({ profiler }).preload('profile')
         })
 
@@ -1090,7 +1070,6 @@ describe('Model | HasOne', () => {
                 public profile: HasOne<typeof Profile>
             }
 
-            User.boot()
 
             const users = await User.query().preload('profile', () => {
                 throw new Error('not expected to be here')

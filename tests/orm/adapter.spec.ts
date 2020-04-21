@@ -40,7 +40,7 @@ describe('Adapter', () => {
             public username: string
         }
 
-        User.boot()
+
 
         const user = new User()
         user.username = 'virk'
@@ -63,7 +63,7 @@ describe('Adapter', () => {
             public username: string
         }
 
-        User.boot()
+
 
         const user = new User()
         user.username = 'virk'
@@ -92,7 +92,7 @@ describe('Adapter', () => {
             public username: string
         }
 
-        User.boot()
+
 
         const user = new User()
         user.username = 'virk'
@@ -121,7 +121,7 @@ describe('Adapter', () => {
             public username: string
         }
 
-        User.boot()
+
 
         await db.table('users').returning('id').multiInsert(
             [{ username: 'virk' }, { username: 'nikk' }]
@@ -151,7 +151,7 @@ describe('Adapter', () => {
             public username: string
         }
 
-        User.boot()
+
         const trx = await db.transaction()
 
         const user = new User()
@@ -181,7 +181,7 @@ describe('Adapter', () => {
             public username: string
         }
 
-        User.boot()
+
         const trx = await db.transaction()
 
         const user = new User()
@@ -211,7 +211,7 @@ describe('Adapter', () => {
             public username: string
         }
 
-        User.boot()
+
         const trx = await db.transaction()
         const trx1 = await trx.transaction()
 
@@ -236,7 +236,7 @@ describe('Adapter', () => {
             public username: string
         }
 
-        User.boot()
+
 
         const user = new User()
         user.username = 'virk'
@@ -269,7 +269,7 @@ describe('Adapter', () => {
             public username: string
         }
 
-        User.boot()
+
 
         const user = new User()
         user.username = 'virk'
@@ -301,7 +301,7 @@ describe('Adapter', () => {
             public username: string
         }
 
-        User.boot()
+
 
         const user = new User()
         user.username = 'virk'

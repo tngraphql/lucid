@@ -49,7 +49,7 @@ export const proxyHandler = {
         const Model = target.constructor as LucidModel;
 
         boot(Model);
-        
+
         const column = Model.$getColumn(key)
 
         /**

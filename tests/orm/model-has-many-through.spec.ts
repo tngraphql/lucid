@@ -30,19 +30,19 @@ describe('Model | Has Many Through', () => {
                 class User extends BaseModel {
                 }
 
-                User.boot()
+
 
                 class Post extends BaseModel {
                 }
 
-                Post.boot()
+
 
                 class Country extends BaseModel {
                     @hasManyThrough([() => Post, () => User])
                     public posts: HasManyThrough<typeof Post>
                 }
 
-                Country.boot()
+
 
                 Country.$getRelation('posts')!.boot()
             } catch ({ message }) {
@@ -59,12 +59,12 @@ describe('Model | Has Many Through', () => {
                 class User extends BaseModel {
                 }
 
-                User.boot()
+                User.bootIfNotBooted();
 
                 class Post extends BaseModel {
                 }
 
-                Post.boot()
+                Post.bootIfNotBooted();
 
                 class Country extends BaseModel {
                     @column({ isPrimary: true })
@@ -74,7 +74,7 @@ describe('Model | Has Many Through', () => {
                     public posts: HasManyThrough<typeof Post>
                 }
 
-                Country.boot()
+
                 Country.$getRelation('posts')!.boot()
             } catch ({ message }) {
                 expect(
@@ -92,12 +92,12 @@ describe('Model | Has Many Through', () => {
                     public countryId: number
                 }
 
-                User.boot()
+
 
                 class Post extends BaseModel {
                 }
 
-                Post.boot()
+
 
                 class Country extends BaseModel {
                     @column({ isPrimary: true })
@@ -107,7 +107,7 @@ describe('Model | Has Many Through', () => {
                     public posts: HasManyThrough<typeof Post>
                 }
 
-                Country.boot()
+
                 Country.$getRelation('posts')!.boot()
             } catch ({ message }) {
                 expect(
@@ -128,12 +128,12 @@ describe('Model | Has Many Through', () => {
                     public countryId: number
                 }
 
-                User.boot()
+
 
                 class Post extends BaseModel {
                 }
 
-                Post.boot()
+                Post.bootIfNotBooted();
 
                 class Country extends BaseModel {
                     @column({ isPrimary: true })
@@ -143,7 +143,7 @@ describe('Model | Has Many Through', () => {
                     public posts: HasManyThrough<typeof Post>
                 }
 
-                Country.boot()
+
                 Country.$getRelation('posts')!.boot()
             } catch ({ message }) {
                 expect(
@@ -161,14 +161,14 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column()
                 public userId: number
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -178,7 +178,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
 
             const relation = Country.$getRelation('posts')!
             relation.boot()
@@ -205,14 +205,14 @@ describe('Model | Has Many Through', () => {
                 public countryUid: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column()
                 public userUid: number
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -227,7 +227,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
 
             const relation = Country.$getRelation('posts')!
             relation.boot()
@@ -261,14 +261,14 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column()
                 public userId: number
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -278,7 +278,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
             Country.$getRelation('posts')!.boot()
 
             const country = new Country()
@@ -297,14 +297,14 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column()
                 public userId: number
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -314,7 +314,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
             Country.$getRelation('posts')!.boot()
 
             const country = new Country()
@@ -335,14 +335,14 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column()
                 public userId: number
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -352,7 +352,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
             Country.$getRelation('posts')!.boot()
 
             const country = new Country()
@@ -414,14 +414,14 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column()
                 public userId: number
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -431,7 +431,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
             await db.table('countries').insert({ name: 'India' })
 
             const country = await Country.find(1)
@@ -458,14 +458,14 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column()
                 public userId: number
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -475,7 +475,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
             await db.table('countries').multiInsert([
                 { name: 'India' },
                 { name: 'UK' }
@@ -508,14 +508,14 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column()
                 public userId: number
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -525,7 +525,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
             await db.table('countries').insert({ name: 'India' })
 
             const country = await Country.find(1)
@@ -557,14 +557,14 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column()
                 public userId: number
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -574,7 +574,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
             await db.table('countries').insert({ name: 'India' })
 
             const country = await Country.find(1)
@@ -619,14 +619,14 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column()
                 public userId: number
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -636,7 +636,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
             await db.table('countries').insert({ name: 'India' })
             await db.table('users').insert({
                 username: 'virk',
@@ -672,14 +672,14 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column()
                 public userId: number
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -689,7 +689,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
             await db.table('countries').insert({ name: 'India' })
             await db.table('users').insert({
                 username: 'virk',
@@ -752,7 +752,7 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column({ isPrimary: true })
@@ -765,7 +765,7 @@ describe('Model | Has Many Through', () => {
                 public title: string
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -775,7 +775,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
 
             await db.insertQuery().table('countries').insert([{ name: 'India' }])
 
@@ -812,7 +812,7 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column({ isPrimary: true })
@@ -825,7 +825,7 @@ describe('Model | Has Many Through', () => {
                 public title: string
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -835,7 +835,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
 
             await db.insertQuery().table('countries').insert([{ name: 'India' }, { name: 'USA' }])
 
@@ -874,7 +874,7 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column({ isPrimary: true })
@@ -887,7 +887,7 @@ describe('Model | Has Many Through', () => {
                 public title: string
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -897,7 +897,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
 
             await db.insertQuery().table('countries').insert([{ name: 'India' }, { name: 'USA' }])
 
@@ -940,7 +940,7 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column({ isPrimary: true })
@@ -953,7 +953,7 @@ describe('Model | Has Many Through', () => {
                 public title: string
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -963,7 +963,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
 
             await db.insertQuery().table('countries').insert([{ name: 'India' }, { name: 'USA' }])
 
@@ -1005,7 +1005,7 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column({ isPrimary: true })
@@ -1018,7 +1018,7 @@ describe('Model | Has Many Through', () => {
                 public title: string
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -1028,7 +1028,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
 
             await db.insertQuery().table('countries').insert([{ name: 'India' }, { name: 'USA' }])
 
@@ -1061,7 +1061,7 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column({ isPrimary: true })
@@ -1074,7 +1074,7 @@ describe('Model | Has Many Through', () => {
                 public title: string
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -1084,7 +1084,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
 
             await db.insertQuery().table('countries').insert([{ name: 'India' }])
 
@@ -1126,7 +1126,7 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column({ isPrimary: true })
@@ -1139,7 +1139,7 @@ describe('Model | Has Many Through', () => {
                 public title: string
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -1149,7 +1149,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
 
             const countries = await Country.query().preload('posts', () => {
                 throw new Error('not expected to be here')
@@ -1183,14 +1183,14 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column()
                 public userId: number
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -1200,7 +1200,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
 
             await db.table('countries').multiInsert([{ name: 'India' }, { name: 'Switzerland' }])
             await db.table('users').multiInsert([
@@ -1277,14 +1277,14 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column()
                 public userId: number
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -1294,7 +1294,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
 
             await db.table('countries').insert({ name: 'India' })
 
@@ -1331,14 +1331,14 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column()
                 public userId: number
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -1348,7 +1348,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
 
             await db.table('countries').multiInsert([{ name: 'India' }, { name: 'Switzerland' }])
             await db.table('users').multiInsert([
@@ -1416,7 +1416,7 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column()
@@ -1430,7 +1430,7 @@ describe('Model | Has Many Through', () => {
                 })
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -1440,7 +1440,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
 
             await db.table('countries').multiInsert([{ name: 'India' }, { name: 'Switzerland' }])
             await db.table('users').multiInsert([
@@ -1497,7 +1497,7 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column()
@@ -1511,7 +1511,7 @@ describe('Model | Has Many Through', () => {
                 })
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -1521,7 +1521,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
 
             await db.table('countries').multiInsert([{ name: 'India' }, { name: 'Switzerland' }])
             await db.table('users').multiInsert([
@@ -1593,7 +1593,7 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column()
@@ -1603,7 +1603,7 @@ describe('Model | Has Many Through', () => {
                 public title: string
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -1615,7 +1615,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
 
             await db.table('countries').multiInsert([{ name: 'India' }, { name: 'Switzerland' }])
             await db.table('users').multiInsert([
@@ -1668,7 +1668,7 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column()
@@ -1678,7 +1678,7 @@ describe('Model | Has Many Through', () => {
                 public title: string
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -1693,7 +1693,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
 
             await db.table('countries').multiInsert([{ name: 'India' }, { name: 'Switzerland' }])
             await db.table('users').multiInsert([
@@ -1749,7 +1749,7 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column()
@@ -1759,7 +1759,7 @@ describe('Model | Has Many Through', () => {
                 public title: string
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -1771,7 +1771,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
 
             await db.table('countries').multiInsert([{ name: 'India' }, { name: 'Switzerland' }])
             await db.table('users').multiInsert([
@@ -1824,7 +1824,7 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-            User.boot()
+
 
             class Post extends BaseModel {
                 @column()
@@ -1834,7 +1834,7 @@ describe('Model | Has Many Through', () => {
                 public title: string
             }
 
-            Post.boot()
+
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -1846,7 +1846,7 @@ describe('Model | Has Many Through', () => {
                 public posts: HasManyThrough<typeof Post>
             }
 
-            Country.boot()
+
 
             await db.table('countries').multiInsert([{ name: 'India' }, { name: 'Switzerland' }])
             await db.table('users').multiInsert([
