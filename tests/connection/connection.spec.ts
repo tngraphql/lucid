@@ -8,12 +8,12 @@
  * file that was distributed with this source code.
  */
 
-import { cleanup, getConfig, getLogger, resetTables, setup } from '../helpers';
 import { Connection } from '../../src/Connection/Connection';
+import { cleanup, getConfig, getLogger, resetTables, setup } from '../helpers';
 
 describe('connection', () => {
 
-    if (process.env.DB !== 'sqlite') {
+    if ( process.env.DB !== 'sqlite' ) {
         describe('Connection | Config', () => {
             beforeAll(async () => {
                 await setup();
@@ -28,14 +28,14 @@ describe('connection', () => {
                 config.replicas! = {
                     write: {
                         connection: {
-                            host: '10.0.0.1',
-                        },
+                            host: '10.0.0.1'
+                        }
                     },
                     read: {
                         connection: [{
-                            host: '10.0.0.1',
-                        }],
-                    },
+                            host: '10.0.0.1'
+                        }]
+                    }
                 };
 
                 const connection = new Connection('primary', config, getLogger());
@@ -50,14 +50,14 @@ describe('connection', () => {
                 config.replicas! = {
                     write: {
                         connection: {
-                            host: '10.0.0.1',
-                        },
+                            host: '10.0.0.1'
+                        }
                     },
                     read: {
                         connection: [{
-                            host: '10.0.0.1',
-                        }],
-                    },
+                            host: '10.0.0.1'
+                        }]
+                    }
                 }
 
                 const connection = new Connection('primary', config, getLogger())
@@ -65,7 +65,11 @@ describe('connection', () => {
 
                 expect(readConfig.client).toBe(config.client);
 
-                expect(readConfig.connection).toEqual({database: 'lucid'});
+                if ( process.env.DB === 'mssql' ) {
+                    expect(readConfig.connection).toEqual({ database: 'master' });
+                } else {
+                    expect(readConfig.connection).toEqual({ database: 'lucid' });
+                }
             });
         });
     }
@@ -129,7 +133,7 @@ describe('connection', () => {
             const connection = new Connection(
                 'primary',
                 Object.assign({}, getConfig(), { client: null }),
-                getLogger(),
+                getLogger()
             )
 
             connection.on('error', ({ message }) => {
@@ -145,7 +149,7 @@ describe('connection', () => {
             expect(fn).toThrow(/knex: Required configuration option/)
         });
 
-        if (process.env.DB === 'mysql') {
+        if ( process.env.DB === 'mysql' ) {
             it('pass user config to mysql driver', async () => {
                 const config: any = getConfig()
                 config.connection!.charset = 'utf-8'
@@ -206,18 +210,18 @@ describe('connection', () => {
             expect(report).toEqual({
                 connection: 'primary',
                 message: 'Connection is healthy',
-                error: null,
+                error: null
             });
 
             await connection.disconnect()
         });
 
-        if (process.env.DB !== 'sqlite') {
+        if ( process.env.DB !== 'sqlite' ) {
             it('get healthcheck report for un-healthy connection', async () => {
                 const connection = new Connection('primary', Object.assign({}, getConfig(), {
                     connection: {
-                        host: 'bad-host',
-                    },
+                        host: 'bad-host'
+                    }
                 }), getLogger())
                 connection.connect()
 
@@ -232,15 +236,15 @@ describe('connection', () => {
                 const connection = new Connection('primary', Object.assign({}, getConfig(), {
                     replicas: {
                         write: {
-                            connection: getConfig().connection,
+                            connection: getConfig().connection
                         },
                         read: {
                             connection: [
                                 getConfig().connection,
-                                Object.assign({}, getConfig().connection, { host: 'bad-host' }),
-                            ],
-                        },
-                    },
+                                Object.assign({}, getConfig().connection, { host: 'bad-host' })
+                            ]
+                        }
+                    }
                 }), getLogger())
                 connection.connect()
 
