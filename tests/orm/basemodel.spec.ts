@@ -3442,24 +3442,6 @@ describe('Base model', () => {
 
             const user = User.query();
 
-            var knex = require('knex')({
-                client: 'mysql',
-                connection: {
-                    host: "mysql",
-                    user: "virk",
-                    password: "password",
-                    database: "lucid"
-                }
-            });
-
-            const sql = knex.select('*').from('users')
-                            .where(knex.raw('id = ?', [1]))
-                            .toSQL();
-
-
-            console.log(sql);
-            console.log(user.toSQL());
-
             expect(user).toBeInstanceOf(ModelQueryBuilder);
             expect(user.toSQL().sql).toBe('select * from "users"');
             expect(user.select('id').toSQL().sql).toBe(['select `id`', ' from `users`'].join(''));
