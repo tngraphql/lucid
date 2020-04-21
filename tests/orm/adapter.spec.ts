@@ -162,7 +162,7 @@ describe('Adapter', () => {
 
         const totalUsers = await db.from('users').count('*', 'total')
 
-        expect(totalUsers[0].total).toBe(1)
+        expect(Number(totalUsers[0].total)).toBe(1)
         expect(user.id).toBeDefined()
         expect(user.$trx).toBeUndefined()
         expect(user.$attributes).toEqual({ username: 'virk', id: user.id })
@@ -192,7 +192,7 @@ describe('Adapter', () => {
 
         const totalUsers = await db.from('users').count('*', 'total')
 
-        expect(totalUsers[0].total).toBe(0)
+        expect(Number(totalUsers[0].total)).toBe(0)
         expect(user.id).toBeDefined()
         expect(user.$trx).toBeUndefined()
         expect(user.$attributes).toEqual({ username: 'virk', id: user.id })

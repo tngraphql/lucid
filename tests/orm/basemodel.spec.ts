@@ -2464,7 +2464,7 @@ describe('Base model', () => {
             await user.delete()
 
             const usersCount = await db.from('users').count('*', 'total')
-            expect(usersCount[0].total).toBe(0)
+            expect(Number(usersCount[0].total)).toBe(0)
         })
 
         test('abort delete when before hook raises exception', async () => {
@@ -2508,7 +2508,7 @@ describe('Base model', () => {
             }
 
             const usersCount = await db.from('users').count('*', 'total')
-            expect(usersCount[0].total).toBe(1)
+            expect(Number(usersCount[0].total)).toBe(1)
         })
 
         test('invoke before and after fetch hooks', async () => {
@@ -3442,8 +3442,26 @@ describe('Base model', () => {
 
             const user = User.query();
 
+            var knex = require('knex')({
+                client: 'mysql',
+                connection: {
+                    host: "mysql",
+                    user: "virk",
+                    password: "password",
+                    database: "lucid"
+                }
+            });
+
+            const sql = knex.select('*').from('users')
+                            .where(knex.raw('id = ?', [1]))
+                            .toSQL();
+
+
+            console.log(sql);
+            console.log(user.toSQL());
+
             expect(user).toBeInstanceOf(ModelQueryBuilder);
-            expect(user.toSQL().sql).toBe('select * from `users`');
+            expect(user.toSQL().sql).toBe('select * from "users"');
             expect(user.select('id').toSQL().sql).toBe(['select `id`', ' from `users`'].join(''));
         });
     });
