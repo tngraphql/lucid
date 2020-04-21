@@ -2100,8 +2100,8 @@ describe('Model | ManyToMany', () => {
             const totalPosts = await db.query().from('skills').count('*', 'total')
             const skillUsers = await db.query().from('skill_user')
 
-            expect(totalUsers[0].total).toBe(1)
-            expect(totalPosts[0].total).toBe(1)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalPosts[0].total)).toBe(1)
 
             expect(skillUsers).toHaveLength(1)
             expect(skillUsers[0].user_id).toBe(user.id)
@@ -2147,8 +2147,8 @@ describe('Model | ManyToMany', () => {
             const totalPosts = await db.query().from('skills').count('*', 'total')
             const skillUsers = await db.query().from('skill_user')
 
-            expect(totalUsers[0].total).toBe(1)
-            expect(totalPosts[0].total).toBe(1)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalPosts[0].total)).toBe(1)
 
             expect(skillUsers).toHaveLength(1)
             expect(skillUsers[0].user_id).toBe(user.id)
@@ -2195,8 +2195,8 @@ describe('Model | ManyToMany', () => {
             const totalPosts = await db.query().from('skills').count('*', 'total')
             const skillUsers = await db.query().from('skill_user')
 
-            expect(totalUsers[0].total).toBe(1)
-            expect(totalPosts[0].total).toBe(1)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalPosts[0].total)).toBe(1)
 
             expect(skillUsers).toHaveLength(2)
             expect(skillUsers[0].user_id).toBe(user.id)
@@ -2250,8 +2250,8 @@ describe('Model | ManyToMany', () => {
             const totalSkills = await db.query().from('skills').count('*', 'total')
             const skillUsers = await db.query().from('skill_user')
 
-            expect(totalUsers[0].total).toBe(2)
-            expect(totalSkills[0].total).toBe(1)
+            expect(Number(totalUsers[0].total)).toBe(2)
+            expect(Number(totalSkills[0].total)).toBe(1)
 
             expect(skillUsers[0].user_id).toBe(user.id)
             expect(skillUsers[0].skill_id).toBe(skill.id)
@@ -2320,8 +2320,8 @@ describe('Model | ManyToMany', () => {
             const totalPosts = await db.query().from('skills').count('*', 'total')
             const skillUsers = await db.query().from('skill_user')
 
-            expect(totalUsers[0].total).toBe(1)
-            expect(totalPosts[0].total).toBe(2)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalPosts[0].total)).toBe(2)
 
             expect(skillUsers).toHaveLength(2)
             expect(skillUsers[0].user_id).toBe(user.id)
@@ -2374,8 +2374,8 @@ describe('Model | ManyToMany', () => {
             const totalPosts = await db.query().from('skills').count('*', 'total')
             const skillUsers = await db.query().from('skill_user')
 
-            expect(totalUsers[0].total).toBe(1)
-            expect(totalPosts[0].total).toBe(2)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalPosts[0].total)).toBe(2)
 
             expect(skillUsers).toHaveLength(2)
             expect(skillUsers[0].user_id).toBe(user.id)
@@ -2428,8 +2428,8 @@ describe('Model | ManyToMany', () => {
             const totalPosts = await db.query().from('skills').count('*', 'total')
             const skillUsers = await db.query().from('skill_user')
 
-            expect(totalUsers[0].total).toBe(1)
-            expect(totalPosts[0].total).toBe(2)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalPosts[0].total)).toBe(2)
 
             expect(skillUsers).toHaveLength(4)
             expect(skillUsers[0].user_id).toBe(user.id)
@@ -2491,8 +2491,8 @@ describe('Model | ManyToMany', () => {
             const totalPosts = await db.query().from('skills').count('*', 'total')
             const skillUsers = await db.query().from('skill_user')
 
-            expect(totalUsers[0].total).toBe(2)
-            expect(totalPosts[0].total).toBe(2)
+            expect(Number(totalUsers[0].total)).toBe(2)
+            expect(Number(totalPosts[0].total)).toBe(2)
 
             expect(skillUsers).toHaveLength(4)
             expect(skillUsers[0].user_id).toBe(user.id)
@@ -2559,8 +2559,8 @@ describe('Model | ManyToMany', () => {
             const totalPosts = await db.query().from('skills').count('*', 'total')
             const skillUsers = await db.query().from('skill_user')
 
-            expect(totalUsers[0].total).toBe(0)
-            expect(totalPosts[0].total).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(0)
+            expect(Number(totalPosts[0].total)).toBe(0)
 
             expect(skillUsers).toHaveLength(0)
         })
@@ -2615,8 +2615,8 @@ describe('Model | ManyToMany', () => {
             const totalPosts = await db.query().from('skills').count('*', 'total')
             const skillUsers = await db.query().from('skill_user')
 
-            expect(totalUsers[0].total).toBe(1)
-            expect(totalPosts[0].total).toBe(1)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalPosts[0].total)).toBe(1)
 
             expect(skillUsers).toHaveLength(1)
             expect(skillUsers[0].user_id).toBe(user.id)
@@ -2662,8 +2662,8 @@ describe('Model | ManyToMany', () => {
             const totalPosts = await db.query().from('skills').count('*', 'total')
             const skillUsers = await db.query().from('skill_user')
 
-            expect(totalUsers[0].total).toBe(1)
-            expect(totalPosts[0].total).toBe(1)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalPosts[0].total)).toBe(1)
 
             expect(skillUsers).toHaveLength(1)
             expect(skillUsers[0].user_id).toBe(user.id)
@@ -2727,8 +2727,8 @@ describe('Model | ManyToMany', () => {
             const totalSkills = await db.query().from('skills').count('*', 'total')
             const skillUsers = await db.query().from('skill_user')
 
-            expect(totalUsers[0].total).toBe(1)
-            expect(totalSkills[0].total).toBe(2)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalSkills[0].total)).toBe(2)
 
             expect(skillUsers).toHaveLength(2)
             expect(skillUsers[0].user_id).toBe(user.id)
@@ -2784,8 +2784,8 @@ describe('Model | ManyToMany', () => {
             const totalPosts = await db.query().from('skills').count('*', 'total')
             const skillUsers = await db.query().from('skill_user')
 
-            expect(totalUsers[0].total).toBe(0)
-            expect(totalPosts[0].total).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(0)
+            expect(Number(totalPosts[0].total)).toBe(0)
             expect(skillUsers).toHaveLength(0)
         })
     })
@@ -2838,8 +2838,8 @@ describe('Model | ManyToMany', () => {
             const totalSkills = await db.query().from('skills').count('*', 'total')
             const skillUsers = await db.query().from('skill_user')
 
-            expect(totalUsers[0].total).toBe(1)
-            expect(totalSkills[0].total).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalSkills[0].total)).toBe(0)
 
             expect(skillUsers).toHaveLength(2)
             expect(skillUsers[0].user_id).toBe(user.id)
@@ -2888,8 +2888,8 @@ describe('Model | ManyToMany', () => {
             const totalSkills = await db.query().from('skills').count('*', 'total')
             const skillUsers = await db.query().from('skill_user')
 
-            expect(totalUsers[0].total).toBe(1)
-            expect(totalSkills[0].total).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalSkills[0].total)).toBe(0)
 
             expect(skillUsers).toHaveLength(2)
             expect(skillUsers[0].user_id).toBe(user.id)
@@ -2961,8 +2961,8 @@ describe('Model | ManyToMany', () => {
             const totalSkills = await db.query().from('skills').count('*', 'total')
             const skillUsers = await db.query().from('skill_user')
 
-            expect(totalUsers[0].total).toBe(1)
-            expect(totalSkills[0].total).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalSkills[0].total)).toBe(0)
 
             expect(skillUsers).toHaveLength(1)
             expect(skillUsers[0].user_id).toBe(user.id)
@@ -3012,8 +3012,8 @@ describe('Model | ManyToMany', () => {
             const totalSkills = await db.query().from('skills').count('*', 'total')
             const skillUsers = await db.query().from('skill_user')
 
-            expect(totalUsers[0].total).toBe(1)
-            expect(totalSkills[0].total).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalSkills[0].total)).toBe(0)
 
             expect(skillUsers).toHaveLength(2)
             expect(skillUsers[0].user_id).toBe(user.id)
@@ -3088,8 +3088,8 @@ describe('Model | ManyToMany', () => {
             const totalSkills = await db.query().from('skills').count('*', 'total')
             const skillUsers = await db.query().from('skill_user')
 
-            expect(totalUsers[0].total).toBe(1)
-            expect(totalSkills[0].total).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalSkills[0].total)).toBe(0)
 
             expect(skillUsers[0].id).toBe(1)
             expect(skillUsers[0].user_id).toBe(user.id)
@@ -3152,8 +3152,8 @@ describe('Model | ManyToMany', () => {
             const totalSkills = await db.query().from('skills').count('*', 'total')
             const skillUsers = await db.query().from('skill_user').orderBy('id', 'asc')
 
-            expect(totalUsers[0].total).toBe(1)
-            expect(totalSkills[0].total).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalSkills[0].total)).toBe(0)
 
             expect(skillUsers[0].id).toBe(1)
             expect(skillUsers[0].user_id).toBe(user.id)
@@ -3213,8 +3213,8 @@ describe('Model | ManyToMany', () => {
             const totalSkills = await db.query().from('skills').count('*', 'total')
             const skillUsers = await db.query().from('skill_user')
 
-            expect(totalUsers[0].total).toBe(1)
-            expect(totalSkills[0].total).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalSkills[0].total)).toBe(0)
 
             expect(skillUsers[0].id).toBe(1)
             expect(skillUsers[0].user_id).toBe(user.id)
@@ -3274,8 +3274,8 @@ describe('Model | ManyToMany', () => {
             const totalSkills = await db.query().from('skills').count('*', 'total')
             const skillUsers = await db.query().from('skill_user')
 
-            expect(totalUsers[0].total).toBe(1)
-            expect(totalSkills[0].total).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalSkills[0].total)).toBe(0)
             expect(skillUsers).toHaveLength(3)
 
             expect(skillUsers[0].id).toBe(1)
@@ -3352,8 +3352,8 @@ describe('Model | ManyToMany', () => {
             const totalSkills = await db.query().from('skills').count('*', 'total')
             const skillUsers = await db.query().from('skill_user')
 
-            expect(totalUsers[0].total).toBe(1)
-            expect(totalSkills[0].total).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalSkills[0].total)).toBe(0)
             expect(skillUsers).toHaveLength(3)
 
             expect(skillUsers[0].id).toBe(1)
@@ -3434,7 +3434,7 @@ describe('Model | ManyToMany', () => {
             expect(skills.hasPages).toBeTruthy()
             expect(skills.hasMorePages).toBeTruthy()
             expect(skills.isEmpty).toBeFalsy()
-            expect(skills.total).toBe(2)
+            expect(Number(skills.total)).toBe(2)
             expect(skills.hasTotal).toBeTruthy()
             expect(skills.getMeta()).toEqual({
                 total: 2,

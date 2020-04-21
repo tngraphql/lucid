@@ -1405,7 +1405,7 @@ describe('Query Builder Three', () => {
             expect(users.hasPages).toBeTruthy()
             expect(users.hasMorePages).toBeTruthy()
             expect(users.isEmpty).toBeFalsy()
-            expect(users.total).toBe(18)
+            expect(Number(users.total)).toBe(18)
             expect(users.hasTotal).toBeTruthy()
 
             expect(users.getMeta()).toEqual({
@@ -1442,7 +1442,7 @@ describe('Query Builder Three', () => {
             expect(users.hasPages).toBeTruthy()
             expect(users.hasMorePages).toBeTruthy()
             expect(users.isEmpty).toBeFalsy()
-            expect(users.total).toBe(18)
+            expect(Number(users.total)).toBe(18)
             expect(users.hasTotal).toBeTruthy()
             expect(users.getMeta()).toEqual({
                 total: 18,
@@ -1476,7 +1476,7 @@ describe('Query Builder Three', () => {
             expect(users.hasPages).toBeTruthy()
             expect(users.hasMorePages).toBeTruthy()
             expect(users.isEmpty).toBeFalsy()
-            expect(users.total).toBe(18)
+            expect(Number(users.total)).toBe(18)
             expect(users.hasTotal).toBeTruthy()
             expect(users.getMeta()).toEqual({
                 total: 18,
@@ -1510,7 +1510,7 @@ describe('Query Builder Three', () => {
             expect(users.hasPages).toBeTruthy()
             expect(users.hasMorePages).toBeFalsy()
             expect(users.isEmpty).toBeFalsy()
-            expect(users.total).toBe(18)
+            expect(Number(users.total)).toBe(18)
             expect(users.hasTotal).toBeTruthy()
 
             expect(users.getMeta()).toEqual({
@@ -1551,7 +1551,7 @@ describe('Query Builder Three', () => {
             expect(users.hasPages).toBeTruthy()
             expect(users.hasMorePages).toBeTruthy()
             expect(users.isEmpty).toBeFalsy()
-            expect(users.total).toBe(18)
+            expect(Number(users.total)).toBe(18)
             expect(users.hasTotal).toBeTruthy()
             expect(users.getMeta()).toEqual({
                 total: 18,

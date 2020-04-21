@@ -1371,8 +1371,8 @@ describe('Model | HasOne', () => {
             const totalUsers = await db.query().from('users').count('*', 'total')
             const totalProfiles = await db.query().from('profiles').count('*', 'total')
 
-            expect(totalUsers[0].total).toBe(0)
-            expect(totalProfiles[0].total).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(0)
+            expect(Number(totalProfiles[0].total)).toBe(0)
             expect(user.$trx).toBeUndefined()
             expect(profile.$trx).toBeUndefined()
         })

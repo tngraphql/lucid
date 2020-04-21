@@ -3443,8 +3443,10 @@ describe('Base model', () => {
             const user = User.query();
 
             expect(user).toBeInstanceOf(ModelQueryBuilder);
-            expect(user.toSQL().sql).toBe('select * from "users"');
-            expect(user.select('id').toSQL().sql).toBe(['select `id`', ' from `users`'].join(''));
+            if ( process.env.DB === 'mysql' ) {
+                expect(user.toSQL().sql).toBe('select * from "users"');
+                expect(user.select('id').toSQL().sql).toBe(['select `id`', ' from `users`'].join(''));
+            }
         });
     });
 
@@ -3488,7 +3490,7 @@ describe('Base model', () => {
             expect(users.hasPages).toBeTruthy()
             expect(users.hasMorePages).toBeTruthy()
             expect(users.isEmpty).toBeFalsy()
-            expect(users.total).toBe(18)
+            expect(Number(users.total)).toBe(18)
             expect(users.hasTotal).toBeTruthy()
             expect(users.getMeta()).toEqual({
                 total: 18,
@@ -3600,7 +3602,7 @@ describe('Base model', () => {
 
             const totalUsers = await db.query().from('users').count('*', 'total')
 
-            expect(totalUsers[0].total).toBe(1);
+            expect(Number(totalUsers[0].total)).toBe(1);
             expect(user.$primaryKeyValue).toBe(1);
             expect(user.$isPersisted).toBe(true);
             expect(user).toBeInstanceOf(User);
@@ -3623,7 +3625,7 @@ describe('Base model', () => {
 
             const totalUsers = await db.query().from('users').count('*', 'total');
 
-            expect(totalUsers[0].total).toBe(2);
+            expect(Number(totalUsers[0].total)).toBe(2);
             expect(user).toBeInstanceOf(User);
 
             expect(user!.$primaryKeyValue).toBe(2);
@@ -3649,7 +3651,7 @@ describe('Base model', () => {
 
             const totalUsers = await db.query().from('users').count('*', 'total')
 
-            expect(totalUsers[0].total).toBe(1);
+            expect(Number(totalUsers[0].total)).toBe(1);
             expect(user).toBeInstanceOf(User);
 
             expect(user!.$primaryKeyValue).toBe(1);
@@ -3673,7 +3675,7 @@ describe('Base model', () => {
 
             const totalUsers = await db.query().from('users').count('*', 'total')
 
-            expect(totalUsers[0].total).toBe(1);
+            expect(Number(totalUsers[0].total)).toBe(1);
             expect(user).toBeInstanceOf(User);
 
             expect(user!.$primaryKeyValue).toBeUndefined();

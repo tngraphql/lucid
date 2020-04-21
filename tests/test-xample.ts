@@ -15,9 +15,10 @@ import { getBaseModel, getConfig, getDb, getEmitter, getLogger, ormAdapter, setu
 async function main() {
     let db = getDb()
     let BaseModel = getBaseModel(ormAdapter(db))
-    await setup();
+    // await setup();
 
-    class User extends BaseModel {
+
+    /*class User extends BaseModel {
         @column({ isPrimary: true })
         public id: number
 
@@ -83,7 +84,7 @@ async function main() {
     console.log('primary3', primary.client2.select('*').from('users').toSQL());
     console.log('primary4', primary.client2.queryBuilder().from('users').toSQL());
 
-    process.exit(1);
+    process.exit(1);*/
 }
 
 main();

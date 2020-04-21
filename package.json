@@ -7,17 +7,17 @@
         "test": "tests"
     },
     "scripts": {
-        "test:sqlite": "set DB=sqlite && jest --verbose --coverage --runInBand",
-        "test:mysql": "set DB=mysql && jest --verbose --coverage --runInBand",
-        "test:mssql": "set DB=mssql && jest --verbose --coverage --runInBand",
-        "test:pg": "set DB=pg && jest --verbose --coverage --runInBand",
+        "test:sqlite": "cross-env DB=sqlite jest --verbose --coverage --runInBand",
+        "test:mysql": "cross-env DB=mysql jest --verbose --coverage --runInBand",
+        "test:mssql": "cross-env DB=mssql jest --verbose --coverage --runInBand",
+        "test:pg": "cross-env DB=pg && jest --verbose --coverage --runInBand",
         "test:docker": "npm run test:sqlite && npm run test:mysql && npm run test:pg && npm run test:mssql",
         "test": "jest --verbose --coverage --runInBand",
         "clean": "rimraf dist",
         "compile": "npm run clean && tsc -b && npm run copy:files",
         "copy:files": "copyfiles \"templates/**/*.txt\" build",
         "build": "npm run compile",
-        "test:knex": "ts-node-dev tests/test-xample.ts"
+        "test:knex": "cross-env DB=mysql ts-node-dev tests/test-xample.ts"
     },
     "dependencies": {
         "@poppinss/utils": "^2.2.0",

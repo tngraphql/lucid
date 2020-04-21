@@ -8,7 +8,7 @@ services:
       - mysql
       - pg
       - mssql
-    command: ["npm", "run", "test:knex"]
+    command: ["npm", "run", "test:docker"]
     environment:
       DB: pg
       DB_NAME: lucid

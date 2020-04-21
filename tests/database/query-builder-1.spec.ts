@@ -2005,7 +2005,7 @@ describe('Query Builder One', () => {
                     })
                 })
 
-            expect(users[0].total).toBe(5)
+            expect(Number(users[0].total)).toBe(5)
             await connection.disconnect()
         })
 
@@ -2051,7 +2051,7 @@ describe('Query Builder One', () => {
                     })
                 })
 
-            expect(users[0].total).toBe(4)
+            expect(Number(users[0].total)).toBe(4)
             await connection.disconnect()
         })
     })

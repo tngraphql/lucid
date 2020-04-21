@@ -1251,7 +1251,7 @@ describe('Model | Has Many Through', () => {
             expect(posts.hasPages).toBeTruthy()
             expect(posts.hasMorePages).toBeTruthy()
             expect(posts.isEmpty).toBeFalsy()
-            expect(posts.total).toBe(3)
+            expect(Number(posts.total)).toBe(3)
             expect(posts.hasTotal).toBeTruthy()
             expect(posts.getMeta()).toEqual({
                 total: 3,

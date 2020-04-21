@@ -1082,8 +1082,8 @@ describe('Model | HasMany', () => {
             const totalUsers = await db.query().from('users').count('*', 'total')
             const totalPosts = await db.query().from('posts').count('*', 'total')
 
-            expect(totalUsers[0].total).toBe(1)
-            expect(totalPosts[0].total).toBe(1)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalPosts[0].total)).toBe(1)
         })
     })
 
@@ -1147,8 +1147,8 @@ describe('Model | HasMany', () => {
             const totalUsers = await db.query().from('users').count('*', 'total')
             const totalPosts = await db.query().from('posts').count('*', 'total')
 
-            expect(totalUsers[0].total).toBe(1)
-            expect(totalPosts[0].total).toBe(2)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalPosts[0].total)).toBe(2)
         })
 
         test('wrap save many calls inside transaction', async () => {
@@ -1193,8 +1193,8 @@ describe('Model | HasMany', () => {
             const totalUsers = await db.query().from('users').count('*', 'total')
             const totalPosts = await db.query().from('posts').count('*', 'total')
 
-            expect(totalUsers[0].total).toBe(0)
-            expect(totalPosts[0].total).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(0)
+            expect(Number(totalPosts[0].total)).toBe(0)
             expect(user.$trx).toBeUndefined()
             expect(post.$trx).toBeUndefined()
             expect(post1.$trx).toBeUndefined()
@@ -1243,8 +1243,8 @@ describe('Model | HasMany', () => {
             const totalUsers = await db.query().from('users').count('*', 'total')
             const totalPosts = await db.query().from('posts').count('*', 'total')
 
-            expect(totalUsers[0].total).toBe(0)
-            expect(totalPosts[0].total).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(0)
+            expect(Number(totalPosts[0].total)).toBe(0)
             expect(user.$trx).toBeUndefined()
             expect(post.$trx).toBeUndefined()
         })
@@ -1301,8 +1301,8 @@ describe('Model | HasMany', () => {
             const totalUsers = await db.query().from('users').count('*', 'total')
             const totalPosts = await db.query().from('posts').count('*', 'total')
 
-            expect(totalUsers[0].total).toBe(1)
-            expect(totalPosts[0].total).toBe(1)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalPosts[0].total)).toBe(1)
         })
     })
 
@@ -1367,8 +1367,8 @@ describe('Model | HasMany', () => {
             const totalUsers = await db.query().from('users').count('*', 'total')
             const totalPosts = await db.query().from('posts').count('*', 'total')
 
-            expect(totalUsers[0].total).toBe(1)
-            expect(totalPosts[0].total).toBe(2)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalPosts[0].total)).toBe(2)
         })
 
         test('wrap create many calls inside transaction', async () => {
@@ -1408,8 +1408,8 @@ describe('Model | HasMany', () => {
             const totalUsers = await db.query().from('users').count('*', 'total')
             const totalPosts = await db.query().from('posts').count('*', 'total')
 
-            expect(totalUsers[0].total).toBe(0)
-            expect(totalPosts[0].total).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(0)
+            expect(Number(totalPosts[0].total)).toBe(0)
             expect(user.$trx).toBeUndefined()
         })
 
@@ -1448,8 +1448,8 @@ describe('Model | HasMany', () => {
             const totalUsers = await db.query().from('users').count('*', 'total')
             const totalPosts = await db.query().from('posts').count('*', 'total')
 
-            expect(totalUsers[0].total).toBe(0)
-            expect(totalPosts[0].total).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(0)
+            expect(Number(totalPosts[0].total)).toBe(0)
             expect(user.$trx).toBeUndefined()
             expect(post.$trx).toBeUndefined()
         })
@@ -1706,7 +1706,7 @@ describe('Model | HasMany', () => {
             expect(posts.hasPages).toBeTruthy()
             expect(posts.hasMorePages).toBeTruthy()
             expect(posts.isEmpty).toBeFalsy()
-            expect(posts.total).toBe(18)
+            expect(Number(posts.total)).toBe(18)
             expect(posts.hasTotal).toBeTruthy()
             expect(posts.getMeta()).toEqual({
                 total: 18,

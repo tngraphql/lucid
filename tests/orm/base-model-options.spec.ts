@@ -467,7 +467,7 @@ describe('Model options', () => {
             const user = await User.firstOrCreate({ username: 'virk' }, undefined, { connection: 'secondary' })
             const total = await db.from('users').count('*', 'total')
 
-            expect(total[0].total).toBe(1)
+            expect(Number(total[0].total)).toBe(1)
             expect(user.$options!.connection).toBe('secondary')
             expect(user.$options!.profiler).toBeInstanceOf(Profiler)
         })
@@ -488,7 +488,7 @@ describe('Model options', () => {
             const user = await User.firstOrCreate({ username: 'nikk' }, undefined, { connection: 'secondary' })
             const total = await db.from('users').count('*', 'total')
 
-            expect(total[0].total).toBe(2)
+            expect(Number(total[0].total)).toBe(2)
             expect(user.$options!.connection).toBe('secondary')
             expect(user.$options!.profiler).toBeInstanceOf(Profiler)
         })
@@ -510,7 +510,7 @@ describe('Model options', () => {
             const user = await User.firstOrCreate({ username: 'virk' }, undefined, { profiler })
             const total = await db.from('users').count('*', 'total')
 
-            expect(total[0].total).toBe(1)
+            expect(Number(total[0].total)).toBe(1)
             expect(user.$options!.connection).toBe('primary')
             expect(user.$options!.profiler).toEqual(profiler)
         })
@@ -532,7 +532,7 @@ describe('Model options', () => {
             const user = await User.firstOrCreate({ username: 'nikk' }, undefined, { profiler })
             const total = await db.from('users').count('*', 'total')
 
-            expect(total[0].total).toBe(2)
+            expect(Number(total[0].total)).toBe(2)
             expect(user.$options!.profiler).toEqual(profiler)
         })
 
@@ -553,7 +553,7 @@ describe('Model options', () => {
             const user = await User.firstOrCreate({ username: 'virk' }, undefined, { client })
             const total = await db.from('users').count('*', 'total')
 
-            expect(total[0].total).toBe(1)
+            expect(Number(total[0].total)).toBe(1)
             expect(user.$options!.profiler).toEqual(client.profiler)
             expect(user.$options!.connection).toEqual(client.connectionName)
         })
@@ -575,7 +575,7 @@ describe('Model options', () => {
             const user = await User.firstOrCreate({ username: 'nikk' }, undefined, { client })
             const total = await db.from('users').count('*', 'total')
 
-            expect(total[0].total).toBe(2)
+            expect(Number(total[0].total)).toBe(2)
             expect(user.$options!.profiler).toEqual(client.profiler)
             expect(user.$options!.connection).toEqual(client.connectionName)
         })
@@ -599,7 +599,7 @@ describe('Model options', () => {
 
             const total = await db.from('users').count('*', 'total')
 
-            expect(total[0].total).toBe(1)
+            expect(Number(total[0].total)).toBe(1)
             expect(user.$options!.profiler).toEqual(client.profiler)
             expect(user.$options!.connection).toEqual(client.connectionName)
         })
@@ -622,7 +622,7 @@ describe('Model options', () => {
 
             const total = await db.from('users').count('*', 'total')
 
-            expect(total[0].total).toBe(0)
+            expect(Number(total[0].total)).toBe(0)
             expect(user.$options!.profiler).toEqual(client.profiler)
             expect(user.$options!.connection).toEqual(client.connectionName)
         })
@@ -665,7 +665,7 @@ describe('Model options', () => {
 
             const total = await db.from('users').count('*', 'total')
 
-            expect(total[0].total).toBe(1)
+            expect(Number(total[0].total)).toBe(1)
             expect(user.$options!.connection).toBe('secondary')
             expect(user.$options!.profiler).toBeInstanceOf(Profiler)
         })
@@ -689,7 +689,7 @@ describe('Model options', () => {
 
             const total = await db.from('users').count('*', 'total')
 
-            expect(total[0].total).toBe(1)
+            expect(Number(total[0].total)).toBe(1)
             expect(user.$options!.connection).toBe('secondary')
             expect(user.$options!.profiler).toBeInstanceOf(Profiler)
         })
@@ -716,7 +716,7 @@ describe('Model options', () => {
 
             const total = await db.from('users').count('*', 'total')
 
-            expect(total[0].total).toBe(1)
+            expect(Number(total[0].total)).toBe(1)
             expect(user.$options!.connection).toBe('primary')
             expect(user.$options!.profiler).toEqual(profiler)
         })
@@ -741,7 +741,7 @@ describe('Model options', () => {
 
             const total = await db.from('users').count('*', 'total')
 
-            expect(total[0].total).toBe(1)
+            expect(Number(total[0].total)).toBe(1)
             expect(user.$options!.connection).toBe('primary')
             expect(user.$options!.profiler).toEqual(profiler)
         })
@@ -768,7 +768,7 @@ describe('Model options', () => {
 
             const total = await db.from('users').count('*', 'total')
 
-            expect(total[0].total).toBe(1)
+            expect(Number(total[0].total)).toBe(1)
             expect(user.$options!.profiler).toEqual(client.profiler)
             expect(user.$options!.connection).toEqual(client.connectionName)
         })
@@ -794,7 +794,7 @@ describe('Model options', () => {
 
             const total = await db.from('users').count('*', 'total')
 
-            expect(total[0].total).toBe(1)
+            expect(Number(total[0].total)).toBe(1)
             expect(user.$options!.profiler).toEqual(client.profiler)
             expect(user.$options!.connection).toEqual(client.connectionName)
         })
@@ -829,7 +829,7 @@ describe('Model options', () => {
             }
 
             const total = await db.from('users').count('*', 'total')
-            expect(total[0].total).toBe(0)
+            expect(Number(total[0].total)).toBe(0)
         })
 
         test('use existing transaction when passed', async () => {
@@ -863,7 +863,7 @@ describe('Model options', () => {
             await trx.rollback()
 
             const total = await db.from('users').count('*', 'total')
-            expect(total[0].total).toBe(0)
+            expect(Number(total[0].total)).toBe(0)
         })
     })
 
@@ -904,7 +904,7 @@ describe('Model options', () => {
 
             const total = await db.from('users').count('*', 'total')
 
-            expect(total[0].total).toBe(1)
+            expect(Number(total[0].total)).toBe(1)
             expect(user.$options!.connection).toBe('secondary')
             expect(user.$options!.profiler).toBeInstanceOf(Profiler)
         })
@@ -928,7 +928,7 @@ describe('Model options', () => {
 
             const total = await db.from('users').count('*', 'total')
 
-            expect(total[0].total).toBe(1)
+            expect(Number(total[0].total)).toBe(1)
             expect(user.$options!.connection).toBe('secondary')
             expect(user.$options!.profiler).toBeInstanceOf(Profiler)
         })
@@ -955,7 +955,7 @@ describe('Model options', () => {
 
             const total = await db.from('users').count('*', 'total')
 
-            expect(total[0].total).toBe(1)
+            expect(Number(total[0].total)).toBe(1)
             expect(user.$options!.connection).toBe('primary')
             expect(user.$options!.profiler).toEqual(profiler)
         })
@@ -980,7 +980,7 @@ describe('Model options', () => {
 
             const total = await db.from('users').count('*', 'total')
 
-            expect(total[0].total).toBe(1)
+            expect(Number(total[0].total)).toBe(1)
             expect(user.$options!.connection).toBe('primary')
             expect(user.$options!.profiler).toEqual(profiler)
         })
@@ -1007,7 +1007,7 @@ describe('Model options', () => {
 
             const total = await db.from('users').count('*', 'total')
 
-            expect(total[0].total).toBe(1)
+            expect(Number(total[0].total)).toBe(1)
             expect(user.$options!.profiler).toEqual(client.profiler)
             expect(user.$options!.connection).toEqual(client.connectionName)
         })
@@ -1033,7 +1033,7 @@ describe('Model options', () => {
 
             const total = await db.from('users').count('*', 'total')
 
-            expect(total[0].total).toBe(1)
+            expect(Number(total[0].total)).toBe(1)
             expect(user.$options!.profiler).toEqual(client.profiler)
             expect(user.$options!.connection).toEqual(client.connectionName)
         })
@@ -1068,7 +1068,7 @@ describe('Model options', () => {
             }
 
             const total = await db.from('users').count('*', 'total')
-            expect(total[0].total).toBe(0)
+            expect(Number(total[0].total)).toBe(0)
         })
 
         test('use existing transaction when passed', async () => {
@@ -1102,7 +1102,7 @@ describe('Model options', () => {
             await trx.rollback()
 
             const total = await db.from('users').count('*', 'total')
-            expect(total[0].total).toBe(0)
+            expect(Number(total[0].total)).toBe(0)
         })
     })
 
