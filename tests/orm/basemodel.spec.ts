@@ -3444,7 +3444,7 @@ describe('Base model', () => {
 
             expect(user).toBeInstanceOf(ModelQueryBuilder);
             if ( process.env.DB === 'mysql' ) {
-                expect(user.toSQL().sql).toBe('select * from "users"');
+                expect(user.toSQL().sql).toBe('select * from `users`');
                 expect(user.select('id').toSQL().sql).toBe(['select `id`', ' from `users`'].join(''));
             }
         });
