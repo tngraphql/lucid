@@ -22,6 +22,7 @@ import { Chainable } from '../../Database/QueryBuilder/Chainable'
 import { QueryRunner } from '../../QueryRunner/QueryRunner'
 
 import { Preloader } from '../Preloader/Preloader'
+import _ = require('lodash');
 
 /**
  * A wrapper to invoke scope methods on the query builder
@@ -114,6 +115,28 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
     ) {
         super(builder, customFn, model.$keys.attributesToColumns.resolve.bind(model.$keys.attributesToColumns))
         builder.table(model.getTable());
+
+        const context = this;
+
+        return new Proxy(this, {
+            get(target: any, key: string | number, receiver: any): any {
+                if ( typeof key === 'symbol' ) {
+                    return Reflect.get(target, key, receiver);
+                }
+
+                if ( Reflect.has(target, key) ) {
+                    return Reflect.get(target, key, receiver);
+                }
+
+                const scope = `scope${ _.upperFirst(key as string) }`;
+
+                if ( typeof model[scope] === 'function' ) {
+                    return model[scope].bind(model, context);
+                }
+
+                return Reflect.get(target, key, receiver);
+            }
+        })
     }
 
     /**

@@ -277,13 +277,17 @@ describe('Model query builder', () => {
 
             public static active = scope((query) => {
                 query.where('is_active', true)
-            })
+            });
+
+            public static scopeActive(query, value: boolean = true) {
+                return query.where('is_active', value);
+            }
         }
 
 
         const { sql, bindings } = User.query().apply((scopes) => {
-            scopes.active()
-        }).toSQL()
+            scopes.active();
+        }).toSQL();
 
         const { sql: knexSql, bindings: knexBindings } = db.connection()
                                                            .getWriteClient()
@@ -294,6 +298,75 @@ describe('Model query builder', () => {
         expect(sql).toBe(knexSql)
         expect(bindings).toEqual(knexBindings)
     })
+
+    it('apply local scope', async () => {
+        class User extends BaseModel {
+            @column({ isPrimary: true })
+            public id: number
+
+            @column()
+            public username: string;
+
+            public static scopeActive(query) {
+                return query.where('is_active', true);
+            }
+        }
+
+        const { sql, bindings } = User.query().active(false).toSQL();
+
+        const { sql: knexSql, bindings: knexBindings } = db.connection()
+                                                           .getWriteClient()
+                                                           .from('users')
+                                                           .where('is_active', true)
+                                                           .toSQL()
+
+        expect(sql).toBe(knexSql)
+        expect(bindings).toEqual(knexBindings)
+    });
+
+    it('apply dynamic scopes', async () => {
+        class User extends BaseModel {
+            @column({ isPrimary: true })
+            public id: number
+
+            @column()
+            public username: string;
+
+            public static scopeActive(query, active: boolean = false) {
+                return query.where('is_active', active);
+            }
+        }
+
+        const { sql, bindings } = User.query().active(true).toSQL();
+
+        const { sql: knexSql, bindings: knexBindings } = db.connection()
+                                                           .getWriteClient()
+                                                           .from('users')
+                                                           .where('is_active', true)
+                                                           .toSQL()
+
+        expect(sql).toBe(knexSql)
+        expect(bindings).toEqual(knexBindings)
+    });
+
+    it('call name scope too same builder method', async () => {
+        expect.assertions(1);
+        const task = [];
+        class User extends BaseModel {
+            @column({ isPrimary: true })
+            public id: number
+
+            @column()
+            public username: string;
+
+            public static scopeWhere(query, active: boolean = false) {
+                task.push('where');
+                return query.where('is_active', active);
+            }
+        }
+
+        expect(task).toEqual([]);
+    });
 
     test('apply scopes inside a sub query', async () => {
         class User extends BaseModel {

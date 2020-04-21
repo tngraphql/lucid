@@ -202,7 +202,6 @@ describe('Schema', () => {
             await trx.commit()
         } catch (error) {
             await trx.rollback()
-            console.log(error)
         }
 
         const hasUsers = await db.connection().schema.hasTable('schema_users')

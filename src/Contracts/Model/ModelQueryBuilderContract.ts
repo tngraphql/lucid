@@ -23,6 +23,8 @@ import { ExtractScopes } from './types';
 export interface ModelQueryBuilderContract<Model extends LucidModel,
     Result extends any = InstanceType<Model>>
     extends ChainableContract, ExcutableQueryBuilderContract<Result[]> {
+    [key: string]: any | (() => this);
+
     model: Model
 
     /**
@@ -95,11 +97,11 @@ export interface ModelQueryBuilderContract<Model extends LucidModel,
     /**
      * Aggregates
      */
-    count: Aggregate<ModelQueryBuilderContract<Model, any>>
-    countDistinct: Aggregate<ModelQueryBuilderContract<Model, any>>
-    min: Aggregate<ModelQueryBuilderContract<Model, any>>
-    max: Aggregate<ModelQueryBuilderContract<Model, any>>
-    sum: Aggregate<ModelQueryBuilderContract<Model, any>>
-    avg: Aggregate<ModelQueryBuilderContract<Model, any>>
-    avgDistinct: Aggregate<ModelQueryBuilderContract<Model, any>>
+    count: Aggregate<ModelQueryBuilderContract<Model, any>>;
+    countDistinct: Aggregate<ModelQueryBuilderContract<Model, any>>;
+    min: Aggregate<ModelQueryBuilderContract<Model, any>>;
+    max: Aggregate<ModelQueryBuilderContract<Model, any>>;
+    sum: Aggregate<ModelQueryBuilderContract<Model, any>>;
+    avg: Aggregate<ModelQueryBuilderContract<Model, any>>;
+    avgDistinct: Aggregate<ModelQueryBuilderContract<Model, any>>;
 }

@@ -2198,7 +2198,6 @@ describe('Base model', () => {
 
                 @beforeCreate()
                 public static beforeCreateHook(model: User) {
-                    console.log('beforeCreateHook')
                     stack.push('beforeCreateHook')
                     expect(model).toBeInstanceOf(User)
                     expect(model.$isPersisted).toBeFalsy()
@@ -2206,7 +2205,6 @@ describe('Base model', () => {
 
                 @beforeSave()
                 public static beforeSaveHook(model: User) {
-                    console.log('beforeSaveHook')
                     stack.push('beforeSaveHook')
                     expect(model).toBeInstanceOf(User)
                     expect(model.$isPersisted).toBeFalsy()
@@ -2214,7 +2212,6 @@ describe('Base model', () => {
 
                 @afterCreate()
                 public static afterCreateHook(model: User) {
-                    console.log('afterCreateHook');
                     stack.push('afterCreateHook')
                     expect(model).toBeInstanceOf(User)
                     expect(model.$isPersisted).toBeTruthy()
@@ -2222,7 +2219,6 @@ describe('Base model', () => {
 
                 @afterSave()
                 public static afterSaveHook(model: User) {
-                    console.log('afterSaveHook');
                     stack.push('afterSaveHook')
                     expect(model).toBeInstanceOf(User)
                     expect(model.$isPersisted).toBeTruthy()
@@ -2232,7 +2228,6 @@ describe('Base model', () => {
             const user = new User()
             user.username = 'virk'
             await user.save()
-            console.log(stack);
 
             expect(stack).toEqual([
                 'beforeCreateHook',
@@ -2259,14 +2254,12 @@ describe('Base model', () => {
                     super.boot()
 
                     this.before('create', (model) => {
-                        console.log('create');
                         expect(model).toBeInstanceOf(User)
                         expect(model.$isPersisted).toBeFalsy()
                         throw new Error('Wait')
                     })
 
                     this.before('save', (model) => {
-                        console.log('save');
                         expect(model).toBeInstanceOf(User)
                         expect(model.$isPersisted).toBeFalsy()
                     })
@@ -2289,7 +2282,6 @@ describe('Base model', () => {
             try {
                 await user.save()
             } catch ({ message }) {
-                console.log({message});
                 expect(message).toBe('Wait')
             }
         })

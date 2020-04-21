@@ -29,7 +29,7 @@ describe('Migrator', () => {
 
     afterEach(async () => {
         await resetTables()
-        await cleanup(['tngraphql.com', 'schema_users', 'schema_accounts'])
+        await cleanup(['tngraphql_schema', 'schema_users', 'schema_accounts'])
         await fs.cleanup();
         jest.resetModules();
     })
