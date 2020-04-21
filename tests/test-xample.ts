@@ -36,15 +36,15 @@ async function main() {
             database: 'lucid'
         }
     });
-    var knex = require('knex')({
-        client: 'mysql',
-        connection: {
-            host: "localhost",
-            user: "root",
-            password: "123123As",
-            database: "lucid"
-        }
-    });
+    // var knex = require('knex')({
+    //     client: 'mysql',
+    //     connection: {
+    //         host: "localhost",
+    //         user: "root",
+    //         password: "123123As",
+    //         database: "lucid"
+    //     }
+    // });
 
     const hasUsersTable = await knex.schema.hasTable('users')
     if ( ! hasUsersTable ) {
