@@ -78,7 +78,7 @@ export interface DatabaseContract {
     /**
      * Returns the Knex raw query builder instance
      */
-    KnexRawQuery(sql: string, bindings?: RawQueryBindings): Knex.Raw
+    knexRawQuery(sql: string, bindings?: RawQueryBindings): Knex.Raw
 
     /**
      * Returns the query builder for a given model

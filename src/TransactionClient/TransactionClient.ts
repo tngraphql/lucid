@@ -44,7 +44,7 @@ export class TransactionClient extends EventEmitter implements TransactionClient
     public profiler?: ProfilerRowContract
 
     constructor(
-        public KnexClient: Knex.Transaction,
+        public knexClient: Knex.Transaction,
         public dialect: DialectContract,
         public connectionName: string,
         public emitter: EmitterContract
@@ -56,7 +56,7 @@ export class TransactionClient extends EventEmitter implements TransactionClient
      * Whether or not transaction has been completed
      */
     public get isCompleted() {
-        return this.KnexClient.isCompleted()
+        return this.knexClient.isCompleted()
     }
 
     /**
@@ -71,7 +71,7 @@ export class TransactionClient extends EventEmitter implements TransactionClient
      * of transactions
      */
     public getReadClient() {
-        return this.KnexClient
+        return this.knexClient
     }
 
     /**
@@ -79,7 +79,7 @@ export class TransactionClient extends EventEmitter implements TransactionClient
      * of transactions
      */
     public getWriteClient() {
-        return this.KnexClient
+        return this.knexClient
     }
 
     /**
@@ -101,7 +101,7 @@ export class TransactionClient extends EventEmitter implements TransactionClient
      * added for API compatibility with the [[QueryClient]] class
      */
     public async columnsInfo(table: string, column?: string): Promise<any> {
-        const query = this.KnexClient.select(table)
+        const query = this.knexClient.select(table)
         const result = await (column ? query.columnInfo(column) : query.columnInfo())
         return result
     }
@@ -110,7 +110,7 @@ export class TransactionClient extends EventEmitter implements TransactionClient
      * Get a new query builder instance
      */
     public knexQuery(): Knex.QueryBuilder {
-        return this.KnexClient.queryBuilder()
+        return this.knexClient.queryBuilder()
     }
 
     /**
@@ -118,8 +118,8 @@ export class TransactionClient extends EventEmitter implements TransactionClient
      * created from the `write` client, so before executing the query, you
      * may want to decide which client to use.
      */
-    public KnexRawQuery(sql: string, bindings?: any): Knex.Raw {
-        return bindings ? this.KnexClient.raw(sql, bindings) : this.KnexClient.raw(sql)
+    public knexRawQuery(sql: string, bindings?: any): Knex.Raw {
+        return bindings ? this.knexClient.raw(sql, bindings) : this.knexClient.raw(sql)
     }
 
     /**
@@ -149,7 +149,7 @@ export class TransactionClient extends EventEmitter implements TransactionClient
      * Execute raw query on transaction
      */
     public rawQuery(sql: any, bindings?: any): any {
-        return new RawQueryBuilder(this.KnexClient.raw(sql, bindings), this)
+        return new RawQueryBuilder(this.knexClient.raw(sql, bindings), this)
     }
 
     /**
@@ -172,7 +172,7 @@ export class TransactionClient extends EventEmitter implements TransactionClient
      * Returns another instance of transaction with save point
      */
     public async transaction(callback?: (trx: TransactionClientContract) => Promise<any>): Promise<any> {
-        const trx = await this.KnexClient.transaction()
+        const trx = await this.knexClient.transaction()
         const transaction = new TransactionClient(trx, this.dialect, this.connectionName, this.emitter)
 
         /**
@@ -216,7 +216,7 @@ export class TransactionClient extends EventEmitter implements TransactionClient
      */
     public async commit() {
         try {
-            await this.KnexClient.commit()
+            await this.knexClient.commit()
             this.profiler?.end({ state: 'commit' })
             this.emit('commit', this)
             this.removeAllListeners()
@@ -232,7 +232,7 @@ export class TransactionClient extends EventEmitter implements TransactionClient
      */
     public async rollback() {
         try {
-            await this.KnexClient.rollback()
+            await this.knexClient.rollback()
             this.profiler?.end({ state: 'rollback' })
             this.emit('rollback', this)
             this.removeAllListeners()

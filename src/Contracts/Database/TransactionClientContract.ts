@@ -18,7 +18,7 @@ import { QueryClientContract } from './QueryClientContract';
  * transaction on a single connection
  */
 export interface TransactionClientContract extends QueryClientContract, EventEmitter {
-    KnexClient: Knex.Transaction,
+    knexClient: Knex.Transaction,
 
     /**
      * Custom profiler to time queries

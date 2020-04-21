@@ -137,9 +137,9 @@ export abstract class Chainable extends Macroable implements ChainableContract {
      * Transforms the value to something that Knex can internally understand and
      * handle. It includes.
      *
-     * 1. Returning the `KnexBuilder` for sub queries.
-     * 2. Returning the `Knex.refBuilder` for reference builder.
-     * 2. Returning the `KnexBuilder` for raw queries.
+     * 1. Returning the `knexBuilder` for sub queries.
+     * 2. Returning the `knex.refBuilder` for reference builder.
+     * 2. Returning the `knexBuilder` for raw queries.
      * 3. Wrapping callbacks, so that the end user receives an instance Lucid query
      *    builder and not Knex query builder.
      */

@@ -198,7 +198,7 @@ export class DatabaseQueryBuilder extends Chainable implements DatabaseQueryBuil
      * Run query inside the given transaction
      */
     public useTransaction(transaction: TransactionClientContract) {
-        this.knexQuery.transacting(transaction.KnexClient)
+        this.knexQuery.transacting(transaction.knexClient)
         return this
     }
 

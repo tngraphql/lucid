@@ -1,5 +1,7 @@
+import { Connection } from '../src/Connection/Connection';
+import { ConnectionManager } from '../src/Connection/ConnectionManager';
 import { column } from '../src/Orm/Decorators';
-import { getBaseModel, getDb, ormAdapter, setup } from './helpers';
+import { getBaseModel, getConfig, getDb, getEmitter, getLogger, ormAdapter, setup } from './helpers';
 
 /**
  * (c) Phan Trung Nguyên <nguyenpl117@gmail.com>
@@ -34,6 +36,15 @@ async function main() {
             database: 'lucid'
         }
     });
+    var knex = require('knex')({
+        client: 'mysql',
+        connection: {
+            host: "localhost",
+            user: "root",
+            password: "123123As",
+            database: "lucid"
+        }
+    });
 
     const hasUsersTable = await knex.schema.hasTable('users')
     if ( ! hasUsersTable ) {
@@ -60,6 +71,19 @@ async function main() {
     console.log(2, user.toSQL());
 
     console.log(3, user.select('id').toSQL().sql);
+
+    const manager = new ConnectionManager(getLogger(), getEmitter())
+    manager.add('primary', getConfig())
+    manager.connect('primary');
+    const primary: any = manager.get('primary').connection;
+
+    console.log('primary', primary.client.select('*').from('users').toSQL());
+    console.log('primary2', primary.client.queryBuilder().from('users').toSQL());
+
+    console.log('primary3', primary.client2.select('*').from('users').toSQL());
+    console.log('primary4', primary.client2.queryBuilder().from('users').toSQL());
+
+    process.exit(1);
 }
 
 main();

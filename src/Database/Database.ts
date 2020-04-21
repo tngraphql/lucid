@@ -152,8 +152,8 @@ export class Database implements DatabaseContract {
     /**
      * Returns the Knex raw query builder
      */
-    public KnexRawQuery(sql: string, bindings?: any[]) {
-        return this.connection(this.primaryConnectionName).KnexRawQuery(sql, bindings)
+    public knexRawQuery(sql: string, bindings?: any[]) {
+        return this.connection(this.primaryConnectionName).knexRawQuery(sql, bindings)
     }
 
     /**

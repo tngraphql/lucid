@@ -82,7 +82,7 @@ export interface QueryClientContract {
     /**
      * Returns the Knex raw query builder instance
      */
-    KnexRawQuery(sql: string, bindings?: RawQueryBindings): Knex.Raw
+    knexRawQuery(sql: string, bindings?: RawQueryBindings): Knex.Raw
 
     /**
      * Get new query builder instance for select, update and

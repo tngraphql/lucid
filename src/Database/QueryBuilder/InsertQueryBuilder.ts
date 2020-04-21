@@ -116,7 +116,7 @@ export class InsertQueryBuilder extends Macroable implements InsertQueryBuilderC
      * Run query inside the given transaction
      */
     public useTransaction(transaction: TransactionClientContract) {
-        this.knexQuery.transacting(transaction.KnexClient)
+        this.knexQuery.transacting(transaction.knexClient)
         return this
     }
 

@@ -167,7 +167,7 @@ export class QueryClient implements QueryClientContract {
      * created from the `write` client, so before executing the query, you
      * may want to decide which client to use.
      */
-    public KnexRawQuery(sql: string, bindings?: any): Knex.Raw {
+    public knexRawQuery(sql: string, bindings?: any): Knex.Raw {
         return bindings ? this.connection.client!.raw(sql, bindings) : this.connection.client!.raw(sql)
     }
 
