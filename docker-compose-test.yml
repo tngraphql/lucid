@@ -8,7 +8,7 @@ services:
       - mysql
       - pg
       - mssql
-    command: ["ts-node-dev tests/test-xample.ts"]
+    command: ["npm", "run", "test:knex"]
     environment:
       DB: pg
       DB_NAME: lucid

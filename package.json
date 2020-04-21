@@ -16,7 +16,8 @@
         "clean": "rimraf dist",
         "compile": "npm run clean && tsc -b && npm run copy:files",
         "copy:files": "copyfiles \"templates/**/*.txt\" build",
-        "build": "npm run compile"
+        "build": "npm run compile",
+        "test:knex": "ts-node-dev tests/test-xample.ts"
     },
     "dependencies": {
         "@poppinss/utils": "^2.2.0",
