@@ -212,42 +212,44 @@ describe('connection', () => {
             await connection.disconnect()
         });
 
-        it('get healthcheck report for un-healthy connection', async () => {
-            const connection = new Connection('primary', Object.assign({}, getConfig(), {
-                connection: {
-                    host: 'bad-host',
-                },
-            }), getLogger())
-            connection.connect()
-
-            const report = await connection.getReport()
-            expect(report.message).toBe('Unable to reach the database server');
-            expect(report.error).toBeDefined();
-
-            await connection.disconnect()
-        }, 15000);
-
-        it('get healthcheck report for un-healthy read host', async () => {
-            const connection = new Connection('primary', Object.assign({}, getConfig(), {
-                replicas: {
-                    write: {
-                        connection: getConfig().connection,
+        if (process.env.DB !== 'sqlite') {
+            it('get healthcheck report for un-healthy connection', async () => {
+                const connection = new Connection('primary', Object.assign({}, getConfig(), {
+                    connection: {
+                        host: 'bad-host',
                     },
-                    read: {
-                        connection: [
-                            getConfig().connection,
-                            Object.assign({}, getConfig().connection, { host: 'bad-host' }),
-                        ],
+                }), getLogger())
+                connection.connect()
+
+                const report = await connection.getReport()
+                expect(report.message).toBe('Unable to reach the database server');
+                expect(report.error).toBeDefined();
+
+                await connection.disconnect()
+            }, 15000);
+
+            it('get healthcheck report for un-healthy read host', async () => {
+                const connection = new Connection('primary', Object.assign({}, getConfig(), {
+                    replicas: {
+                        write: {
+                            connection: getConfig().connection,
+                        },
+                        read: {
+                            connection: [
+                                getConfig().connection,
+                                Object.assign({}, getConfig().connection, { host: 'bad-host' }),
+                            ],
+                        },
                     },
-                },
-            }), getLogger())
-            connection.connect()
+                }), getLogger())
+                connection.connect()
 
-            const report = await connection.getReport()
-            expect(report.message).toBe('Unable to reach one of the read hosts');
-            expect(report.error).toBeDefined();
+                const report = await connection.getReport()
+                expect(report.message).toBe('Unable to reach one of the read hosts');
+                expect(report.error).toBeDefined();
 
-            await connection.disconnect()
-        }, 15000);
+                await connection.disconnect()
+            }, 15000);
+        }
     });
 })
