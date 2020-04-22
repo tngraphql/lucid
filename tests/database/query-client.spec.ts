@@ -64,6 +64,7 @@ describe('Query client', () => {
             expect(Object.keys(columns)).toEqual([
                 'id',
                 'country_id',
+                'is_active',
                 'username',
                 'email',
                 'points',

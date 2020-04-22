@@ -120,3 +120,8 @@ export type HooksHandler<Data extends any,
 export type ModelRelationOptions = RelationOptions<ModelRelations>
     | ManyToManyRelationOptions<ModelRelations>
     | ThroughRelationOptions<ModelRelations>
+
+export type GlobalScope = ({
+    scope: (() => void) | object | string,
+    callback: (() => void) | object
+});

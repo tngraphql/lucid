@@ -115,6 +115,7 @@ export async function setup(destroyDb: boolean = true) {
         await db.schema.createTable('users', (table) => {
             table.increments()
             table.integer('country_id')
+            table.integer('is_active')
             table.string('username', 100).unique()
             table.string('email', 100).unique()
             table.integer('points').defaultTo(0)

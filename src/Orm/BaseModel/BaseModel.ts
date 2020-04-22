@@ -10,17 +10,20 @@
 
 import { Hooks } from '@poppinss/hooks/build'
 import { Exception } from '@poppinss/utils/build'
+import { InvalidArgumentException } from '@tngraphql/illuminate';
 import { ApplicationContract } from '@tngraphql/illuminate/dist/Contracts/ApplicationContract';
+import { isString } from 'util';
 import { QueryClientContract } from '../../Contracts/Database/QueryClientContract';
 import { TransactionClientContract } from '../../Contracts/Database/TransactionClientContract';
 import { ColumnOptions } from '../../Contracts/Model/ColumnOptions';
 import { LucidModel } from '../../Contracts/Model/LucidModel';
 import { CacheNode, LucidRow, ModelAdapterOptions, ModelObject, ModelOptions } from '../../Contracts/Model/LucidRow';
 import { ModelKeysContract } from '../../Contracts/Model/ModelKeysContract';
+import { ModelQueryBuilderContract } from '../../Contracts/Model/ModelQueryBuilderContract';
 import { OrmConfig } from '../../Contracts/Model/OrmConfig';
 import {
     ComputedOptions,
-    EventsList,
+    EventsList, GlobalScope,
     HooksHandler,
     ModelColumnOptions,
     ModelRelationOptions
@@ -33,6 +36,7 @@ import {
     RelationshipsContract,
     ThroughRelationOptions
 } from '../../Contracts/Orm/Relations/types';
+import { ScopeType } from '../../Contracts/types';
 import { ensureRelation, ensureValue, isObject, managedTransaction } from '../../utils'
 
 import { Config } from '../Config'
@@ -45,6 +49,8 @@ import { HasOne } from '../Relations/HasOne'
 import { ManyToMany } from '../Relations/ManyToMany'
 import { ModelEventEmitter } from './ModelEventEmitter';
 import { proxyHandler } from './proxyHandler'
+
+const hash = require('object-hash');
 
 const MANY_RELATIONS = ['hasMany', 'manyToMany', 'hasManyThrough']
 
@@ -91,9 +97,9 @@ export class BaseModel implements LucidRow {
     public static _booted: boolean
 
     /**
-     * Query scopes defined on the model
+     * The object of global scopes on the model.
      */
-    public static $queryScopes: any = {}
+    public static $globalScopes: Map<any, GlobalScope[]> = new Map();
 
     /**
      * A set of properties marked as computed. Computed properties are included in
@@ -146,12 +152,43 @@ export class BaseModel implements LucidRow {
     /**
      * Returns the model query instance for the given model
      */
-    public static query(options?: ModelAdapterOptions): any {
-        return this.createQuery(options);
+    public static query(options?: ModelAdapterOptions): any | ModelQueryBuilderContract<LucidModel> {
+        return this.newQuery(options);
     }
 
-    protected static createQuery(options?: ModelAdapterOptions): any {
-        return this.$adapter.query(this, options)
+    /**
+     * Get a new query builder for the model's table.
+     *
+     * @param options
+     */
+    protected static newQuery(options?: ModelAdapterOptions): any {
+        const query = this.$adapter.query(this, options);
+
+        this.registerGlobalScopes(query);
+
+        return query;
+    }
+
+    public static withoutGlobalScope(scope): any {
+        return this.query().withoutGlobalScope(scope);
+    }
+
+    public static withoutGlobalScopes(scope): any {
+        return this.query().withoutGlobalScopes(scope);
+    }
+
+
+    /**
+     * Register the global scopes for this builder instance.
+     *
+     * @param builder
+     */
+    protected static registerGlobalScopes(builder) {
+        this.getGlobalScopes().map(({scope, callback}) => {
+            builder.withGlobalScope(scope, callback);
+        });
+
+        return builder;
     }
 
     /**
@@ -767,7 +804,62 @@ export class BaseModel implements LucidRow {
         return this.query().client.truncate(this.table, cascade)
     }
 
+    /**
+     * Register a new global scope on the model.
+     *
+     */
+    public static addGlobalScope(scope: ScopeType, callback?: (builder: ModelQueryBuilderContract<LucidModel>) => any) {
+        if ( ! this.$globalScopes.has(this) ) {
+            this.$globalScopes.set(this, []);
+        }
+
+        const instance = this.$globalScopes.get(this);
+
+        if ( typeof scope === 'string' && callback ) {
+            return instance.push({
+                scope,
+                callback
+            });
+        } else if ( typeof scope === 'function' ) {
+            return instance.push({
+                scope,
+                callback: scope
+            });
+        } else if ( Reflect.has(scope as object, 'apply') ) {
+            return instance.push({
+                scope: scope.constructor,
+                callback: scope as object
+            });
+        }
+
+        throw new InvalidArgumentException('Global scope must be an instance of Closure or Scope.');
+    }
+
+    public static hasGlobalScope(scope: string | object) {
+        return this.getGlobalScope(scope) !== void (0);
+    }
+
+    /**
+     *
+     * @param scope
+     */
+    public static getGlobalScope(scope: string | object): (() => void) | object | null {
+        const instance = this.$globalScopes.get(this) || [];
+
+        return instance.find(value => value.scope === scope);
+    }
+
+    /**
+     * Get a global scope registered with the model.
+     */
+    public static getGlobalScopes(): GlobalScope[] {
+        return this.$globalScopes.get(this) || [];
+    }
+
     constructor() {
+        const Model = this.constructor as LucidModel;
+        Model.bootIfNotBooted();
+
         return new Proxy(this, proxyHandler)
     }
 

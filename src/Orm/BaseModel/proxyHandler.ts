@@ -11,18 +11,12 @@
 
 import { LucidModel } from '../../Contracts/Model/LucidModel';
 
-function boot(target: LucidModel) {
-    target.bootIfNotBooted();
-}
-
 /**
  * A proxy trap to add support for custom getters and setters
  */
 export const proxyHandler = {
     get(target: any, key: any, receiver: any) {
         const Model = target.constructor as LucidModel;
-
-        boot(Model);
 
         const column = Model.$getColumn(key)
 
@@ -47,8 +41,6 @@ export const proxyHandler = {
 
     set(target: any, key: any, value: any, receiver: any) {
         const Model = target.constructor as LucidModel;
-
-        boot(Model);
 
         const column = Model.$getColumn(key)
 

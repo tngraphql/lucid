@@ -10,12 +10,20 @@
 import { Hooks } from '@poppinss/hooks/build'
 import { AdapterContract } from '../Orm/AdapterContract';
 import { ExtractModelRelations, ModelRelations, RelationshipsContract } from '../Orm/Relations/types';
+import { ScopeType } from '../types';
 import { ColumnOptions } from './ColumnOptions';
 import { LucidRow, ModelAdapterOptions, ModelAttributes, ModelObject } from './LucidRow';
 import { ModelKeysContract } from './ModelKeysContract';
 import { ModelQueryBuilderContract } from './ModelQueryBuilderContract';
 import { OrmConfig } from './OrmConfig';
-import { ComputedOptions, EventsList, HooksHandler, ModelColumnOptions, ModelRelationOptions } from './types';
+import {
+    ComputedOptions,
+    EventsList,
+    GlobalScope,
+    HooksHandler,
+    ModelColumnOptions,
+    ModelRelationOptions
+} from './types';
 
 // export type LucidModel = typeof BaseModel & {new(): LucidRow};
 
@@ -98,6 +106,35 @@ export interface LucidModel {
         serializedToColumns: ModelKeysContract,
         serializedToAttributes: ModelKeysContract,
     }
+
+    /**
+     * Register a new global scope on the model.
+     *
+     * @param scope
+     * @param callback
+     *
+     * @throws InvalidArgumentException
+     */
+    addGlobalScope(scope: ScopeType, callback?: (builder: ModelQueryBuilderContract<LucidModel>) => any): void;
+
+    /**
+     * Determine if a model has a global scope.
+     *
+     * @param scope
+     */
+    hasGlobalScope(scope: string | object): boolean;
+
+    /**
+     * Get a global scope registered with the model.
+     *
+     * @param scope
+     */
+    getGlobalScope(scope: string | object): (() => void) | object | null;
+
+    /**
+     * Get a global scope registered with the model.
+     */
+    getGlobalScopes(): GlobalScope[];
 
     /**
      * Creating model from adapter results
@@ -358,7 +395,16 @@ export interface LucidModel {
         >(
         this: Model,
         options?: ModelAdapterOptions
-    ): ModelQueryBuilderContract<Model, Result>
+    ): ModelQueryBuilderContract<Model, Result>;
+
+    withoutGlobalScope<Model extends LucidModel,
+        Result extends any = InstanceType<Model>,
+        >(scope: string | object): ModelQueryBuilderContract<Model, Result>;
+
+    withoutGlobalScopes<Model extends LucidModel,
+        Result extends any = InstanceType<Model>,
+        >(scope?: any[]): ModelQueryBuilderContract<Model, Result>;
+
 
     /**
      * Truncate model table

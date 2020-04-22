@@ -9,6 +9,7 @@
  */
 
 import { Exception } from '@poppinss/utils/build'
+import { scryptSync } from 'crypto';
 import { QueryClientContract } from '../Contracts/Database/QueryClientContract';
 import { TransactionClientContract } from '../Contracts/Database/TransactionClientContract';
 import { LucidRow, ModelObject } from '../Contracts/Model/LucidRow';

@@ -38,7 +38,17 @@ export interface ModelQueryBuilderContract<Model extends LucidModel,
      */
     apply<Scopes extends ExtractScopes<Model>>(
         callback: (scopes: Scopes) => void
-    ): this
+    ): this;
+
+    applyScopes(): this;
+
+    removedScopes(): any[];
+
+    withGlobalScope(id, scope);
+
+    withoutGlobalScope(scope: any): this;
+
+    withoutGlobalScopes(scope: any): this;
 
     /**
      * A copy of client options.

@@ -17,9 +17,11 @@ import { DBQueryCallback } from '../../Contracts/Database/types';
 import { LucidModel } from '../../Contracts/Model/LucidModel';
 import { ModelAdapterOptions, ModelObject } from '../../Contracts/Model/LucidRow';
 import { ModelQueryBuilderContract } from '../../Contracts/Model/ModelQueryBuilderContract';
+import { GlobalScope } from '../../Contracts/Model/types';
 import { SimplePaginator } from '../../Database/Paginator/SimplePaginator'
 import { Chainable } from '../../Database/QueryBuilder/Chainable'
 import { QueryRunner } from '../../QueryRunner/QueryRunner'
+import { isObject } from '../../utils';
 
 import { Preloader } from '../Preloader/Preloader'
 import _ = require('lodash');
@@ -99,7 +101,18 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
     /**
      * Whether or not query is a subquery for `.where` callback
      */
-    public isSubQuery = false
+    public isSubQuery = false;
+
+    protected _scopes: GlobalScope[] = [];
+
+    /**
+     * The methods that should be returned from query builder.
+     */
+    protected _passthru = [
+        'toSQL'
+    ];
+
+    protected _removedScopes = [];
 
     constructor(
         builder: Knex.QueryBuilder,
@@ -116,33 +129,117 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
         super(builder, customFn, model.$keys.attributesToColumns.resolve.bind(model.$keys.attributesToColumns))
         builder.table(model.getTable());
 
-        const context = this;
-
-        return new Proxy(this, {
+        const p = new Proxy(this, {
             get(target: any, key: string | number, receiver: any): any {
                 if ( typeof key === 'symbol' ) {
                     return Reflect.get(target, key, receiver);
                 }
 
-                if ( Reflect.has(target, key) ) {
-                    return Reflect.get(target, key, receiver);
+                if ( ! Reflect.has(target, key) ) {
+                    const scope = `scope${ _.upperFirst(key as string) }`;
+
+                    if ( typeof model[scope] === 'function' ) {
+                        return model[scope].bind(model, p);
+                    }
                 }
 
-                const scope = `scope${ _.upperFirst(key as string) }`;
-
-                if ( typeof model[scope] === 'function' ) {
-                    return model[scope].bind(model, context);
+                if ( target._passthru.includes(key as string) ) {
+                    return Reflect.get(target.toBase(), key, receiver);
                 }
 
                 return Reflect.get(target, key, receiver);
             }
-        })
+        });
+
+        return p;
+    }
+
+    public withGlobalScope(scope, callback): this {
+        if ( ! this._scopes ) {
+            this._scopes = [];
+        }
+
+        this._scopes.push({ scope, callback });
+
+        return this;
+    }
+
+    public withoutGlobalScopes(scopes: any[] = null): this {
+        if ( scopes === null ) {
+            scopes = this._scopes.slice();
+
+            for( let scope of scopes ) {
+                this.withoutGlobalScope(scope.scope);
+            }
+        } else {
+            if ( Array.isArray(scopes) ) {
+                for( let scope of scopes ) {
+                    this.withoutGlobalScope(scope);
+                }
+            }
+        }
+
+        return this;
+    }
+
+    public withoutGlobalScope(scope: string | Function): this {
+        let index = this._scopes.findIndex(x => x.scope === scope);
+
+        if ( index !== -1 ) {
+            this._scopes.splice(index, 1);
+        }
+
+        this._removedScopes.push(scope);
+
+        return this;
+    }
+
+    /**
+     * Get an array of global scopes that were removed from the query.
+     *
+     */
+    public removedScopes(): any[] {
+        return this._removedScopes;
+    }
+
+    public applyScopes(): this {
+        if ( ! this._scopes ) {
+            return this;
+        }
+
+        for( let item of this._scopes ) {
+            if ( ! this._scopes.includes(item) ) {
+                continue;
+            }
+
+            const scope: any = item.callback;
+
+            this.callScope((builder = this) => {
+                if ( isObject(scope) && Reflect.has(scope, 'apply') ) {
+                    scope.apply(builder, this.model);
+                }
+
+                if ( typeof scope === 'function' ) {
+                    scope(builder);
+                }
+            });
+        }
+
+        return this;
+    }
+
+    protected callScope(scope): this {
+        scope(this);
+
+        return this;
     }
 
     /**
      * Executes the current query
      */
     private async execQuery() {
+        this.applyScopes();
+
         const isWriteQuery = ['update', 'del', 'insert'].includes(this.knexQuery['_method'])
         const queryData = Object.assign(this.getQueryData(), this.customReporterData)
         const rows = await new QueryRunner(this.client, queryData).run(this.knexQuery)
@@ -242,6 +339,11 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
         }
 
         return result[0] || null
+    }
+
+    public toBase(): this {
+        this.applyScopes();
+        return this;
     }
 
     /**
