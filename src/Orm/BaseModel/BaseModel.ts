@@ -147,6 +147,10 @@ export class BaseModel implements LucidRow {
      * Returns the model query instance for the given model
      */
     public static query(options?: ModelAdapterOptions): any {
+        return this.createQuery(options);
+    }
+
+    protected static createQuery(options?: ModelAdapterOptions): any {
         return this.$adapter.query(this, options)
     }
 

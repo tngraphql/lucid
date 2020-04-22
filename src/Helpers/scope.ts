@@ -17,6 +17,6 @@ import { QueryScopeCallback } from '../Contracts/Model/QueryScopeCallback';
  * Helper to mark a function as query scope
  */
 export function scope<Model extends LucidModel,
-    Callback extends QueryScopeCallback<Model>>(callback: Callback): QueryScope<Callback> {
+    Callback = QueryScopeCallback<Model>>(callback: Callback): QueryScope<Callback> {
     return callback as QueryScope<Callback>
 }
