@@ -50,8 +50,6 @@ import { ManyToMany } from '../Relations/ManyToMany'
 import { ModelEventEmitter } from './ModelEventEmitter';
 import { proxyHandler } from './proxyHandler'
 
-const hash = require('object-hash');
-
 const MANY_RELATIONS = ['hasMany', 'manyToMany', 'hasManyThrough']
 
 function StaticImplements<T>() {
