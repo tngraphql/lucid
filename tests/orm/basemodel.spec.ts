@@ -4337,5 +4337,25 @@ describe('Base model', () => {
             expect(usersList).toHaveLength(1);
             expect(usersList[0].points).toBe(10);
         })
+
+        it('Truncate model table', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public username: string
+
+                @column()
+                public email: string
+            }
+
+            await db.insertQuery().table('users').insert({ username: 'virk' });
+
+            await User.truncate();
+
+            const usersList = await db.query().from('users')
+            expect(usersList).toHaveLength(0);
+        });
     });
 })

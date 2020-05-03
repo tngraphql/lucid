@@ -13,6 +13,7 @@ import { Macroable } from 'macroable/build';
 import { InsertQueryBuilderContract } from '../../Contracts/Database/InsertQueryBuilderContract';
 import { QueryClientContract } from '../../Contracts/Database/QueryClientContract';
 import { TransactionClientContract } from '../../Contracts/Database/TransactionClientContract';
+import { BaseModel } from '../../Orm/BaseModel/BaseModel';
 import { QueryRunner } from '../../QueryRunner/QueryRunner'
 
 /**

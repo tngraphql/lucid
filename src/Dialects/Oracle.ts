@@ -10,8 +10,9 @@
 
 import { DialectContract } from '../Contracts/Database/DialectContract';
 import { QueryClientContract } from '../Contracts/Database/QueryClientContract';
+import { AbstractDialect } from './AbstractDialect';
 
-export class OracleDialect implements DialectContract {
+export class OracleDialect extends AbstractDialect implements DialectContract {
     public readonly name = 'oracledb'
     public readonly supportsAdvisoryLocks = false
 
@@ -20,9 +21,6 @@ export class OracleDialect implements DialectContract {
      * valid for luxon date parsing library
      */
     public readonly dateTimeFormat = 'yyyy-MM-dd HH:mm:ss'
-
-    constructor(private client: QueryClientContract) {
-    }
 
     /**
      * Not implemented yet

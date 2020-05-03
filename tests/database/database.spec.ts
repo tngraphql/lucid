@@ -8,11 +8,7 @@
  * file that was distributed with this source code.
  */
 
-import { DateTime } from 'luxon';
-import { LucidModel } from '../../src/Contracts/Model/LucidModel';
-import { LucidRow } from '../../src/Contracts/Model/LucidRow';
-import { BaseModel } from '../../src/Orm/BaseModel/BaseModel';
-import { column } from '../../src/Orm/Decorators';
+import { DatabaseContract } from '../../src/Contracts/Database/DatabaseContract';
 import { cleanup, getConfig, getDb, getEmitter, getLogger, getProfiler, setup } from '../helpers';
 import { Database } from '../../src/Database/Database';
 
@@ -252,52 +248,173 @@ describe('database', () => {
     });
 
     describe('Database | global transaction', () => {
+        let db: DatabaseContract;
+        const config = {
+            connection: 'primary',
+            connections: { primary: getConfig() },
+        }
         beforeAll(async () => {
             await setup();
         });
 
         afterAll(async () => {
-            await cleanup();
+            // await cleanup();
         });
 
-        test('perform queries inside a global transaction', async () => {
+        beforeEach(async () => {
+            db = new Database(config, getLogger(), getProfiler(), getEmitter());
+        });
+
+        afterEach(async () => {
+            await db.manager.closeAll();
+        });
+
+        it('supports automatically committing', async () => {
+            await db.transaction(() => {
+                return Promise.resolve();
+            });
+        });
+
+        it('does not allow queries after commit', async () => {
+            const t = await db.transaction();
+
+            await t.rawQuery('SELECT 1+1');
+
+            await t.commit();
+
+            try {
+                await t.rawQuery('SELECT 1+1');
+            } catch (e) {
+                expect(e.message).toBe('Transaction query already complete, run with DEBUG=knex:tx for more info');
+            }
+        });
+
+        it('does not allow queries immediately after commit call', async () => {
+            await db.transaction(async (trx) => {
+                await trx.rawQuery('SELECT 1+1');
+                await trx.commit();
+                try {
+                    await trx.rawQuery('SELECT 1+1')
+                } catch ({message}) {
+                    expect(message).toBe('Transaction query already complete, run with DEBUG=knex:tx for more info');
+                };
+            });
+        });
+
+        it('does not allow queries after rollback', async () => {
+            await db.transaction(async (trx) => {
+                await db.rawQuery('SELECT 1+1').useTransaction(trx);
+                await trx.rollback();
+                try {
+                    await db.rawQuery('SELECT 1+1').useTransaction(trx)
+                } catch ({message}) {
+                    expect(message).toBe('Transaction query already complete, run with DEBUG=knex:tx for more info');
+                };
+            });
+        });
+
+        it('supports event `commit` when a transaction is committed', async () => {
+            const stack = [];
+
+            await db.transaction(async trx => {
+                trx.on('commit', function(t) {
+                    stack.push('commit');
+                });
+                await db.rawQuery('SELECT 1+1').useTransaction(trx);
+            });
+
+            expect(stack).toEqual(['commit']);
+        });
+
+        it('supports event `rollback` when a transaction is rolled back', async () => {
+            const stack = [];
+
+            await db.transaction(async trx => {
+                trx.on('rollback', function(t) {
+                    stack.push('rollback');
+                });
+                await db.rawQuery('SELECT 1+1').useTransaction(trx);
+                throw new Error('');
+            });
+
+            expect(stack).toEqual(['rollback']);
+        });
+
+        it('supports automatically rolling back with a thrown error', async () => {
+            await db.transaction(async (trx) => {
+                await db.table('users').insert({ username: 'virk' }).useTransaction(trx);
+                throw new Error();
+            }).catch(() => {
+
+            })
+
+            const users = await db.from('users');
+            expect(users).toHaveLength(0);
+        });
+
+        it('supports automatically rolling back with a rejection', async () => {
+            await db.transaction(async (trx) => {
+                await db.table('users').insert({ username: 'virk' }).useTransaction(trx);
+                return Promise.reject(new Error('Swag'));
+            }).catch(() => {
+
+            })
+
+            const users = await db.from('users');
+            expect(users).toHaveLength(0);
+        });
+
+        it('perform queries inside a transaction using `useTransaction`', async () => {
+            const trx = await db.transaction();
+            await db.table('users').insert({ username: 'virk' }).useTransaction(trx);
+            await trx.rollback();
+
+            const users = await db.from('users');
+            expect(users).toHaveLength(0);
+        });
+
+        test('perform queries inside a transaction', async () => {
             const config = {
                 connection: 'primary',
                 connections: { primary: getConfig() },
             }
 
             const db = new Database(config, getLogger(), getProfiler(), getEmitter())
-            await db.beginGlobalTransaction()
-
-            await db.table('users').insert({ username: 'virk' })
-            await db.rollbackGlobalTransaction()
+            try {
+                await db.transaction(async (trx) => {
+                    await db.table('users').insert({ username: 'virk' }).useTransaction(trx);
+                    throw new Error('rollback');
+                })
+            } catch (e) {
+                expect(e.message).toEqual('rollback');
+            };
 
             const users = await db.from('users');
             expect(users).toHaveLength(0);
-            expect(db.connectionGlobalTransactions.size).toBe(0);
 
             await db.manager.closeAll()
         })
 
-        test('create transactions inside a global transaction', async () => {
-            const config = {
-                connection: 'primary',
-                connections: { primary: getConfig() },
+        it('create transactions inside a transaction', async () => {
+            async function f(trx1) {
+                const trx2 = await trx1.transaction()
+                await trx2.table('users').insert({ username: 'virk' })
+                await trx2.commit();
             }
 
-            const db = new Database(config, getLogger(), getProfiler(), getEmitter())
-            await db.beginGlobalTransaction()
-            const trx = await db.transaction()
+            const trx1 = await db.transaction()
+            await trx1.table('users').insert({ username: 'virk2' })
 
-            await trx.table('users').insert({ username: 'virk' })
-            await trx.commit()
+            const trx2 = await db.transaction()
+            await trx2.table('users').insert({ username: 'virk' })
+            await trx2.commit();
 
-            await db.rollbackGlobalTransaction()
+            await trx1.rollback();
 
             const users = await db.from('users');
             expect(users).toHaveLength(0);
-            expect(db.connectionGlobalTransactions.size).toBe(0);
-            await db.manager.closeAll()
+            // expect(db.connectionGlobalTransactions.size).toBe(0);
+            // await db.manager.closeAll()
         })
 
         test('multiple calls to beginGlobalTransaction must be a noop', async () => {

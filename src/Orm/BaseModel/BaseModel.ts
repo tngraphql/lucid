@@ -799,7 +799,7 @@ export class BaseModel implements LucidRow {
      * Truncate model table
      */
     public static truncate(cascade: boolean = false) {
-        return this.query().client.truncate(this.table, cascade)
+        return this.query().client.truncate(this.getTable(), cascade)
     }
 
     /**
@@ -1147,18 +1147,31 @@ export class BaseModel implements LucidRow {
         }
     }
 
+    static _cls: any;
+
     /**
      * Set options on the model instance along with transaction
      */
     public $setOptionsAndTrx(options?: ModelAdapterOptions): void {
+        // if ( (!options || options.client === undefined) && this.constructor['_cls'] ) {
+        //     const t = this.constructor['_cls'].get('transaction');
+        //     if ( t ) {
+        //         if ( ! options ) {
+        //             options = {};
+        //         }
+        //         options.client = t;
+        //     }
+        // }
+
         if ( ! options ) {
-            return
+            return;
         }
 
         if ( options.client && options.client.isTransaction ) {
             this.$trx = options.client as TransactionClientContract
         }
-        this.$options = options
+
+        this.$options = options;
     }
 
     /**

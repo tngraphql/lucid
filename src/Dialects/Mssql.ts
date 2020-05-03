@@ -11,8 +11,9 @@
 import { DialectContract } from '../Contracts/Database/DialectContract';
 import { QueryClientContract } from '../Contracts/Database/QueryClientContract';
 import { RawBuilder } from '../Database/StaticBuilder/RawBuilder'
+import { AbstractDialect } from './AbstractDialect';
 
-export class MssqlDialect implements DialectContract {
+export class MssqlDialect extends AbstractDialect implements DialectContract {
     public readonly name = 'mssql'
     public readonly supportsAdvisoryLocks = false
 
@@ -21,9 +22,6 @@ export class MssqlDialect implements DialectContract {
      * valid for luxon date parsing library
      */
     public readonly dateTimeFormat = 'yyyy-MM-dd\'T\'HH:mm:ss.SSSZZ'
-
-    constructor(private client: QueryClientContract) {
-    }
 
     /**
      * Returns an array of table names

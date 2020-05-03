@@ -30,7 +30,6 @@ export class Connection extends EventEmitter implements ConnectionContract {
      * method is invoked
      */
     public client?: Knex
-    public client2?: Knex
 
     /**
      * Read client when read/write replicas are defined in the config, otherwise
@@ -229,7 +228,6 @@ export class Connection extends EventEmitter implements ConnectionContract {
      */
     private setupWriteConnection() {
         this.client = Knex(Object.assign({ log: new Logger(this.name, this.logger) }, this.getWriteConfig()))
-        this.client2 = require('knex')(Object.assign({ log: new Logger(this.name, this.logger) }, this.getWriteConfig()));
         patchKnex(this.client, this.writeConfigResolver.bind(this))
     }
 

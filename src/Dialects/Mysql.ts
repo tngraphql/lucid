@@ -11,8 +11,9 @@
 import { DialectContract } from '../Contracts/Database/DialectContract';
 import { QueryClientContract } from '../Contracts/Database/QueryClientContract';
 import { RawBuilder } from '../Database/StaticBuilder/RawBuilder'
+import { AbstractDialect } from './AbstractDialect';
 
-export class MysqlDialect implements DialectContract {
+export class MysqlDialect extends AbstractDialect implements DialectContract {
     public readonly name = 'mysql'
     public readonly supportsAdvisoryLocks = true
 
@@ -21,9 +22,6 @@ export class MysqlDialect implements DialectContract {
      * valid for luxon date parsing library
      */
     public readonly dateTimeFormat = 'yyyy-MM-dd HH:mm:ss'
-
-    constructor(private client: QueryClientContract) {
-    }
 
     /**
      * Truncate mysql table with option to cascade

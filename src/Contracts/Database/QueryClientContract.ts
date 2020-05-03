@@ -20,6 +20,7 @@ import { InsertQueryBuilderContract } from './InsertQueryBuilderContract';
 import { RawBuilderContract } from './RawBuilderContract';
 import { RawQueryBuilderContract } from './RawQueryBuilderContract';
 import { ReferenceBuilderContract } from './ReferenceBuilderContract';
+import { TransactionClientContract } from './TransactionClientContract';
 import { TransactionFn } from './TransactionFn';
 
 /**
@@ -147,7 +148,9 @@ export interface QueryClientContract {
     /**
      * Get instance of transaction client
      */
-    transaction: TransactionFn,
+    // transaction: TransactionFn,
+    transaction<T = TransactionClientContract>(options?, callback?: (trx: TransactionClientContract) => Promise<T>): Promise<T>
+    transaction<T = TransactionClientContract>(callback?: (trx: TransactionClientContract) => Promise<T>): Promise<T>
 
     /**
      * Work with advisory locks

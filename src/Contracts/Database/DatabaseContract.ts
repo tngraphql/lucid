@@ -138,7 +138,9 @@ export interface DatabaseContract {
     /**
      * Start a new transaction
      */
-    transaction: TransactionFn,
+    // transaction: TransactionFn,
+    transaction<T = TransactionClientContract>(options?, callback?: (trx: TransactionClientContract) => Promise<T> | T): Promise<T>
+    transaction<T = TransactionClientContract>(callback?: (trx: TransactionClientContract) => Promise<T> | T): Promise<T>
 
     /**
      * Returns the health check report for registered connections

@@ -14,6 +14,7 @@ import { EventEmitter } from 'events'
 import * as Knex from 'knex'
 import { DialectContract } from '../Contracts/Database/DialectContract';
 import { TransactionClientContract } from '../Contracts/Database/TransactionClientContract';
+import { Database } from '../Database/Database';
 import { DatabaseQueryBuilder } from '../Database/QueryBuilder/DatabaseQueryBuilder'
 import { InsertQueryBuilder } from '../Database/QueryBuilder/InsertQueryBuilder'
 import { RawQueryBuilder } from '../Database/QueryBuilder/RawQueryBuilder'
@@ -171,8 +172,31 @@ export class TransactionClient extends EventEmitter implements TransactionClient
     /**
      * Returns another instance of transaction with save point
      */
-    public async transaction(callback?: (trx: TransactionClientContract) => Promise<any>): Promise<any> {
-        const trx = await this.knexClient.transaction()
+    public async transaction(options?, callback?: (trx: TransactionClientContract) => Promise<any>): Promise<any> {
+        if (typeof options === 'function') {
+            callback = options;
+            options = undefined;
+        }
+
+        let trx;
+
+        if ( options && options.transaction ) {
+            // delete options.isolationLevel;
+            trx = await options.transaction.knexClient.transaction(null, {
+                userParams: {},
+                doNotRejectOnRollback: true,
+                dialect: this.dialect,
+                ...options
+            });
+        } else {
+            trx = await this.knexClient['parent'].transaction(null, {
+                userParams: {},
+                doNotRejectOnRollback: true,
+                dialect: this.dialect,
+                ...options
+            });
+        }
+
         const transaction = new TransactionClient(trx, this.dialect, this.connectionName, this.emitter)
 
         /**
@@ -184,14 +208,18 @@ export class TransactionClient extends EventEmitter implements TransactionClient
          * Self managed transaction
          */
         if ( typeof (callback) === 'function' ) {
-            try {
-                const response = await callback(transaction)
-                ! transaction.isCompleted && await transaction.commit()
-                return response
-            } catch (error) {
-                await transaction.rollback()
-                throw error
-            }
+            return Database.clsRun(async () => {
+                try {
+                    Database._cls && Database._cls.set('transaction', transaction);
+
+                    const response = await callback(transaction)
+                    ! transaction.isCompleted && await transaction.commit()
+                    return response
+                } catch (error) {
+                    await transaction.rollback()
+                    throw error
+                }
+            })
         }
 
         return transaction

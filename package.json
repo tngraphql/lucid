@@ -17,14 +17,17 @@
         "compile": "npm run clean && tsc -b && npm run copy:files",
         "copy:files": "copyfiles \"templates/**/*.txt\" build",
         "build": "npm run compile",
-        "test:knex": "cross-env DB=mysql ts-node-dev tests/test-xample.ts"
+        "test:knex": "cross-env DB=mysql ts-node-dev tests/test-xample.ts",
+        "dev": "ts-node-dev dev.ts"
     },
     "dependencies": {
         "@poppinss/utils": "^2.2.0",
+        "cls-hooked": "^4.2.2",
         "events": "^3.1.0",
         "knex": "^0.20.13",
         "knex-dynamic-connection": "^1.0.4",
         "macroable": "^4.0.3",
+        "mysql2": "^2.1.0",
         "pluralize": "^8.0.0"
     },
     "devDependencies": {
@@ -39,6 +42,8 @@
         "@types/jest": "^25.2.1",
         "@types/node": "^13.11.1",
         "chance": "^1.1.4",
+        "cls-bluebird": "^2.1.0",
+        "continuation-local-storage": "^3.2.1",
         "copyfiles": "^2.2.0",
         "cross-env": "^7.0.2",
         "dotenv": "^8.2.0",
@@ -50,7 +55,7 @@
         "pg": "^8.0.2",
         "reflect-metadata": "^0.1.13",
         "rimraf": "^3.0.2",
-        "sqlite3": "^4.1.1",
+        "sqlite3": "^4.2.0",
         "ts-jest": "^25.2.1",
         "ts-node": "^8.4.1",
         "ts-node-dev": "^1.0.0-pre.44",

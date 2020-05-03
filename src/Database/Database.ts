@@ -17,16 +17,17 @@ import { ConnectionManager } from '../Connection/ConnectionManager'
 import { ConnectionManagerContract } from '../Contracts/Connection/ConnectionManagerContract';
 import { DatabaseClientOptions, DatabaseConfig } from '../Contracts/Connection/types';
 import { DatabaseContract } from '../Contracts/Database/DatabaseContract';
+import { QueryClientContract } from '../Contracts/Database/QueryClientContract';
 import { TransactionClientContract } from '../Contracts/Database/TransactionClientContract';
 import { prettyPrint } from '../Helpers/prettyPrint'
 import { ModelQueryBuilder } from '../Orm/QueryBuilder/ModelQueryBuilder'
-
 import { QueryClient } from '../QueryClient/QueryClient'
 import { SimplePaginator } from './Paginator/SimplePaginator'
 import { DatabaseQueryBuilder } from './QueryBuilder/DatabaseQueryBuilder'
 import { InsertQueryBuilder } from './QueryBuilder/InsertQueryBuilder'
 import { RawBuilder } from './StaticBuilder/RawBuilder'
-import { ReferenceBuilder } from './StaticBuilder/ReferenceBuilder'
+import { ReferenceBuilder } from './StaticBuilder/ReferenceBuilder';
+import './customTransaction';
 
 /**
  * Database class exposes the API to manage multiple connections and obtain an instance
@@ -57,6 +58,11 @@ export class Database implements DatabaseContract {
      */
     public connectionGlobalTransactions: Map<string, TransactionClientContract> = new Map()
 
+    /**
+     * A store of global transactions
+     */
+    static _cls;
+
     constructor(
         private config: DatabaseConfig,
         private logger: LoggerContract,
@@ -65,6 +71,15 @@ export class Database implements DatabaseContract {
     ) {
         this.manager = new ConnectionManager(this.logger, this.emitter)
         this.registerConnections()
+    }
+
+    public static clsRun(fn: (ctx?: any) => void) {
+        const ns = this._cls;
+        if ( ! ns ) return fn();
+
+        let res;
+        ns.run(context => res = fn(context));
+        return res;
     }
 
     public prettyPrint = prettyPrint
@@ -89,7 +104,7 @@ export class Database implements DatabaseContract {
     /**
      * Returns the query client for a given connection
      */
-    public connection(connection: string = this.primaryConnectionName, options?: DatabaseClientOptions) {
+    public connection(connection: string = this.primaryConnectionName, options?: DatabaseClientOptions): QueryClientContract {
         options = options || {}
 
         /**
@@ -115,10 +130,15 @@ export class Database implements DatabaseContract {
         /**
          * Return the global transaction when it already exists.
          */
-        if ( this.connectionGlobalTransactions.has(connection) ) {
-            this.logger.trace({ connection }, 'using pre-existing global transaction connection')
-            const globalTransactionClient = this.connectionGlobalTransactions.get(connection)!
-            return globalTransactionClient
+        if ( Database._cls ) {
+            const t = Database._cls.get('transaction');
+            if ( t ) {
+                this.logger.trace({ connection }, 'using pre-existing global transaction connection');
+                return t;
+            }
+            // this.logger.trace({ connection }, 'using pre-existing global transaction connection');
+            // const globalTransactionClient = this.connectionGlobalTransactions.get(connection)!
+            // return globalTransactionClient
         }
 
         /**
@@ -222,8 +242,12 @@ export class Database implements DatabaseContract {
      * Returns a transaction instance on the default
      * connection
      */
-    public transaction() {
-        return this.connection().transaction()
+    public async transaction<T>(options?, autoCallback?) {
+        if (typeof options === 'function') {
+            autoCallback = options;
+            options = undefined;
+        }
+        return this.connection().transaction<T>(options, autoCallback);
     }
 
     /**

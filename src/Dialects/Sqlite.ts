@@ -9,8 +9,10 @@
  */
 import { DialectContract } from '../Contracts/Database/DialectContract';
 import { QueryClientContract } from '../Contracts/Database/QueryClientContract';
+import { ISOLATION_LEVELS } from '../Database/customTransaction';
+import { AbstractDialect } from './AbstractDialect';
 
-export class SqliteDialect implements DialectContract {
+export class SqliteDialect extends AbstractDialect implements DialectContract {
     public readonly name = 'sqlite3'
     public readonly supportsAdvisoryLocks = false
 
@@ -19,9 +21,6 @@ export class SqliteDialect implements DialectContract {
      * valid for luxon date parsing library
      */
     public readonly dateTimeFormat = 'yyyy-MM-dd HH:mm:ss'
-
-    constructor(private client: QueryClientContract) {
-    }
 
     /**
      * Returns an array of table names
@@ -58,5 +57,20 @@ export class SqliteDialect implements DialectContract {
      */
     public releaseAdvisoryLock(): Promise<boolean> {
         throw new Error('Sqlite doesn\'t support advisory locks')
+    }
+
+    public setIsolationLevelQuery(value) {
+        switch (value) {
+        case ISOLATION_LEVELS.REPEATABLE_READ:
+            return '-- SQLite is not able to choose the isolation level REPEATABLE READ.';
+        case ISOLATION_LEVELS.READ_UNCOMMITTED:
+            return 'PRAGMA read_uncommitted = ON;';
+        case ISOLATION_LEVELS.READ_COMMITTED:
+            return 'PRAGMA read_uncommitted = OFF;';
+        case ISOLATION_LEVELS.SERIALIZABLE:
+            return '';
+        default:
+            throw new Error(`Unknown isolation level: ${value}`);
+        }
     }
 }
