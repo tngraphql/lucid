@@ -1153,16 +1153,6 @@ export class BaseModel implements LucidRow {
      * Set options on the model instance along with transaction
      */
     public $setOptionsAndTrx(options?: ModelAdapterOptions): void {
-        // if ( (!options || options.client === undefined) && this.constructor['_cls'] ) {
-        //     const t = this.constructor['_cls'].get('transaction');
-        //     if ( t ) {
-        //         if ( ! options ) {
-        //             options = {};
-        //         }
-        //         options.client = t;
-        //     }
-        // }
-
         if ( ! options ) {
             return;
         }

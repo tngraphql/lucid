@@ -200,7 +200,7 @@ describe('Adapter', () => {
         expect(user.$isPersisted).toBeTruthy()
     })
 
-    test('cleanup old trx event listeners when transaction is updated', async () => {
+    it('cleanup old trx event listeners when transaction is updated', async () => {
         class User extends BaseModel {
             public static $table = 'users'
 
@@ -219,7 +219,6 @@ describe('Adapter', () => {
         user.$trx = trx1
         user.$trx = trx
         user.username = 'virk'
-
         await trx1.rollback()
         expect(user.$trx).toEqual(trx)
         await trx.rollback()

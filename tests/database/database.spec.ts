@@ -335,7 +335,7 @@ describe('database', () => {
                 });
                 await db.rawQuery('SELECT 1+1').useTransaction(trx);
                 throw new Error('');
-            });
+            }).catch(() => {});
 
             expect(stack).toEqual(['rollback']);
         });
@@ -387,7 +387,7 @@ describe('database', () => {
                 })
             } catch (e) {
                 expect(e.message).toEqual('rollback');
-            };
+            }
 
             const users = await db.from('users');
             expect(users).toHaveLength(0);
@@ -396,16 +396,10 @@ describe('database', () => {
         })
 
         it('create transactions inside a transaction', async () => {
-            async function f(trx1) {
-                const trx2 = await trx1.transaction()
-                await trx2.table('users').insert({ username: 'virk' })
-                await trx2.commit();
-            }
-
             const trx1 = await db.transaction()
             await trx1.table('users').insert({ username: 'virk2' })
 
-            const trx2 = await db.transaction()
+            const trx2 = await trx1.transaction()
             await trx2.table('users').insert({ username: 'virk' })
             await trx2.commit();
 
@@ -417,26 +411,27 @@ describe('database', () => {
             // await db.manager.closeAll()
         })
 
-        test('multiple calls to beginGlobalTransaction must be a noop', async () => {
-            const config = {
-                connection: 'primary',
-                connections: { primary: getConfig() },
-            }
-
-            const db = new Database(config, getLogger(), getProfiler(), getEmitter())
-            await db.beginGlobalTransaction()
-            await db.beginGlobalTransaction()
-            await db.beginGlobalTransaction()
-
-            await db.table('users').insert({ username: 'virk' })
-
-            await db.rollbackGlobalTransaction()
-
-            const users = await db.from('users')
-            expect(users).toHaveLength(0);
-            expect(db.connectionGlobalTransactions.size).toBe(0);
-
-            await db.manager.closeAll()
-        })
+        // test('multiple calls to beginGlobalTransaction must be a noop', async () => {
+        //     const config = {
+        //         connection: 'primary',
+        //         connections: { primary: getConfig() },
+        //     }
+        //
+        //     const db = new Database(config, getLogger(), getProfiler(), getEmitter());
+        //
+        //     // await db.beginGlobalTransaction()
+        //     // await db.beginGlobalTransaction()
+        //     // await db.beginGlobalTransaction()
+        //
+        //     await db.table('users').insert({ username: 'virk' })
+        //
+        //     // await db.rollbackGlobalTransaction()
+        //
+        //     const users = await db.from('users')
+        //     expect(users).toHaveLength(0);
+        //     expect(db.connectionGlobalTransactions.size).toBe(0);
+        //
+        //     await db.manager.closeAll()
+        // })
     });
 })

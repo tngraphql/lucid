@@ -58,4 +58,8 @@ export class MssqlDialect extends AbstractDialect implements DialectContract {
     public releaseAdvisoryLock(): Promise<boolean> {
         throw new Error('Support for advisory locks is not implemented for mssql. Create a PR to add the feature')
     }
+
+    public setIsolationLevelQuery() {
+        return '';
+    }
 }

@@ -30,7 +30,17 @@ import {
     hasOne
 } from '../../src/Orm/Decorators';
 import { ModelQueryBuilder } from '../../src/Orm/QueryBuilder/ModelQueryBuilder';
-import { cleanup, FakeAdapter, getBaseModel, getDb, getUsers, ormAdapter, resetTables, setup } from '../helpers';
+import {
+    cleanup,
+    FakeAdapter,
+    getBaseModel,
+    getDb,
+    getUsers,
+    hasMysql,
+    ormAdapter,
+    resetTables,
+    setup
+} from '../helpers';
 
 let db: ReturnType<typeof getDb>
 let BaseModel: ReturnType<typeof getBaseModel>
@@ -3457,7 +3467,7 @@ describe('Base model', () => {
             const user = User.query();
 
             expect(user).toBeInstanceOf(ModelQueryBuilder);
-            if ( process.env.DB === 'mysql' ) {
+            if ( hasMysql(process.env.DB) ) {
                 expect(user.toSQL().sql).toBe('select * from `users`');
                 expect(user.select('id').toSQL().sql).toBe(['select `id`', ' from `users`'].join(''));
             }

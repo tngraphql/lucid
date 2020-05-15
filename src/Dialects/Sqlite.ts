@@ -62,7 +62,7 @@ export class SqliteDialect extends AbstractDialect implements DialectContract {
     public setIsolationLevelQuery(value) {
         switch (value) {
         case ISOLATION_LEVELS.REPEATABLE_READ:
-            return '-- SQLite is not able to choose the isolation level REPEATABLE READ.';
+            return '';
         case ISOLATION_LEVELS.READ_UNCOMMITTED:
             return 'PRAGMA read_uncommitted = ON;';
         case ISOLATION_LEVELS.READ_COMMITTED:

@@ -13,8 +13,12 @@ import * as Transaction from 'knex/lib/transaction.js';
 const Debug = require('debug');
 const debug = Debug('knex:tx');
 const makeKnex = require('knex/lib/util/make-knex');
-const { uniqueId, isUndefined } = require('lodash');
+const {uniqueId, isUndefined} = require('lodash');
 
+
+/**
+ * Isolation levels can be set per-transaction by passing `options.isolationLevel` to `transaction`.
+ */
 export enum ISOLATION_LEVELS {
     READ_UNCOMMITTED = 'READ UNCOMMITTED',
     READ_COMMITTED = 'READ COMMITTED',
@@ -22,53 +26,54 @@ export enum ISOLATION_LEVELS {
     SERIALIZABLE = 'SERIALIZABLE',
 }
 
-function setIsolationLevelQuery(trx, conn, value) {
-    trx.query(conn, `SET TRANSACTION ISOLATION LEVEL ${value};`);
-}
-
-Transaction.prototype.setIsolationLevelQuery = async function(conn, value) {
-    if ( !value ) {
+Transaction.prototype.setIsolationLevel = async function (value, options) {
+    if (!value) {
         return;
     }
-    return this.trxClient.query(conn, value);
+    if (!(value && !this.client.transacting)) {
+        return;
+    }
+
+    const sql = options.dialect.setIsolationLevelQuery(value);
+
+    if (!sql) {
+        return;
+    }
+
+    return this.trxClient.raw(sql);
 };
 
-Transaction.prototype._evaluateContainer = async function(config, container) {
-    return this.acquireConnection(config, (connection) => {
+Transaction.prototype._evaluateContainer = async function (config, container) {
+    return this.acquireConnection(config, async (connection) => {
         const trxClient = (this.trxClient = makeTxClient(
             this,
             this.client,
             connection
         ));
 
-        if ( config.isolationLevel && !this.client.transacting ) {
-            this.setIsolationLevelQuery(connection, config.dialect.setIsolationLevelQuery(config.isolationLevel))
-                      .catch(e=> {
-                          if ( e.errno !== 3221225477 ) {
-                              throw e;
-                          }
-                      });
-            try {
-                trxClient.query(connection, "-- SQLite's default isolation level is SERIALIZABLE. Nothing to do.\n")
-            } catch (e) {
+        let startTransaction;
 
-            };
-            // setIsolationLevelQuery(trxClient, connection, config.isolationLevel);
+        if (config?.dialect?.settingIsolationLevelDuringTransaction) {
+            startTransaction = this.client.transacting
+                ? this.savepoint(connection)
+                : this.begin(connection);
+
+            await this.setIsolationLevel(config.isolationLevel, config);
+
+        } else {
+            await this.setIsolationLevel(config.isolationLevel, config);
+
+            startTransaction = this.client.transacting
+                ? this.savepoint(connection)
+                : this.begin(connection);
         }
-
-        // config.dialect.setIsolationLevelQuery(trxC0lient, connection, config.isolationLevel);
-        // console.log(config.dialect);
-
-        const init = this.client.transacting
-            ? this.savepoint(connection)
-            : this.begin(connection);
 
         const executionPromise = new Promise((resolver, rejecter) => {
             this._resolver = resolver;
             this._rejecter = rejecter;
         });
 
-        init
+        Promise.resolve()
             .then(() => {
                 return makeTransactor(this, connection, trxClient);
             })
@@ -84,7 +89,7 @@ Transaction.prototype._evaluateContainer = async function(config, container) {
                 } catch (err) {
                     result = Promise.reject(err);
                 }
-                if ( result && result.then && typeof result.then === 'function' ) {
+                if (result && result.then && typeof result.then === 'function') {
                     result
                         .then((val) => {
                             return transactor.commit(val);
@@ -119,21 +124,21 @@ function makeTransactor(trx, connection, trxClient) {
     transactor.isTransaction = true;
     transactor.userParams = trx.userParams || {};
 
-    transactor.context.transaction = function(container, options) {
-        if ( ! options ) {
-            options = { doNotRejectOnRollback: true };
-        } else if ( isUndefined(options.doNotRejectOnRollback) ) {
+    transactor.context.transaction = function (container, options) {
+        if (!options) {
+            options = {doNotRejectOnRollback: true};
+        } else if (isUndefined(options.doNotRejectOnRollback)) {
             options.doNotRejectOnRollback = true;
         }
 
         return this._transaction(container, options, trx);
     };
 
-    transactor.savepoint = function(container, options) {
+    transactor.savepoint = function (container, options) {
         return transactor.transaction(container, options);
     };
 
-    if ( trx.client.transacting ) {
+    if (trx.client.transacting) {
         transactor.commit = (value) => trx.release(connection, value);
         transactor.rollback = (error) => trx.rollbackTo(connection, error);
     } else {
@@ -158,29 +163,29 @@ function makeTxClient(trx, client, connection) {
     trxClient.valueForUndefined = client.valueForUndefined;
     trxClient.logger = client.logger;
 
-    trxClient.on('query', function(arg) {
+    trxClient.on('query', function (arg) {
         trx.emit('query', arg);
         client.emit('query', arg);
     });
 
-    trxClient.on('query-error', function(err, obj) {
+    trxClient.on('query-error', function (err, obj) {
         trx.emit('query-error', err, obj);
         client.emit('query-error', err, obj);
     });
 
-    trxClient.on('query-response', function(response, obj, builder) {
+    trxClient.on('query-response', function (response, obj, builder) {
         trx.emit('query-response', response, obj, builder);
         client.emit('query-response', response, obj, builder);
     });
 
     const _query = trxClient.query;
-    trxClient.query = function(conn, obj) {
+    trxClient.query = function (conn, obj) {
         const completed = trx.isCompleted();
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             try {
-                if ( conn !== connection )
+                if (conn !== connection)
                     throw new Error('Invalid connection for transaction query.');
-                if ( completed ) completedError(trx, obj);
+                if (completed) completedError(trx, obj);
                 resolve(_query.call(trxClient, conn, obj));
             } catch (e) {
                 reject(e);
@@ -188,23 +193,23 @@ function makeTxClient(trx, client, connection) {
         });
     };
     const _stream = trxClient.stream;
-    trxClient.stream = function(conn, obj, stream, options) {
+    trxClient.stream = function (conn, obj, stream, options) {
         const completed = trx.isCompleted();
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             try {
-                if ( conn !== connection )
+                if (conn !== connection)
                     throw new Error('Invalid connection for transaction query.');
-                if ( completed ) completedError(trx, obj);
+                if (completed) completedError(trx, obj);
                 resolve(_stream.call(trxClient, conn, obj, stream, options));
             } catch (e) {
                 reject(e);
             }
         });
     };
-    trxClient.acquireConnection = function() {
+    trxClient.acquireConnection = function () {
         return Promise.resolve(connection);
     };
-    trxClient.releaseConnection = function() {
+    trxClient.releaseConnection = function () {
         return Promise.resolve();
     };
 

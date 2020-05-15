@@ -9,7 +9,7 @@
  */
 
 import { Connection } from '../../src/Connection/Connection';
-import { cleanup, getConfig, getLogger, resetTables, setup } from '../helpers';
+import {cleanup, getConfig, getLogger, hasMysql, resetTables, setup} from '../helpers';
 
 describe('connection', () => {
 
@@ -164,6 +164,22 @@ describe('connection', () => {
                 await connection.disconnect()
             });
         }
+        if ( process.env.DB === 'mysql2' ) {
+            it('pass user config to mysql driver', async () => {
+                const config: any = getConfig()
+                config.connection!.charset = 'utf-8'
+                config.connection!.typeCast = false
+
+                const connection = new Connection('primary', config, getLogger())
+                await connection.connect()
+
+                expect(connection.client['context'].client.constructor.name).toBe('Client_MySQL2');
+                expect(connection.client['context'].client.config.connection.charset).toBe('utf-8');
+                expect(connection.client['context'].client.config.connection.typeCast).toBe(false);
+                await connection.disconnect()
+            });
+        }
+
 
         // it('test', async () => {
         //     const config = getConfig()

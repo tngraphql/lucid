@@ -22,6 +22,10 @@ import { RawBuilder } from '../Database/StaticBuilder/RawBuilder'
 import { ReferenceBuilder } from '../Database/StaticBuilder/ReferenceBuilder'
 
 import { ModelQueryBuilder } from '../Orm/QueryBuilder/ModelQueryBuilder'
+import {RawBuilderContract} from "../Contracts/Database/RawBuilderContract";
+import {ReferenceBuilderContract} from "../Contracts/Database/ReferenceBuilderContract";
+import {dialects} from "../Dialects";
+import { resolveClientNameWithAliases } from 'knex/lib/helpers'
 
 /**
  * Transaction uses a dedicated connection from the connection pool
@@ -42,11 +46,18 @@ export class TransactionClient extends EventEmitter implements TransactionClient
     /**
      * The profiler to be used for profiling queries
      */
-    public profiler?: ProfilerRowContract
+    public profiler?: ProfilerRowContract;
+
+    /**
+     * The dialect in use
+     */
+    public dialect: DialectContract = new (
+        dialects[resolveClientNameWithAliases(this.dialectName)]
+    )(this);
 
     constructor(
         public knexClient: Knex.Transaction,
-        public dialect: DialectContract,
+        public dialectName: string,
         public connectionName: string,
         public emitter: EmitterContract
     ) {
@@ -102,8 +113,8 @@ export class TransactionClient extends EventEmitter implements TransactionClient
      * added for API compatibility with the [[QueryClient]] class
      */
     public async columnsInfo(table: string, column?: string): Promise<any> {
-        const query = this.knexClient.select(table)
-        const result = await (column ? query.columnInfo(column) : query.columnInfo())
+        const query = this.knexClient.table(table)
+        const result = await (column ? query.columnInfo(column as never) : query.columnInfo())
         return result
     }
 
@@ -158,14 +169,14 @@ export class TransactionClient extends EventEmitter implements TransactionClient
      * cannot be executed. Use `rawQuery`, if you want to execute
      * queries raw queries.
      */
-    public raw(sql: string, bindings?: any) {
+    public raw(sql: string, bindings?: any): RawBuilderContract {
         return new RawBuilder(sql, bindings)
     }
 
     /**
      * Returns reference builder.
      */
-    public ref(reference: string) {
+    public ref(reference: string): ReferenceBuilderContract {
         return new ReferenceBuilder(reference)
     }
 
@@ -180,8 +191,14 @@ export class TransactionClient extends EventEmitter implements TransactionClient
 
         let trx;
 
-        if ( options && options.transaction ) {
-            // delete options.isolationLevel;
+        if (options && (options.transaction === null || options.transaction === undefined)) {
+            trx = await this.knexClient['parent'].transaction(null, {
+                userParams: {},
+                doNotRejectOnRollback: true,
+                dialect: this.dialect,
+                ...options
+            });
+        } else if ( options && options.transaction ) {
             trx = await options.transaction.knexClient.transaction(null, {
                 userParams: {},
                 doNotRejectOnRollback: true,
@@ -189,7 +206,7 @@ export class TransactionClient extends EventEmitter implements TransactionClient
                 ...options
             });
         } else {
-            trx = await this.knexClient['parent'].transaction(null, {
+            trx = await this.knexClient.transaction(null, {
                 userParams: {},
                 doNotRejectOnRollback: true,
                 dialect: this.dialect,
@@ -197,12 +214,18 @@ export class TransactionClient extends EventEmitter implements TransactionClient
             });
         }
 
-        const transaction = new TransactionClient(trx, this.dialect, this.connectionName, this.emitter)
+        const transaction = new TransactionClient(trx, this.dialectName, this.connectionName, this.emitter)
 
         /**
          * Always make sure to pass the profiler down the chain
          */
         transaction.profiler = this.profiler?.create('trx:begin', { state: 'begin' })
+
+        return transaction.runTransaction(options, callback);
+    }
+
+    runTransaction(options, callback) {
+        const transaction = this;
 
         /**
          * Self managed transaction

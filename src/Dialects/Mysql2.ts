@@ -9,12 +9,12 @@
  */
 
 import { DialectContract } from '../Contracts/Database/DialectContract';
-import { QueryClientContract } from '../Contracts/Database/QueryClientContract';
 import { RawBuilder } from '../Database/StaticBuilder/RawBuilder'
-import { AbstractDialect } from './AbstractDialect';
+import {AbstractDialect} from "./AbstractDialect";
 
-export class MysqlDialect extends AbstractDialect implements DialectContract {
-    public readonly name = 'mysql'
+export class Mysql2Dialect extends AbstractDialect implements DialectContract {
+    public readonly name = 'mysql2';
+
     public readonly supportsAdvisoryLocks = true;
 
     public readonly settingIsolationLevelDuringTransaction = false;

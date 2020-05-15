@@ -11,7 +11,7 @@ import { QueryClientContract } from '../Contracts/Database/QueryClientContract';
  */
 
 export class AbstractDialect {
-    public settingIsolationLevelDuringTransaction: boolean = true;
+    public readonly settingIsolationLevelDuringTransaction: boolean = true;
 
     constructor(protected client: QueryClientContract) {
     }

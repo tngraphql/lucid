@@ -242,7 +242,7 @@ export class Database implements DatabaseContract {
      * Returns a transaction instance on the default
      * connection
      */
-    public async transaction<T>(options?, autoCallback?) {
+    public async transaction<T = TransactionClientContract>(options?, autoCallback?): Promise<T> {
         if (typeof options === 'function') {
             autoCallback = options;
             options = undefined;
@@ -257,75 +257,75 @@ export class Database implements DatabaseContract {
         return this.manager.report()
     }
 
-    /**
-     * Begin a new global transaction
-     */
-    public async beginGlobalTransaction(
-        connectionName?: string,
-        options?: Omit<DatabaseClientOptions, 'mode'>
-    ) {
-        connectionName = connectionName || this.primaryConnectionName
-
-        /**
-         * Return global transaction as it is
-         */
-        const globalTrx = this.connectionGlobalTransactions.get(connectionName)
-        if ( globalTrx ) {
-            return globalTrx
-        }
-
-        /**
-         * Create a new transaction and store a reference to it
-         */
-        const trx = await this.connection(connectionName, options).transaction()
-        this.connectionGlobalTransactions.set(trx.connectionName, trx)
-
-        /**
-         * Listen for events to drop the reference when transaction
-         * is over
-         */
-        trx.on('commit', ($trx) => {
-            this.connectionGlobalTransactions.delete($trx.connectionName)
-        })
-
-        trx.on('rollback', ($trx) => {
-            this.connectionGlobalTransactions.delete($trx.connectionName)
-        })
-
-        return trx
-    }
-
-    /**
-     * Commit an existing global transaction
-     */
-    public async commitGlobalTransaction(connectionName?: string) {
-        connectionName = connectionName || this.primaryConnectionName
-        const trx = this.connectionGlobalTransactions.get(connectionName)
-
-        if ( ! trx ) {
-            throw new Exception([
-                'Cannot commit a non-existing global transaction.',
-                ' Make sure you are not calling "commitGlobalTransaction" twice'
-            ].join(''))
-        }
-
-        await trx.commit()
-    }
-
-    /**
-     * Rollback an existing global transaction
-     */
-    public async rollbackGlobalTransaction(connectionName?: string) {
-        connectionName = connectionName || this.primaryConnectionName
-        const trx = this.connectionGlobalTransactions.get(connectionName)
-
-        if ( ! trx ) {
-            throw new Exception([
-                'Cannot rollback a non-existing global transaction.',
-                ' Make sure you are not calling "commitGlobalTransaction" twice'
-            ].join(''))
-        }
-
-        await trx.rollback()
-    }
+    // /**
+    //  * Begin a new global transaction
+    //  */
+    // public async beginGlobalTransaction(
+    //     connectionName?: string,
+    //     options?: Omit<DatabaseClientOptions, 'mode'>
+    // ) {
+    //     connectionName = connectionName || this.primaryConnectionName
+    //
+    //     /**
+    //      * Return global transaction as it is
+    //      */
+    //     const globalTrx = this.connectionGlobalTransactions.get(connectionName)
+    //     if ( globalTrx ) {
+    //         return globalTrx
+    //     }
+    //
+    //     /**
+    //      * Create a new transaction and store a reference to it
+    //      */
+    //     const trx = await this.connection(connectionName, options).transaction()
+    //     this.connectionGlobalTransactions.set(trx.connectionName, trx)
+    //
+    //     /**
+    //      * Listen for events to drop the reference when transaction
+    //      * is over
+    //      */
+    //     trx.on('commit', ($trx) => {
+    //         this.connectionGlobalTransactions.delete($trx.connectionName)
+    //     })
+    //
+    //     trx.on('rollback', ($trx) => {
+    //         this.connectionGlobalTransactions.delete($trx.connectionName)
+    //     })
+    //
+    //     return trx
+    // }
+    //
+    // /**
+    //  * Commit an existing global transaction
+    //  */
+    // public async commitGlobalTransaction(connectionName?: string) {
+    //     connectionName = connectionName || this.primaryConnectionName
+    //     const trx = this.connectionGlobalTransactions.get(connectionName)
+    //
+    //     if ( ! trx ) {
+    //         throw new Exception([
+    //             'Cannot commit a non-existing global transaction.',
+    //             ' Make sure you are not calling "commitGlobalTransaction" twice'
+    //         ].join(''))
+    //     }
+    //
+    //     await trx.commit()
+    // }
+    //
+    // /**
+    //  * Rollback an existing global transaction
+    //  */
+    // public async rollbackGlobalTransaction(connectionName?: string) {
+    //     connectionName = connectionName || this.primaryConnectionName
+    //     const trx = this.connectionGlobalTransactions.get(connectionName)
+    //
+    //     if ( ! trx ) {
+    //         throw new Exception([
+    //             'Cannot rollback a non-existing global transaction.',
+    //             ' Make sure you are not calling "commitGlobalTransaction" twice'
+    //         ].join(''))
+    //     }
+    //
+    //     await trx.rollback()
+    // }
 }

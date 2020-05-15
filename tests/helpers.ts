@@ -69,6 +69,18 @@ export function getConfig(): ConnectionConfig {
             },
             useNullAsDefault: true
         }
+    case 'mysql2':
+            return {
+                client: 'mysql2',
+                connection: {
+                    host: process.env.MYSQL_HOST as string,
+                    port: Number(process.env.MYSQL_PORT),
+                    database: process.env.DB_NAME as string,
+                    user: process.env.MYSQL_USER as string,
+                    password: process.env.MYSQL_PASSWORD as string
+                },
+                useNullAsDefault: true
+            }
     case 'pg':
         return {
             client: 'pg',
@@ -98,6 +110,10 @@ export function getConfig(): ConnectionConfig {
     default:
         throw new Error(`Missing test config for ${ process.env.DB } connection`)
     }
+}
+
+export function hasMysql(db: string) {
+    return ['mysql', 'mysql2'].includes(db);
 }
 
 /**
