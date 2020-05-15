@@ -101,10 +101,14 @@ describe('Migrator', () => {
       import { Schema } from '../../../../../src/Schema'
       module.exports = class User extends Schema {
         public async up () {
-          this.schema.createTable('schema_users', (table) => {
+          try{
+            await this.schema.createTable('schema_users', (table) => {
             table.increments()
             table['badMethod']('account_id')
-          })
+          })          
+          } catch (e) {
+          console.log(e)
+          }
         }
       }
     `)
@@ -137,6 +141,8 @@ describe('Migrator', () => {
                 queries: migrator.migratedFiles[file].queries,
             }
         })
+
+        console.log(migrated);
 
         expect(migrated).toHaveLength(1)
         expect(migrated[0].name).toBe(join('database/migrations/accounts'))
