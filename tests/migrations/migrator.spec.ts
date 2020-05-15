@@ -144,6 +144,7 @@ describe('Migrator', () => {
 
         console.log(migrated);
 
+
         expect(migrated).toHaveLength(1)
         expect(migrated[0].name).toBe(join('database/migrations/accounts'))
         expect(migrated[0].batch).toBe(1)
