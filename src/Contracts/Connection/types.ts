@@ -22,6 +22,7 @@ type SharedConnectionNode = {
     password?: string,
     database?: string,
     port?: number,
+    options?: any
 }
 
 /**

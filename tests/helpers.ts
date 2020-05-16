@@ -100,7 +100,10 @@ export function getConfig(): ConnectionConfig {
                 user: process.env.MSSQL_USER as string,
                 server: process.env.MSSQL_SERVER as string,
                 password: process.env.MSSQL_PASSWORD as string,
-                database: 'master'
+                database: 'master',
+                // options: {
+                //     enableArithAbort: true
+                // }
             },
             pool: {
                 min: 0,

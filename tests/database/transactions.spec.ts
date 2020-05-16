@@ -69,8 +69,7 @@ describe('Transaction | query | ' + process.env.DB, () => {
 
         const trx = await db.transaction();
 
-        const tables = await trx.getAllTables();
-
+        const tables = await trx.getAllTables(['public'])
         if ( !hasMysql(process.env.DB) ) {
             expect(tables).toEqual([
                 'comments',
@@ -151,9 +150,11 @@ describe('Transaction | query | ' + process.env.DB, () => {
 
         const trx = await db.transaction();
 
-        const res = await trx.knexRawQuery("SELECT 1+1");
+        await trx.table('users').insert({username: 'job'});
 
-        expect(res[0]).toBeDefined();
+        const res = await trx.knexRawQuery("SELECT * FROM users");
+
+        expect(res).toHaveLength(1);
 
         await trx.commit();
         await connection.disconnect()
@@ -517,7 +518,7 @@ describe('Transaction | query | ' + process.env.DB, () => {
                 'BEGIN;',
                 'COMMIT;'
             ],
-            postgres: [
+            pg: [
                 'BEGIN;',
                 'SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;',
                 'COMMIT;',
@@ -593,7 +594,7 @@ describe('Transaction | query | ' + process.env.DB, () => {
         });
     }
 
-    if (!['sqlite', 'postgres', 'postgres-native'].includes(process.env.DB)) {
+    if (!['sqlite', 'pg'].includes(process.env.DB)) {
         it('should block updates after reading a row using SERIALIZABLE', async () => {
             const connection = new Connection('primary', getConfig(), getLogger())
             connection.connect();
