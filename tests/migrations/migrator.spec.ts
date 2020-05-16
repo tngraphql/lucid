@@ -31,8 +31,11 @@ describe('Migrator', () => {
         await resetTables()
         await cleanup(['tngraphql_schema', 'schema_users', 'schema_accounts'])
         await fs.cleanup();
-        jest.resetModules();
     })
+
+    beforeEach(async () => {
+        await jest.resetModules();
+    });
 
     test('create the schema table when there are no migrations', async () => {
         const app = new Application(fs.basePath)
@@ -103,8 +106,7 @@ describe('Migrator', () => {
         public async up () {
           this.schema.createTable('schema_users', (table) => {
             table.increments();
-            // table['badMethod']('account_id');
-            throw new Error();
+            table['badMethod']('account_id');
           });
         }
       }
