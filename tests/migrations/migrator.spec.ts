@@ -95,20 +95,17 @@ describe('Migrator', () => {
 
     test('do not migrate when schema up action fails', async () => {
         expect.assertions(8)
-        const app = new Application(fs.basePath)
+        const app = new Application(fs.basePath);
 
         await fs.add('database/migrations/users.ts', `
       import { Schema } from '../../../../../src/Schema'
       module.exports = class User extends Schema {
         public async up () {
-          try{
-            await this.schema.createTable('schema_users', (table) => {
-            table.increments()
-            table['badMethod']('account_id')
-          })          
-          } catch (e) {
-          console.log(e)
-          }
+          this.schema.createTable('schema_users', (table) => {
+            table.increments();
+            table['badMethod']('account_id');
+            throw new Error();
+          });
         }
       }
     `)
@@ -127,9 +124,10 @@ describe('Migrator', () => {
         const migrator = getMigrator(db, app, {
             direction: 'up',
             connectionName: 'primary',
-        })
+        });
 
         await migrator.run()
+        console.log('migrator.error', migrator.error);
 
         const migrated = await db.connection().from('tngraphql_schema').select('*')
         const hasUsersTable = await db.connection().schema.hasTable('schema_users')
