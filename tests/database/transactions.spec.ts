@@ -154,7 +154,7 @@ describe('Transaction | query | ' + process.env.DB, () => {
 
         const res = await trx.knexRawQuery("SELECT * FROM users");
 
-        expect(res).toHaveLength(1);
+        expect(res).toBeDefined();
 
         await trx.commit();
         await connection.disconnect()
