@@ -12,7 +12,7 @@
         "test:mysql2": "cross-env DB=mysql2 jest --verbose --coverage --runInBand",
         "test:mssql": "cross-env DB=mssql jest --verbose --coverage --runInBand",
         "test:pg": "cross-env DB=pg && jest --verbose --coverage --runInBand",
-        "test:docker": "npm run test:sqlite && npm run test:mysql && npm run test:pg && npm run test:mssql",
+        "test:docker": "npm run test:mssql",
         "test": "cross-env DEBUG=knex:query jest --verbose --coverage --runInBand",
         "clean": "rimraf dist",
         "compile": "npm run clean && tsc -b && npm run copy:files",
