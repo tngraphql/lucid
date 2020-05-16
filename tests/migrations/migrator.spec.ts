@@ -14,7 +14,7 @@ import { join } from "path";
 import { cleanup, getDb, getMigrator, resetTables, setup } from '../helpers';
 
 let db: ReturnType<typeof getDb>
-const fs = new Filesystem(join(__dirname, 'app'))
+let fs = new Filesystem(join(__dirname, 'app'))
 
 describe('Migrator', () => {
     beforeAll(async () => {
@@ -34,7 +34,7 @@ describe('Migrator', () => {
     })
 
     beforeEach(async () => {
-        await jest.resetModules();
+        fs = new Filesystem(join(__dirname, `app${Math.ceil(Number((Math.random()+'').replace('0.','')))}`))
     });
 
     test('create the schema table when there are no migrations', async () => {
