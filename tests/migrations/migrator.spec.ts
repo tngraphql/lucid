@@ -29,12 +29,12 @@ describe('Migrator', () => {
     })
 
     afterEach(async () => {
+        await resetTables()
+        await cleanup(['tngraphql_schema', 'schema_users', 'schema_accounts'])
         await fs.cleanup();
     })
 
     beforeEach(async () => {
-        await resetTables()
-        await cleanup(['tngraphql_schema', 'schema_users', 'schema_accounts'])
         fs = new Filesystem(join(__dirname, `app${Math.ceil(Number((Math.random()+'').replace('0.','')))}`))
     });
 
@@ -130,8 +130,6 @@ describe('Migrator', () => {
         });
 
         await migrator.run()
-
-        console.log(migrator.error);
 
         const migrated = await db.connection().from('tngraphql_schema').select('*')
         const hasUsersTable = await db.connection().schema.hasTable('schema_users')
