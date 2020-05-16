@@ -129,7 +129,6 @@ describe('Migrator', () => {
         });
 
         await migrator.run()
-        console.log('migrator.error', migrator.error);
 
         const migrated = await db.connection().from('tngraphql_schema').select('*')
         const hasUsersTable = await db.connection().schema.hasTable('schema_users')
@@ -141,9 +140,6 @@ describe('Migrator', () => {
                 queries: migrator.migratedFiles[file].queries,
             }
         })
-
-        console.log(migrated);
-
 
         expect(migrated).toHaveLength(1)
         expect(migrated[0].name).toBe(join('database/migrations/accounts'))

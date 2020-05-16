@@ -7,7 +7,7 @@
         "test": "tests"
     },
     "scripts": {
-        "test:sqlite": "cross-env DB=sqlite DEBUG=knex:query jest --verbose --coverage --runInBand",
+        "test:sqlite": "cross-env DB=sqlite jest --verbose --coverage --runInBand",
         "test:mysql": "cross-env DB=mysql jest --verbose --coverage --runInBand",
         "test:mysql2": "cross-env DB=mysql2 jest --verbose --coverage --runInBand",
         "test:mssql": "cross-env DB=mssql jest --verbose --coverage --runInBand",

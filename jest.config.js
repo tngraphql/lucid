@@ -15,8 +15,8 @@ module.exports = {
   ],
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
   testMatch: [
-      // "**/*.spec.ts",
-      "**/migrations/**/*.spec.ts",
+      "**/*.spec.ts",
+      // "**/console/**/*.spec.ts",
       // "**/database/**/*.spec.ts",
       // "**/validate/*.spec.ts",
 
