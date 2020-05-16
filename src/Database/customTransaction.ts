@@ -9,9 +9,11 @@
  */
 
 import * as Transaction from 'knex/lib/transaction.js';
+import * as Transaction_MSSQL from 'knex/lib/dialects/mssql/transaction.js';
 
 const Debug = require('debug');
 const debug = Debug('knex:tx');
+const debugq = Debug('knex:query');
 const makeKnex = require('knex/lib/util/make-knex');
 const {uniqueId, isUndefined} = require('lodash');
 
@@ -25,6 +27,21 @@ export enum ISOLATION_LEVELS {
     REPEATABLE_READ = 'REPEATABLE READ',
     SERIALIZABLE = 'SERIALIZABLE',
 }
+
+Transaction_MSSQL.prototype.begin = function (conn) {
+    debug('%s: begin', this.txid);
+    this.trxClient.emit('query', this.trxClient.raw('BEGIN;'));
+    debugq('BEGIN');
+    return conn.tx_.begin().then(this._resolver, this._rejecter);
+};
+
+Transaction_MSSQL.prototype.commit = function (conn, value) {
+    this._completed = true;
+    debug('%s: commit', this.txid);
+    this.trxClient.emit('query', this.trxClient.raw('COMMIT;'));
+    debugq('COMMIT');
+    return conn.tx_.commit().then(() => this._resolver(value), this._rejecter);
+};
 
 Transaction.prototype.setIsolationLevel = async function (value, options) {
     if (!value) {
@@ -73,7 +90,7 @@ Transaction.prototype._evaluateContainer = async function (config, container) {
             this._rejecter = rejecter;
         });
 
-        Promise.resolve()
+        startTransaction
             .then(() => {
                 return makeTransactor(this, connection, trxClient);
             })

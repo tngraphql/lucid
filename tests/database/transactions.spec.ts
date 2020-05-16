@@ -543,6 +543,7 @@ describe('Transaction | query | ' + process.env.DB, () => {
             stack.push(args);
         });
 
+
         await db.transaction({isolationLevel: ISOLATION_LEVELS.READ_UNCOMMITTED}, async (trx) => {
         });
 
@@ -594,7 +595,7 @@ describe('Transaction | query | ' + process.env.DB, () => {
         });
     }
 
-    if (!['sqlite', 'pg'].includes(process.env.DB)) {
+    if (!['sqlite', 'pg', 'mssql'].includes(process.env.DB)) {
         it('should block updates after reading a row using SERIALIZABLE', async () => {
             const connection = new Connection('primary', getConfig(), getLogger())
             connection.connect();
@@ -612,7 +613,7 @@ describe('Transaction | query | ' + process.env.DB, () => {
                 await db.from('users').useTransaction(transaction);
 
                 await Promise.all([
-                    transaction.knexClient['parent'].from('users')
+                    db.from('users')
                         .update({
                             username: 'nguyen'
                         })
