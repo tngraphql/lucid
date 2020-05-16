@@ -103,7 +103,7 @@ describe('Migrator', () => {
         public async up () {
           this.schema.createTable('schema_users', (table) => {
             table.increments();
-            table['badMethod']('account_id');
+            // table['badMethod']('account_id');
             throw new Error();
           });
         }
