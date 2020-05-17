@@ -35,6 +35,10 @@ describe('Migrator', () => {
         jest.resetModules();
     })
 
+    beforeEach(async () => {
+        fs = new Filesystem(join(__dirname, `app${Math.ceil(Number((Math.random()+'').replace('0.','')))}`))
+    });
+
     test('create the schema table when there are no migrations', async () => {
         const app = new Application(fs.basePath)
         await fs.fsExtra.ensureDir(join(fs.basePath, 'database/migrations'))

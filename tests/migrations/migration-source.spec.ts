@@ -28,6 +28,10 @@ describe('MigrationSource', () => {
         await db.manager.closeAll()
     })
 
+    beforeEach(async () => {
+        fs = new Filesystem(join(__dirname, `app${Math.ceil(Number((Math.random()+'').replace('0.','')))}`))
+    });
+
     afterEach(async () => {
         await resetTables()
         await fs.cleanup()
