@@ -3341,8 +3341,8 @@ describe('Model | ManyToMany', () => {
             const totalSkills = await db.query().from('skills').count('*', 'total')
             const skillUsers = await db.query().from('skill_user')
 
-            expect(totalUsers[0].total).toBe(1)
-            expect(totalSkills[0].total).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalSkills[0].total)).toBe(0)
             expect(skillUsers).toHaveLength(3);
 
             expect(skillUsers[0].id).toBe(1)
