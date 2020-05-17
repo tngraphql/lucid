@@ -43,6 +43,8 @@ export interface DatabaseContract {
         ): SimplePaginatorContract<Row[]>
     },
 
+    hasHealthChecksEnabled: boolean
+
     /**
      * Pretty print query logs
      */

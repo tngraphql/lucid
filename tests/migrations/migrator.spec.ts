@@ -32,11 +32,8 @@ describe('Migrator', () => {
         await resetTables()
         await cleanup(['tngraphql_schema', 'schema_users', 'schema_accounts'])
         await fs.cleanup();
+        jest.resetModules();
     })
-
-    beforeEach(async () => {
-        fs = new Filesystem(join(__dirname, `app${Math.ceil(Number((Math.random()+'').replace('0.','')))}`))
-    });
 
     test('create the schema table when there are no migrations', async () => {
         const app = new Application(fs.basePath)

@@ -56,7 +56,11 @@ export class Database implements DatabaseContract {
     /**
      * A store of global transactions
      */
-    public connectionGlobalTransactions: Map<string, TransactionClientContract> = new Map()
+    public connectionGlobalTransactions: Map<string, TransactionClientContract> = new Map();
+
+    public hasHealthChecksEnabled = false
+
+    public prettyPrint = prettyPrint
 
     /**
      * A store of global transactions
@@ -70,7 +74,24 @@ export class Database implements DatabaseContract {
         private emitter: EmitterContract
     ) {
         this.manager = new ConnectionManager(this.logger, this.emitter)
-        this.registerConnections()
+        this.registerConnections();
+        this.findIfHealthChecksAreEnabled()
+    }
+
+    /**
+     * Compute whether health check is enabled or not after registering the connections.
+     * There are chances that all pre-registered connections are not using health
+     * checks but a dynamic connection is using it. We don't support that use case
+     * for now, since it complicates things a lot and forces us to register the
+     * health checker on demand.
+     */
+    private findIfHealthChecksAreEnabled () {
+        for (let [,conn] of this.manager.connections) {
+            if (conn.config.healthCheck) {
+                this.hasHealthChecksEnabled = true
+                break
+            }
+        }
     }
 
     public static clsRun(fn: (ctx?: any) => void) {
@@ -81,8 +102,6 @@ export class Database implements DatabaseContract {
         ns.run(context => res = fn(context));
         return res;
     }
-
-    public prettyPrint = prettyPrint
 
     /**
      * Registering all connections with the manager, so that we can fetch
