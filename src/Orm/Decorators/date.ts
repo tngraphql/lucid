@@ -14,9 +14,9 @@ import { LucidModel } from '../../Contracts/Model/LucidModel';
 import { LucidRow } from '../../Contracts/Model/LucidRow';
 import { DateColumnDecorator, DateTimeColumnDecorator } from '../../Contracts/Model/types';
 
-const DATE_TIME_TYPES = {
+export const DATE_TIME_TYPES = {
     date: 'date',
-    datetime: 'datetime'
+    datetime: 'datetime',
 }
 
 /**
@@ -174,42 +174,6 @@ function consumeDateTimeColumn(value: any, attributeName: string, modelInstance:
 }
 
 /**
- * A hook to set the luxon date time when it's missing on the date or
- * datetime columns and `auto` is set to true.
- *
- * The hook is meant to be used with both `date` and `datetime` columns,
- * since it's not formatting any dates.
- */
-function setDateIfMissingHook(modelInstance: LucidRow) {
-    const model = modelInstance.constructor as LucidModel
-    model.$columnsDefinitions.forEach((column, attributeName) => {
-        const columnType = column.meta?.type
-
-        /**
-         * Return early when not dealing with date time columns
-         */
-        if ( ! columnType || ! DATE_TIME_TYPES[columnType] ) {
-            return
-        }
-
-        /**
-         * Always update the date when `autoUpdate` is on
-         */
-        if ( column.meta.autoUpdate ) {
-            modelInstance[attributeName] = DateTime.local();
-            return
-        }
-
-        /**
-         * Set the value when autoCreate is on and value is missing
-         */
-        if ( ! modelInstance[attributeName] && column.meta.autoCreate ) {
-            modelInstance[attributeName] = DateTime.local()
-        }
-    })
-}
-
-/**
  * Decorator to define a new date column
  */
 export const dateColumn: DateColumnDecorator = (options?) => {
@@ -236,13 +200,6 @@ export const dateColumn: DateColumnDecorator = (options?) => {
         normalizedOptions.meta.autoCreate = normalizedOptions.autoCreate === true
         normalizedOptions.meta.autoUpdate = normalizedOptions.autoUpdate === true
         Model.$addColumn(property, normalizedOptions)
-
-        /**
-         * Set hook when not already set
-         */
-        if ( ! Model.$hooks.has('before', 'save', setDateIfMissingHook) ) {
-            Model.before('save', setDateIfMissingHook)
-        }
     }
 }
 
@@ -267,12 +224,5 @@ export const dateTimeColumn: DateTimeColumnDecorator = (options?) => {
         normalizedOptions.meta.autoCreate = normalizedOptions.autoCreate === true
         normalizedOptions.meta.autoUpdate = normalizedOptions.autoUpdate === true
         Model.$addColumn(property, normalizedOptions)
-
-        /**
-         * Set hook when not already set
-         */
-        if ( ! Model.$hooks.has('before', 'save', setDateIfMissingHook) ) {
-            Model.before('save', setDateIfMissingHook)
-        }
     }
 }

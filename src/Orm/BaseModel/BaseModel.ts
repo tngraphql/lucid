@@ -49,11 +49,8 @@ import { HasOne } from '../Relations/HasOne'
 import { ManyToMany } from '../Relations/ManyToMany'
 import { ModelEventEmitter } from './ModelEventEmitter';
 import { proxyHandler } from './proxyHandler'
+import { DATE_TIME_TYPES } from '../Decorators/date';
 
-const DATE_TIME_TYPES = {
-    date: 'date',
-    datetime: 'datetime',
-}
 const MANY_RELATIONS = ['hasMany', 'manyToMany', 'hasManyThrough']
 
 function StaticImplements<T>() {
@@ -1496,7 +1493,8 @@ export class BaseModel implements LucidRow {
              * Set the value when its missing and `autoCreate` or `autoUpdate`
              * flags are defined.
              */
-            const attributeValue = this[attributeName]
+            const attributeValue = this[attributeName];
+
             if (!attributeValue && (column.meta.autoCreate || column.meta.autoUpdate)) {
                 this[attributeName] = DateTime.local()
                 return
@@ -1540,6 +1538,7 @@ export class BaseModel implements LucidRow {
             await Model.$hooks.exec('before', 'create', this)
             await Model.$hooks.exec('before', 'save', this)
 
+            this.initiateAutoCreateColumns();
             await Model.$adapter.insert(this, this.prepareForAdapter(this.$attributes))
 
             this.$hydrateOriginals()
