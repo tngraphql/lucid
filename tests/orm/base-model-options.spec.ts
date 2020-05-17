@@ -906,7 +906,8 @@ describe('Model options', () => {
 
             expect(Number(total[0].total)).toBe(1)
             expect(user.$options!.connection).toBe('secondary')
-            expect(user.$options!.profiler).toBeInstanceOf(Profiler)
+            expect(user.$options!.profiler).toBeDefined();
+            expect(user.$trx).toBeUndefined();
         })
 
         test('define custom connection when search fails', async () => {
@@ -930,10 +931,13 @@ describe('Model options', () => {
 
             expect(Number(total[0].total)).toBe(1)
             expect(user.$options!.connection).toBe('secondary')
-            expect(user.$options!.profiler).toBeInstanceOf(Profiler)
+            expect(user.$options!.profiler).toBeDefined()
+            expect(user.$trx).toBeUndefined();
         })
 
         test('define custom profiler', async () => {
+            expect.assertions(4);
+
             class User extends BaseModel {
                 public static $table = 'users'
 
@@ -946,6 +950,11 @@ describe('Model options', () => {
 
             await db.insertQuery().table('users').insert({ username: 'virk' })
             const profiler = getProfiler()
+            const originalCreate = profiler.create.bind(profiler)
+            profiler.create = function (label): any {
+                expect(label).toEqual('trx:begin');
+                return originalCreate(label)
+            }
 
             const [user] = await User.updateOrCreateMany(
                 'username',
@@ -957,10 +966,12 @@ describe('Model options', () => {
 
             expect(Number(total[0].total)).toBe(1)
             expect(user.$options!.connection).toBe('primary')
-            expect(user.$options!.profiler).toEqual(profiler)
+            expect(user.$trx).toBeUndefined();
         })
 
         test('define custom profiler when search fails', async () => {
+            expect.assertions(4);
+
             class User extends BaseModel {
                 public static $table = 'users'
 
@@ -972,6 +983,12 @@ describe('Model options', () => {
             }
 
             const profiler = getProfiler()
+            const originalCreate = profiler.create.bind(profiler)
+            profiler.create = function (label): any {
+                expect(label).toBe('trx:begin');
+                return originalCreate(label)
+            }
+
             const [user] = await User.updateOrCreateMany(
                 'username',
                 [{ username: 'virk' }],
@@ -982,7 +999,7 @@ describe('Model options', () => {
 
             expect(Number(total[0].total)).toBe(1)
             expect(user.$options!.connection).toBe('primary')
-            expect(user.$options!.profiler).toEqual(profiler)
+            expect(user.$trx).toBeUndefined();
         })
 
         test('define custom client', async () => {
@@ -1008,7 +1025,7 @@ describe('Model options', () => {
             const total = await db.from('users').count('*', 'total')
 
             expect(Number(total[0].total)).toBe(1)
-            expect(user.$options!.profiler).toEqual(client.profiler)
+            expect(user.$options!.profiler).toBeDefined();
             expect(user.$options!.connection).toEqual(client.connectionName)
         })
 
@@ -1034,7 +1051,7 @@ describe('Model options', () => {
             const total = await db.from('users').count('*', 'total')
 
             expect(Number(total[0].total)).toBe(1)
-            expect(user.$options!.profiler).toEqual(client.profiler)
+            expect(user.$options!.profiler).toBeDefined();
             expect(user.$options!.connection).toEqual(client.connectionName)
         })
 

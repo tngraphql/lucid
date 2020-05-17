@@ -159,3 +159,13 @@ export async function managedTransaction<T>(
         throw error
     }
 }
+
+/**
+ * Collects values for a key inside an array. Similar to `Array.map`, but
+ * reports missing values.
+ */
+export function collectValues (payload: any[], key: string, missingCallback: () => void) {
+    return payload.map((row: any) => {
+        return ensureValue(row, key, missingCallback)
+    })
+}

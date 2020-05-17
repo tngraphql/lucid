@@ -8,11 +8,11 @@
  * file that was distributed with this source code.
  */
 
-import { Hooks } from '@poppinss/hooks/build'
-import { Exception } from '@poppinss/utils/build'
+import { DateTime } from 'luxon';
+import { Hooks } from '@poppinss/hooks/build';
+import { Exception } from '@poppinss/utils/build';
 import { InvalidArgumentException } from '@tngraphql/illuminate';
 import { ApplicationContract } from '@tngraphql/illuminate/dist/Contracts/ApplicationContract';
-import { isString } from 'util';
 import { QueryClientContract } from '../../Contracts/Database/QueryClientContract';
 import { TransactionClientContract } from '../../Contracts/Database/TransactionClientContract';
 import { ColumnOptions } from '../../Contracts/Model/ColumnOptions';
@@ -37,7 +37,7 @@ import {
     ThroughRelationOptions
 } from '../../Contracts/Orm/Relations/types';
 import { ScopeType } from '../../Contracts/types';
-import { ensureRelation, ensureValue, isObject, managedTransaction } from '../../utils'
+import { ensureRelation, collectValues, isObject, managedTransaction } from '../../utils'
 
 import { Config } from '../Config'
 import { ModelKeys } from '../ModelKeys/ModelKeys'
@@ -50,6 +50,10 @@ import { ManyToMany } from '../Relations/ManyToMany'
 import { ModelEventEmitter } from './ModelEventEmitter';
 import { proxyHandler } from './proxyHandler'
 
+const DATE_TIME_TYPES = {
+    date: 'date',
+    datetime: 'datetime',
+}
 const MANY_RELATIONS = ['hasMany', 'manyToMany', 'hasManyThrough']
 
 function StaticImplements<T>() {
@@ -529,9 +533,7 @@ export class BaseModel implements LucidRow {
      * attributes to the model instance
      */
     public static async create(values: any, options?: ModelAdapterOptions): Promise<any> {
-        const instance = new this()
-        instance.fill(values)
-        instance.$setOptionsAndTrx(options)
+        const instance = this.newUpWithOptions(values, options);
 
         await instance.save()
         return instance
@@ -611,115 +613,111 @@ export class BaseModel implements LucidRow {
      * new one without persisting it.
      */
     public static async firstOrNew(
-        search: any,
+        searchPayload: any,
         savePayload?: any,
         options?: ModelAdapterOptions
-    ) {
-        const query = this.query(options)
-        let row = await query.where(search).first()
+    ): Promise<any> {
+        /**
+         * Search using the search payload and fetch the first row
+         */
+        const query = this.query(options).where(searchPayload)
+        let row = await query.first()
 
-        if ( ! row ) {
-            row = new this()
-            row.fill(Object.assign({}, search, savePayload))
-
-            /**
-             * Pass client options to the newly created row. If row was found
-             * the query builder will set the same options.
-             */
-            row.$setOptionsAndTrx(query.clientOptions)
+        /**
+         * Create a new one, if row is not found
+         */
+        if (!row) {
+            return this.newUpWithOptions(Object.assign({}, searchPayload, savePayload), query.clientOptions);
         }
 
         return row
     }
 
     /**
-     * Same as `firstOrNew`, but persists the newly created model instance
+     * Same as `firstOrNew`, but also persists the newly created model instance.
      */
     public static async firstOrCreate<T extends LucidModel>(
-        this: T,
-        search: any,
+        searchPayload: any,
         savePayload?: any,
         options?: ModelAdapterOptions
-    ) {
-        const row = await this.firstOrNew(search, savePayload, options)
-        if ( ! row.$isPersisted ) {
+    ): Promise<any> {
+        /**
+         * Search using the search payload and fetch the first row
+         */
+        const query = this.query(options).where(searchPayload)
+        let row = await query.first()
+
+        /**
+         * Create a new instance and persist it to the database
+         */
+        if (!row) {
+            row = this.newUpWithOptions(Object.assign({}, searchPayload, savePayload), query.clientOptions)
             await row.save()
         }
 
-        return row
+        return row;
     }
 
     /**
      * Updates or creates a new row inside the database
      */
     public static async updateOrCreate(
-        search: any,
+        searchPayload: any,
         updatedPayload: any,
         options?: ModelAdapterOptions
-    ) {
-        const row = await this.firstOrNew(search, updatedPayload, options)
+    ): Promise<any> {
+        const client = this.$adapter.modelConstructorClient(this as LucidModel, options);
 
         /**
-         * Update if row was found
+         * We wrap updateOrCreate call inside a transaction and obtain an update
+         * lock on the selected row. This ensures that concurrent reads waits
+         * for the existing writes to finish
          */
-        if ( row.$isPersisted ) {
-            row.merge(updatedPayload)
-        }
+        return managedTransaction(client, async (trx) => {
+            const query = this.query({client: trx}).forUpdate().where(searchPayload)
+            let row = await query.first();
+            /**
+             * Create a new instance or update the existing one (if found)
+             */
+            if (!row) {
+                row = this.newUpWithOptions(Object.assign({}, searchPayload, updatedPayload), query.clientOptions)
+            } else {
+                row.merge(updatedPayload)
+            }
 
-        await row.save()
-        return row
+            await row.save()
+            return row
+        });
     }
 
     /**
-     * Find existing rows or create an in-memory instances of the
-     * missing one's.
+     * Find existing rows or create an in-memory instances of the missing ones.
      */
     public static async fetchOrNewUpMany(
         uniqueKey: any,
         payload: any,
-        options?: ModelAdapterOptions,
-        mergeAttributes: boolean = false
-    ) {
+        options?: ModelAdapterOptions
+    ): Promise<any> {
         /**
-         * An array of values for the unique key
+         * Ensure value for the unique key inside the array is not
+         * null or undefined
          */
-        const uniqueKeyValues = payload.map((row: any) => {
-            return ensureValue(row, uniqueKey as string, () => {
-                throw new Exception(
-                    `Value for the "${ uniqueKey }" is null or undefined inside "fetchOrNewUpMany" payload`
-                )
-            })
+        const uniqueKeyValues = collectValues(payload, uniqueKey, () => {
+            throw new Exception(
+                `Value for the "${uniqueKey}" is null or undefined inside "fetchOrNewUpMany" payload`,
+            )
         })
 
+        /**
+         * Find existing rows
+         */
         const query = this.query(options)
         const existingRows = await query.whereIn(uniqueKey, uniqueKeyValues)
 
         /**
-         * Return existing or create missing rows in the same order as the original
-         * array
+         * Return existing rows as it is and create a model instance for missing one's
          */
-        return payload.map((row: any) => {
-            /* eslint-disable-next-line eqeqeq */
-            const existingRow = existingRows.find((one: any) => one[uniqueKey] == row[uniqueKey])
-
-            /**
-             * Return the row found from the select call
-             */
-            if ( existingRow ) {
-                if ( mergeAttributes ) {
-                    existingRow.merge(row)
-                }
-                return existingRow
-            }
-
-            /**
-             * Otherwise create a new one
-             */
-            const instance = new this()
-            instance.fill(row)
-            instance.$setOptionsAndTrx(query.clientOptions)
-            return instance
-        })
+        return this.newUpIfMissing(payload, existingRows, uniqueKey, false, query.clientOptions);
     }
 
     /**
@@ -731,15 +729,32 @@ export class BaseModel implements LucidRow {
         uniqueKey: any,
         payload: any,
         options?: ModelAdapterOptions
-    ) {
-        const rows = await this.fetchOrNewUpMany(uniqueKey, payload, options)
-        if ( ! rows.length ) {
-            return rows
-        }
+    ): Promise<any> {
+        /**
+         * An array of values for the unique key
+         */
+        const uniqueKeyValues = collectValues(payload, uniqueKey, () => {
+            throw new Exception(
+                `Value for the "${uniqueKey}" is null or undefined inside "fetchOrCreateMany" payload`,
+            )
+        })
 
-        const client = this.$adapter.modelClient(rows[0])
-        await managedTransaction(client, async (trx) => {
-            for( let row of rows ) {
+        /**
+         * Find existing rows
+         */
+        const query = this.query(options)
+        const existingRows = await query.whereIn(uniqueKey, uniqueKeyValues);
+
+        /**
+         * Create model instance for the missing rows
+         */
+        const rows = this.newUpIfMissing(payload, existingRows, uniqueKey, false, query.clientOptions)
+
+        /**
+         * Perist inside db inside a transaction
+         */
+        await managedTransaction(query.client, async (trx) => {
+            for (let row of rows) {
                 /**
                  * If transaction `client` was passed, then the row will have
                  * the `trx` already set. But since, the trx of row will be
@@ -747,7 +762,7 @@ export class BaseModel implements LucidRow {
                  * re-set it.
                  */
                 row.$trx = trx
-                if ( ! row.isPersisted ) {
+                if (!row.$isPersisted) {
                     await row.save()
                 }
             }
@@ -765,27 +780,35 @@ export class BaseModel implements LucidRow {
         uniqueKey: any,
         payload: any,
         options?: ModelAdapterOptions
-    ) {
-        const rows = await this.fetchOrNewUpMany(uniqueKey, payload, options, true)
-        if ( ! rows.length ) {
-            return rows
-        }
-
-        const client = this.$adapter.modelClient(rows[0])
-        await managedTransaction(client, async (trx) => {
-            for( let row of rows ) {
-                /**
-                 * If transaction `client` was passed, then the row will have
-                 * the `trx` already set. But since, the trx of row will be
-                 * same as the `trx` passed to this callback, we can safely
-                 * re-set it.
-                 */
-                row.$trx = trx
-                await row.save()
-            }
+    ): Promise<any> {
+        /**
+         * An array of values for the unique key
+         */
+        const uniqueKeyValues = collectValues(payload, uniqueKey, () => {
+            throw new Exception(
+                `Value for the "${uniqueKey}" is null or undefined inside "updateOrCreateMany" payload`,
+            )
         })
 
-        return rows
+        const client = this.$adapter.modelConstructorClient(this as LucidModel, options)
+
+        return managedTransaction(client, async (trx) => {
+            /**
+             * Find existing rows
+             */
+            const query = this.query({client: trx}).forUpdate()
+            const existingRows = await query.whereIn(uniqueKey, uniqueKeyValues)
+
+            /**
+             * Create model instance for the missing rows
+             */
+            const rows = this.newUpIfMissing(payload, existingRows, uniqueKey, true, query.clientOptions);
+            for (let row of rows) {
+                await row.save()
+            }
+
+            return rows
+        });
     }
 
     /**
@@ -1452,6 +1475,58 @@ export class BaseModel implements LucidRow {
     }
 
     /**
+     * Invoked when performing the insert call. The method initiates
+     * all `datetime` columns, if there are not initiated already
+     * and `autoCreate` or `autoUpdate` flags are turned on.
+     */
+    protected initiateAutoCreateColumns () {
+        const model = this.constructor as LucidModel
+
+        model.$columnsDefinitions.forEach((column, attributeName) => {
+            const columnType = column.meta?.type
+
+            /**
+             * Return early when not dealing with date time columns
+             */
+            if (!columnType || !DATE_TIME_TYPES[columnType]) {
+                return
+            }
+
+            /**
+             * Set the value when its missing and `autoCreate` or `autoUpdate`
+             * flags are defined.
+             */
+            const attributeValue = this[attributeName]
+            if (!attributeValue && (column.meta.autoCreate || column.meta.autoUpdate)) {
+                this[attributeName] = DateTime.local()
+                return
+            }
+        })
+    }
+
+    /**
+     * Invoked when performing the update call. The method initiates
+     * all `datetime` columns, if there have `autoUpdate` flag
+     * turned on.
+     */
+    protected initiateAutoUpdateColumns () {
+        const model = this.constructor as LucidModel
+
+        model.$columnsDefinitions.forEach((column, attributeName) => {
+            const columnType = column.meta?.type
+
+            /**
+             * Return early when not dealing with date time columns
+             */
+            if (!columnType || !DATE_TIME_TYPES[columnType] || !column.meta.autoUpdate) {
+                return
+            }
+
+            this[attributeName] = DateTime.local()
+        })
+    }
+
+    /**
      * Perform save on the model instance to commit mutations.
      */
     public async save() {
@@ -1475,22 +1550,26 @@ export class BaseModel implements LucidRow {
             return
         }
 
-        const dirty = this.$dirty
+        /**
+         * Call hooks before hand, so that they have the chance
+         * to make mutations that produces one or more `$dirty`
+         * fields.
+         */
+        await Model.$hooks.exec('before', 'update', this);
+        await Model.$hooks.exec('before', 'save', this);
 
         /**
          * Do not issue updates when model doesn't have any mutations
          */
-        if ( ! Object.keys(dirty).length ) {
+        if (!this.$isDirty) {
             return
         }
-
-        await Model.$hooks.exec('before', 'update', this)
-        await Model.$hooks.exec('before', 'save', this)
 
         /**
          * Perform update
          */
-        await Model.$adapter.update(this, this.prepareForAdapter(dirty))
+        this.initiateAutoUpdateColumns()
+        await Model.$adapter.update(this, this.prepareForAdapter(this.$dirty))
         this.$hydrateOriginals()
         this.$isPersisted = true
 
@@ -1699,5 +1778,56 @@ export class BaseModel implements LucidRow {
 
         this.fill(freshModelInstance.$attributes)
         this.$hydrateOriginals()
+    }
+
+    /**
+     * Helper method for `fetchOrNewUpMany`, `fetchOrCreateMany` and `createOrUpdate`
+     * many.
+     */
+    private static newUpIfMissing(
+        rowObjects: ModelObject[],
+        existingRows: BaseModel[],
+        key: string,
+        mergeAttribute: boolean,
+        options?: ModelAdapterOptions,
+    ) {
+        /**
+         * Return existing or create missing rows in the same order as the original
+         * array
+         */
+        return rowObjects.map((rowObject: any) => {
+            /* eslint-disable-next-line eqeqeq */
+            const existingRow = existingRows.find((one: any) => one[key] == rowObject[key])
+
+            /**
+             * Return the row found from the select call
+             */
+            if (existingRow) {
+                if (mergeAttribute) {
+                    existingRow.merge(rowObject)
+                }
+                return existingRow
+            }
+
+            /**
+             * Otherwise create a new one
+             */
+            return this.newUpWithOptions(rowObject, options)
+        })
+    }
+
+    /**
+     * Creates a new model instance with payload and adapter options
+     */
+    private static newUpWithOptions(payload: any, options?: ModelAdapterOptions) {
+        const row = new this()
+        row.fill(payload)
+
+        /**
+         * Pass client options to the newly created row. If row was found
+         * the query builder will set the same options.
+         */
+        row.$setOptionsAndTrx(options)
+        return row
     }
 }

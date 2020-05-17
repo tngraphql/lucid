@@ -321,7 +321,7 @@ export interface LucidModel {
      */
     firstOrNew<T extends LucidModel>(
         this: T,
-        search: Partial<ModelAttributes<InstanceType<T>>>,
+        searchPayload: Partial<ModelAttributes<InstanceType<T>>>,
         savePayload?: Partial<ModelAttributes<InstanceType<T>>>,
         options?: ModelAdapterOptions
     ): Promise<InstanceType<T>>
@@ -331,9 +331,19 @@ export interface LucidModel {
      */
     firstOrCreate<T extends LucidModel>(
         this: T,
-        search: Partial<ModelAttributes<InstanceType<T>>>,
+        searchPayload: Partial<ModelAttributes<InstanceType<T>>>,
         savePayload?: Partial<ModelAttributes<InstanceType<T>>>,
         options?: ModelAdapterOptions
+    ): Promise<InstanceType<T>>
+
+    /**
+     * Returns the first row or save it to the database
+     */
+    updateOrCreate<T extends LucidModel> (
+        this: T,
+        searchPayload: Partial<ModelAttributes<InstanceType<T>>>,
+        updatePayload: Partial<ModelAttributes<InstanceType<T>>>,
+        options?: ModelAdapterOptions,
     ): Promise<InstanceType<T>>
 
     /**
@@ -344,8 +354,7 @@ export interface LucidModel {
         this: T,
         uniqueKey: keyof ModelAttributes<InstanceType<T>>,
         payload: Partial<ModelAttributes<InstanceType<T>>>[],
-        options?: ModelAdapterOptions,
-        mergeAttributes?: boolean
+        options?: ModelAdapterOptions
     ): Promise<InstanceType<T>[]>
 
     /**
@@ -358,16 +367,6 @@ export interface LucidModel {
         payload: Partial<ModelAttributes<InstanceType<T>>>[],
         options?: ModelAdapterOptions
     ): Promise<InstanceType<T>[]>
-
-    /**
-     * Returns the first row or save it to the database
-     */
-    updateOrCreate<T extends LucidModel>(
-        this: T,
-        search: Partial<ModelAttributes<InstanceType<T>>>,
-        updatePayload: Partial<ModelAttributes<InstanceType<T>>>,
-        options?: ModelAdapterOptions
-    ): Promise<InstanceType<T>>
 
     /**
      * Update existing rows or create new one's.
