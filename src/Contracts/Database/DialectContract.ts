@@ -12,7 +12,7 @@
  * Dialect specfic methods
  */
 export interface DialectContract {
-    readonly name: 'mssql' | 'mysql' | 'oracledb' | 'postgres' | 'redshift' | 'sqlite3'
+    name: 'mssql' | 'mysql' | 'mysql2' | 'oracledb' | 'postgres' | 'redshift' | 'sqlite3'
     readonly supportsAdvisoryLocks: boolean
     readonly dateTimeFormat: string
 

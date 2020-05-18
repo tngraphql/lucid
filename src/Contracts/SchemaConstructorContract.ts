@@ -32,6 +32,7 @@ export interface SchemaConstructorContract {
 export interface SchemaContract {
     readonly file: string
     dryRun: boolean
+    debug: boolean
     db: QueryClientContract
     schema: SchemaBuilder
 

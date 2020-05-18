@@ -10,7 +10,7 @@
 
 import { DateTime } from 'luxon'
 import { LucidRow } from '../../src/Contracts/Model/LucidRow';
-import { HasMany, HasOne } from '../../src/Contracts/Orm/Relations/types';
+import {BelongsTo, HasMany, HasOne} from '../../src/Contracts/Orm/Relations/types';
 import {
     afterCreate,
     afterDelete,
@@ -23,14 +23,28 @@ import {
     beforeFetch,
     beforeFind,
     beforeSave,
-    beforeUpdate,
+    beforeUpdate, belongsTo,
     column,
     computed,
     hasMany,
-    hasOne
+    hasOne,
+    afterPaginate,
+    beforePaginate,
 } from '../../src/Orm/Decorators';
 import { ModelQueryBuilder } from '../../src/Orm/QueryBuilder/ModelQueryBuilder';
-import { cleanup, FakeAdapter, getBaseModel, getDb, getUsers, ormAdapter, resetTables, setup } from '../helpers';
+import {
+    cleanup,
+    FakeAdapter,
+    getBaseModel,
+    getDb,
+    getUsers,
+    hasMysql,
+    ormAdapter,
+    resetTables,
+    setup,
+    getProfiler
+} from '../helpers';
+import {SimplePaginator} from '../../src/Database/Paginator/SimplePaginator'
 
 let db: ReturnType<typeof getDb>
 let BaseModel: ReturnType<typeof getBaseModel>
@@ -132,6 +146,46 @@ describe('Base model', () => {
             expect(User.$keys.columnsToAttributes.get('user_name')).toBe('userName');
         });
     });
+
+    describe('Base Model | options', () => {
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+        })
+
+        afterAll(async () => {
+            await db.manager.closeAll()
+        })
+
+        test('set connection using useConnection method', () => {
+            class User extends BaseModel {
+                @column()
+                public username: string
+            }
+
+            const user = new User()
+            user.username = 'virk'
+
+            user.useConnection('foo')
+            expect(user.$options).toEqual({connection: 'foo'});
+        })
+
+        test('set connection do not overwrite profiler from the options', () => {
+            class User extends BaseModel {
+                @column()
+                public username: string
+            }
+
+            const user = new User()
+            user.username = 'virk'
+
+            const profiler = getProfiler()
+            user.$options = { profiler: profiler }
+
+            user.useConnection('foo')
+            expect(user.$options).toEqual({ connection: 'foo', profiler: profiler });
+        })
+    })
 
     describe('Base Model | getter-setters', () => {
         beforeAll(async () => {
@@ -668,6 +722,38 @@ describe('Base model', () => {
             expect(user.$attributes).toEqual({ username: 'virk', fullName: 'H virk' })
             expect(user.$original).toEqual({ username: 'virk', fullName: 'H virk' })
         })
+
+        test('send values mutated by the hooks to the adapter', async () => {
+            const adapter = new FakeAdapter()
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public username: string
+
+                @column({ columnName: 'full_name' })
+                public fullName: string
+
+                @beforeUpdate()
+                public static touchValues (model: User) {
+                    model.fullName = 'Foo'
+                }
+            }
+
+            User.$adapter = adapter
+            adapter.on('update', (_, attributes) => {
+                expect(attributes).toEqual({full_name: 'Foo'});
+            });
+
+            const user = new User()
+            user.$isPersisted = true
+            await user.save()
+
+            expect(user.$attributes).toEqual({ fullName: 'Foo' })
+            expect(user.$original).toEqual({ fullName: 'Foo' })
+        })
     });
 
     describe('Base Model | create from adapter results', () => {
@@ -950,7 +1036,7 @@ describe('Base model', () => {
             expect(user.serializeAttributes()).toEqual({})
         })
 
-        test('cherry pick fields', async () => {
+        test('pick fields during serialization', async () => {
             class User extends BaseModel {
                 @column()
                 public username: string
@@ -963,10 +1049,10 @@ describe('Base model', () => {
             user.username = 'virk'
             user.id = '1'
 
-            expect(user.serializeAttributes({ id: true })).toEqual({ id: '1' })
+            expect(user.serializeAttributes(['id'])).toEqual({ id: '1' })
         })
 
-        test('ignore fields marked as false', async () => {
+        test('ignore fields under omit', async () => {
             class User extends BaseModel {
                 @column()
                 public username: string
@@ -979,10 +1065,13 @@ describe('Base model', () => {
             user.username = 'virk'
             user.id = '1'
 
-            expect(user.serializeAttributes({ id: true, username: false })).toEqual({ id: '1' })
+            expect(user.serializeAttributes({
+                pick: ['id', 'username'],
+                omit: ['username'],
+            })).toEqual({ id: '1' })
         })
 
-        test('ignore fields that has serializeAs = null, even when part of cherry picking object', async () => {
+        test('ignore fields that has serializeAs = null, even when part of pick array', async () => {
             class User extends BaseModel {
                 @column()
                 public username: string
@@ -995,7 +1084,7 @@ describe('Base model', () => {
             user.username = 'virk'
             user.id = '1'
 
-            expect(user.serializeAttributes({ id: true })).toEqual({})
+            expect(user.serializeAttributes(['id'])).toEqual({})
         })
 
         test('do not invoke custom serialize method when raw flag is on', async () => {
@@ -1047,10 +1136,10 @@ describe('Base model', () => {
             user.username = 'virk'
             user.id = '1'
 
-            expect(user.serializeAttributes({ id: true }, true)).toEqual({ id: '1' })
+            expect(user.serializeAttributes(['id'], true)).toEqual({ id: '1' })
         })
 
-        test('ignore fields marked as false in raw mode', async () => {
+        test('ignore fields under omit array in raw mode', async () => {
             class User extends BaseModel {
                 @column()
                 public username: string
@@ -1063,7 +1152,10 @@ describe('Base model', () => {
             user.username = 'virk'
             user.id = '1'
 
-            expect(user.serializeAttributes({ id: true, username: false }, true)).toEqual({ id: '1' })
+            expect(user.serializeAttributes({
+                pick: ['id', 'username'],
+                omit: ['username'],
+            }, true)).toEqual({ id: '1' })
         })
     });
 
@@ -1272,45 +1364,18 @@ describe('Base model', () => {
             profile.userId = 1
 
             user.$setRelated('profile', profile)
-            expect(user.serializeRelations({ profile: { user_id: true } })).toEqual({
+            expect(user.serializeRelations({
+                profile: {
+                    fields: ['user_id'],
+                },
+            })).toEqual({
                 profile: {
                     user_id: 1
                 }
             })
         })
 
-        test('select all fields when relationship node value is a boolean', async () => {
-            class Profile extends BaseModel {
-                @column()
-                public username: string
-
-                @column()
-                public userId: number
-            }
-
-            class User extends BaseModel {
-                @column({ isPrimary: true })
-                public id: number
-
-                @hasOne(() => Profile)
-                public profile: HasOne<typeof Profile>
-            }
-
-            const user = new User()
-            const profile = new Profile()
-            profile.username = 'virk'
-            profile.userId = 1
-
-            user.$setRelated('profile', profile)
-            expect(user.serializeRelations({ profile: true })).toEqual({
-                profile: {
-                    user_id: 1,
-                    username: 'virk'
-                }
-            })
-        })
-
-        test('do not select any fields when relationship node value is an object', async () => {
+        test('select all fields when no custom fields are defined for a relationship', async () => {
             class Profile extends BaseModel {
                 @column()
                 public username: string
@@ -1334,9 +1399,40 @@ describe('Base model', () => {
 
             user.$setRelated('profile', profile)
             expect(user.serializeRelations({ profile: {} })).toEqual({
-                profile: {}
+                profile: {
+                    user_id: 1,
+                    username: 'virk'
+                }
             })
         })
+
+        test('do not select any fields when relationship fields is an empty array', async () => {
+            class Profile extends BaseModel {
+                @column()
+                public username: string
+
+                @column()
+                public userId: number
+            }
+
+            class User extends BaseModel {
+                @column({isPrimary: true})
+                public id: number
+
+                @hasOne(() => Profile)
+                public profile: HasOne<typeof Profile>
+            }
+
+            const user = new User()
+            const profile = new Profile()
+            profile.username = 'virk'
+            profile.userId = 1
+
+            user.$setRelated('profile', profile)
+            expect(user.serializeRelations({profile: {fields: []}})).toEqual({
+                profile: {}
+            })
+        });
     });
 
     describe('Base Model | toJSON', () => {
@@ -1435,7 +1531,7 @@ describe('Base model', () => {
             const user = new User()
             user.username = 'virk'
 
-            expect(user.serialize({ username: true })).toEqual({ username: 'virk' })
+            expect(user.serialize({ fields: ['username'], })).toEqual({ username: 'virk' })
         })
     });
 
@@ -1954,13 +2050,81 @@ describe('Base model', () => {
             user.$setRelated('profile', profile)
             profile.userId = 1
 
-            expect(user.serialize({ id: true, profile: { username: true } })).toEqual({
+            expect(user.serialize({
+                fields: ['id'],
+                relations: {
+                    profile: {
+                        fields: ['username'],
+                    },
+                },
+            })).toEqual({
                 id: 1,
                 profile: {
                     username: 'virk'
                 }
             })
         })
+
+        test('cherry pick nested relationship keys during serialize', async () => {
+            const adapter = new FakeAdapter()
+
+            class Profile extends BaseModel {
+                @column()
+                public username: string
+
+                @column()
+                public userId: number
+
+                @belongsTo(() => User)
+                public user: BelongsTo<typeof User>
+            }
+
+            class User extends BaseModel {
+                @column({isPrimary: true})
+                public id: number
+
+                @column()
+                public email: string
+
+                @hasOne(() => Profile)
+                public profile: HasOne<typeof Profile>
+            }
+
+            Profile.$adapter = adapter
+
+            const user = new User()
+            user.$consumeAdapterResult({id: 1, email: 'virk@adonisjs.com'})
+
+            const profileUser = new User()
+            profileUser.$consumeAdapterResult({id: 1, email: 'virk@adonisjs.com'})
+
+            const profile = await Profile.create({username: 'virk'})
+            user.$setRelated('profile', profile)
+            profile.$setRelated('user', profileUser)
+            profile.userId = 1;
+
+            expect(user.serialize({
+                fields: ['id'],
+                relations: {
+                    profile: {
+                        fields: ['username'],
+                        relations: {
+                            user: {
+                                fields: ['email'],
+                            },
+                        },
+                    },
+                },
+            })).toEqual({
+                id: 1,
+                profile: {
+                    username: 'virk',
+                    user: {
+                        email: 'virk@adonisjs.com',
+                    },
+                },
+            });
+        });
 
         test('serialize relation toJSON with custom serializeAs key', async () => {
             const adapter = new FakeAdapter()
@@ -2612,6 +2776,65 @@ describe('Base model', () => {
             await db.insertQuery().table('users').insert({ username: 'virk' })
             await User.query().where('id', 1).first()
         })
+
+        test('invoke before and after paginate hooks', async () => {
+            expect.assertions(5);
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public username: string
+
+                @column()
+                public email: string
+
+                @beforePaginate()
+                public static beforePaginateHook ([countQuery, query]: [ModelQueryBuilder, ModelQueryBuilder]) {
+                    expect(query).toBeInstanceOf(ModelQueryBuilder);
+                    expect(countQuery).toBeInstanceOf(ModelQueryBuilder);
+                    expect(countQuery).not.toEqual(query);
+                }
+
+                @afterPaginate()
+                public static afterPaginateHook (paginator: SimplePaginator) {
+                    expect(Number(paginator.total)).toBe(1);
+                    expect(paginator.all()[0].username).toBe('virk');
+                }
+            }
+
+            await db.insertQuery().table('users').insert({ username: 'virk' })
+            await User.query().paginate(1)
+        })
+
+        test('invoke before and after fetch hooks on paginate', async () => {
+            expect.assertions(2);
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public username: string
+
+                @column()
+                public email: string
+
+                @beforeFetch()
+                public static beforeFetchHook (query: ModelQueryBuilder) {
+                    expect(query).toBeInstanceOf(ModelQueryBuilder);
+                }
+
+                @afterFetch()
+                public static afterFetchHook (users: User[]) {
+                    expect(users[0].username).toBe('virk');
+                }
+            }
+
+            await db.insertQuery().table('users').insert({ username: 'virk' })
+            await User.query().paginate(1)
+        })
     });
 
     describe('Base model | extend', () => {
@@ -2892,32 +3115,16 @@ describe('Base model', () => {
 
             const user = new User()
             User.$adapter = adapter
-            adapter.on('insert', (model: User) => {
+            adapter.on('update', (model: User) => {
                 expect(model.updatedAt).not.toStrictEqual(localTime);
-            })
+            });
 
             const localTime = DateTime.local(2010)
             user.username = 'virk'
+            await user.save()
+
             user.updatedAt = localTime
             await user.save()
-        })
-
-        test('only register one hook, regardless of date columns a model has', async () => {
-            class User extends BaseModel {
-                @column({ isPrimary: true })
-                public id: number
-
-                @column()
-                public username: string
-
-                @column.date()
-                public dob: DateTime
-
-                @column.date()
-                public createdAt: DateTime
-            }
-
-            expect(User.$hooks['hooks'].before.get('save').size).toBe(1)
         })
 
         test('format date instance to string before sending to the adapter', async () => {
@@ -3354,24 +3561,6 @@ describe('Base model', () => {
             }
         })
 
-        test('only register one hook, regardless of date columns a model has', async () => {
-            class User extends BaseModel {
-                @column({ isPrimary: true })
-                public id: number
-
-                @column()
-                public username: string
-
-                @column.date()
-                public dob: DateTime
-
-                @column.dateTime()
-                public createdAt: DateTime
-            }
-
-            expect(User.$hooks['hooks'].before.get('save').size).toBe(1)
-        })
-
         test('allow overriding prepare method', async () => {
             expect.assertions(1)
             const adapter = new FakeAdapter()
@@ -3433,6 +3622,131 @@ describe('Base model', () => {
             const user = await User.find(1)
             expect(user!.updatedAt).toBeNull()
         })
+
+        test('always set datetime value when autoUpdate is true', async () => {
+            expect.assertions(2);
+            const adapter = new FakeAdapter()
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public username: string
+
+                @column.dateTime({ autoCreate: true, autoUpdate: true })
+                public joinedAt: DateTime
+            }
+
+            User.$adapter = adapter
+            adapter.on('update', (_, attributes) => {
+                expect(attributes).toHaveProperty('username');
+                expect(attributes).toHaveProperty('joined_at');
+            })
+
+            const user = new User()
+            user.username = 'virk'
+            await user.save()
+
+            user.username = 'nikk'
+            await user.save();
+        })
+
+        test('do not set autoUpdate field datetime when model is not dirty', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public username: string
+
+                @column.dateTime({ autoCreate: true, autoUpdate: true })
+                public joinedAt: DateTime
+            }
+
+            const user = new User()
+            user.username = 'virk'
+            await user.save()
+
+            const originalDateTimeString = user.joinedAt.toString()
+            await user.save()
+            expect(originalDateTimeString).toEqual(user.joinedAt.toString());
+        })
+
+        test('set datetime when model is dirty but after invoking a hook', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public username: string
+
+                @column.dateTime({ autoCreate: true, autoUpdate: true })
+                public joinedAt: DateTime
+
+                @beforeSave()
+                public static updateUserName (model: User) {
+                    if (!model.$isPersisted) {
+                        return
+                    }
+                    model.username = 'nikk'
+                }
+            }
+
+            const user = new User()
+            user.username = 'virk'
+            await user.save()
+
+            const originalDateTimeString = user.joinedAt.toString()
+            await user.save()
+            expect(originalDateTimeString).not.toEqual(user.joinedAt.toString());
+        })
+
+        test('convert datetime to toISO during serialize', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public username: string
+
+                @column.dateTime()
+                public joinedAt: DateTime
+            }
+
+            await db.insertQuery().table('users').insert({
+                username: 'virk',
+                joined_at: DateTime.local().toFormat(db.connection().dialect.dateTimeFormat),
+            })
+
+            const user = await User.find(1)
+            expect(user!.toJSON().joined_at).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}(\+|\-)\d{2}:\d{2}/);
+        })
+
+        test('do not attempt to serialize, when already a string', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public username: string
+
+                @column.dateTime({
+                    consume: (value) => typeof (value) === 'string'
+                        ? DateTime.fromSQL(value).minus({ day: 1 }).toISODate()
+                        : DateTime.fromJSDate(value).minus({ day: 1 }).toISODate(),
+                })
+                public joinedAt: DateTime
+            }
+
+            await db.insertQuery().table('users').insert({
+                username: 'virk',
+                joined_at: DateTime.local().toFormat(db.connection().dialect.dateTimeFormat),
+            })
+
+            const user = await User.find(1)
+            expect(user!.toJSON().joined_at).toEqual(DateTime.local().minus({day: 1}).toISODate());
+        })
     });
 
     describe('Query', () => {
@@ -3457,7 +3771,7 @@ describe('Base model', () => {
             const user = User.query();
 
             expect(user).toBeInstanceOf(ModelQueryBuilder);
-            if ( process.env.DB === 'mysql' ) {
+            if ( hasMysql(process.env.DB) ) {
                 expect(user.toSQL().sql).toBe('select * from `users`');
                 expect(user.select('id').toSQL().sql).toBe(['select `id`', ' from `users`'].join(''));
             }
@@ -3723,6 +4037,53 @@ describe('Base model', () => {
 
             expect(users).toHaveLength(1);
             expect(users[0].points).toBe(20);
+        })
+
+        test('lock row for update to handle concurrent requests', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column({ columnName: 'username' })
+                public userName: string
+
+                @column()
+                public email: string
+
+                @column()
+                public points: number
+
+                public static boot () {
+                    super.boot();
+                    this.before('update', (model) => {
+                        model.points += 1
+                    })
+                }
+            }
+
+            await db.insertQuery().table('users').insert({ username: 'virk', points: 20 })
+
+            /**
+             * The update or create method will first fetch the row and then performs
+             * an update using the model instance. The model hook will use the original
+             * database value to increment the points by 1.
+             *
+             * However, both reads will be performed concurrently, each instance will
+             * receive the original `20` points and update will reflect `21` and not
+             * expected `22`.
+             *
+             * To fix the above issue, we must lock the row for update, since we can
+             * guarantee that an update will always be performed.
+             */
+            await Promise.all([
+                User.updateOrCreate({ userName: 'virk' }, { email: 'virk-1@adonisjs.com' }),
+                User.updateOrCreate({ userName: 'virk' }, { email: 'virk-2@adonisjs.com' }),
+            ])
+
+            const users = await db.query().from('users')
+
+            expect(users).toHaveLength(1);
+            expect(users[0].points).toBe(22);
         })
 
         test('execute updateOrCreate update action inside a transaction', async () => {
@@ -4129,7 +4490,7 @@ describe('Base model', () => {
                     ]
                 )
             } catch ({ message }) {
-                expect(message).toBe('Value for the "username" is null or undefined inside "fetchOrNewUpMany" payload');
+                expect(message).toBe('Value for the "username" is null or undefined inside "fetchOrCreateMany" payload');
             }
 
             const usersList = await db.query().from('users')
@@ -4170,7 +4531,7 @@ describe('Base model', () => {
                     ]
                 )
             } catch ({ message }) {
-                expect(message).toBe('Value for the \"username\" is null or undefined inside \"fetchOrNewUpMany\" payload')
+                expect(message).toBe('Value for the \"username\" is null or undefined inside \"fetchOrCreateMany\" payload')
             }
 
             const usersList = await db.query().from('users')
@@ -4287,7 +4648,7 @@ describe('Base model', () => {
             expect(usersList).toHaveLength(1)
         })
 
-        test('wrap update calls inside a transaction using updateOrCreateMany', async () => {
+        test('wrap update calls inside a custom transaction using updateOrCreateMany', async () => {
             class User extends BaseModel {
                 @column({ isPrimary: true })
                 public id: number
@@ -4337,5 +4698,79 @@ describe('Base model', () => {
             expect(usersList).toHaveLength(1);
             expect(usersList[0].points).toBe(10);
         })
+
+        test('handle concurrent update calls using updateOrCreateMany', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public username: string
+
+                @column()
+                public email: string
+
+                @column()
+                public points: number
+
+                public static boot () {
+                    super.boot()
+                    this.before('update', (model) => {
+                        model.points += 1
+                    })
+                }
+            }
+
+            await db.insertQuery().table('users').insert({
+                username: 'virk',
+                email: 'virk@adonisjs.com',
+                points: 0,
+            })
+
+            await Promise.all([
+                User.updateOrCreateMany(
+                    'username',
+                    [
+                        {
+                            username: 'virk',
+                            email: 'virk-1@adonisjs.com',
+                        },
+                    ],
+                ),
+                User.updateOrCreateMany(
+                    'username',
+                    [
+                        {
+                            username: 'virk',
+                            email: 'virk-1@adonisjs.com',
+                        },
+                    ],
+                ),
+            ])
+
+            const usersList = await db.query().from('users');
+            expect(usersList).toHaveLength(1);
+            expect(usersList[0].points).toBe(2);
+        })
+
+        it('Truncate model table', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public username: string
+
+                @column()
+                public email: string
+            }
+
+            await db.insertQuery().table('users').insert({ username: 'virk' });
+
+            await User.truncate();
+
+            const usersList = await db.query().from('users')
+            expect(usersList).toHaveLength(0);
+        });
     });
 })

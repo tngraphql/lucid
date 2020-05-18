@@ -43,6 +43,8 @@ export interface DatabaseContract {
         ): SimplePaginatorContract<Row[]>
     },
 
+    hasHealthChecksEnabled: boolean
+
     /**
      * Pretty print query logs
      */
@@ -138,7 +140,9 @@ export interface DatabaseContract {
     /**
      * Start a new transaction
      */
-    transaction: TransactionFn,
+    // transaction: TransactionFn,
+    transaction<T = TransactionClientContract>(options?, callback?: (trx: TransactionClientContract) => Promise<T> | T): Promise<T>
+    transaction<T = TransactionClientContract>(callback?: (trx: TransactionClientContract) => Promise<T> | T): Promise<T>
 
     /**
      * Returns the health check report for registered connections
@@ -149,18 +153,18 @@ export interface DatabaseContract {
      * Begin a new global transaction. Multiple calls to this
      * method is a noop
      */
-    beginGlobalTransaction(
-        connectionName?: string,
-        options?: Exclude<DatabaseClientOptions, 'mode'>
-    ): Promise<TransactionClientContract>
-
-    /**
-     * Commit an existing global transaction
-     */
-    commitGlobalTransaction(connectionName?: string): Promise<void>
-
-    /**
-     * Rollback an existing global transaction
-     */
-    rollbackGlobalTransaction(connectionName?: string): Promise<void>
+    // beginGlobalTransaction(
+    //     connectionName?: string,
+    //     options?: Exclude<DatabaseClientOptions, 'mode'>
+    // ): Promise<TransactionClientContract>
+    //
+    // /**
+    //  * Commit an existing global transaction
+    //  */
+    // commitGlobalTransaction(connectionName?: string): Promise<void>
+    //
+    // /**
+    //  * Rollback an existing global transaction
+    //  */
+    // rollbackGlobalTransaction(connectionName?: string): Promise<void>
 }

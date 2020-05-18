@@ -8,22 +8,24 @@
  * file that was distributed with this source code.
  */
 
-import { Filesystem } from '@poppinss/dev-utils/build';
-import { join } from "path";
-import { cleanup, getBaseSchema, getDb, resetTables, setup } from '../helpers';
+import { cleanup, getBaseSchema, getDb, resetTables, setup, getEmitter } from '../helpers';
 
 let db: ReturnType<typeof getDb>
-const fs = new Filesystem(join(__dirname, 'app'))
+let emitter: ReturnType<typeof getEmitter>
 
 describe('Schema', () => {
     beforeAll(async () => {
-        db = getDb()
         await setup()
-    })
+    });
 
     afterAll(async () => {
         await cleanup()
         await db.manager.closeAll()
+    });
+
+    beforeEach(async () => {
+        emitter = getEmitter()
+        db = getDb(emitter)
     })
 
     afterEach(async () => {
@@ -230,5 +232,118 @@ describe('Schema', () => {
         }).toQuery()
 
         expect(queries).toEqual([knexSchema])
+    })
+
+    it('emit db:query event when schema instructions are executed', async () => {
+        expect.assertions(10);
+
+        class UsersSchema extends getBaseSchema() {
+            public up () {
+                this.schema.createTable('schema_users', (table) => {
+                    table.increments('id')
+                    table.string('username')
+                })
+
+                this.schema.createTable('schema_accounts', (table) => {
+                    table.increments('id')
+                    table.integer('user_id').unsigned().references('schema_users.id')
+                })
+            }
+        }
+
+        const trx = await db.transaction()
+        trx.debug = true
+        const schema = new UsersSchema(trx, 'users.ts', false)
+
+        emitter.on('db:query', (query) => {
+            expect(query).toHaveProperty('sql');
+            expect(query).toHaveProperty('duration');
+            expect(query.inTransaction).toBeTruthy();
+            expect(query.connection).toBe('primary')
+            expect(query.method).toBe('create')
+        })
+
+        try {
+            await schema.execUp()
+            await trx.commit()
+        } catch (error) {
+            await trx.rollback()
+        }
+
+        await db.connection().schema.dropTable('schema_accounts')
+        await db.connection().schema.dropTable('schema_users')
+    })
+
+    it('do not emit db:query debugging is turned off', async () => {
+        class UsersSchema extends getBaseSchema() {
+            public up () {
+                this.schema.createTable('schema_users', (table) => {
+                    table.increments('id')
+                    table.string('username')
+                })
+
+                this.schema.createTable('schema_accounts', (table) => {
+                    table.increments('id')
+                    table.integer('user_id').unsigned().references('schema_users.id')
+                })
+            }
+        }
+
+        const trx = await db.transaction()
+        const schema = new UsersSchema(trx, 'users.ts', false)
+        emitter.on('db:query', () => {
+            throw new Error('Never expected to reach here')
+        })
+
+        try {
+            await schema.execUp()
+            await trx.commit()
+        } catch (error) {
+            await trx.rollback()
+        }
+
+        await db.connection().schema.dropTable('schema_accounts')
+        await db.connection().schema.dropTable('schema_users')
+    })
+
+    it('emit db:query when enabled on the schema', async () => {
+        expect.assertions(10);
+
+        class UsersSchema extends getBaseSchema() {
+            public debug = true
+
+            public up () {
+                this.schema.createTable('schema_users', (table) => {
+                    table.increments('id')
+                    table.string('username')
+                })
+
+                this.schema.createTable('schema_accounts', (table) => {
+                    table.increments('id')
+                    table.integer('user_id').unsigned().references('schema_users.id')
+                })
+            }
+        }
+
+        const trx = await db.transaction()
+        const schema = new UsersSchema(trx, 'users.ts', false)
+
+        emitter.on('db:query', (query) => {
+            expect(query).toHaveProperty('sql');
+            expect(query).toHaveProperty('duration');
+            expect(query.inTransaction).toBeTruthy();
+            expect(query.connection).toBe('primary')
+            expect(query.method).toBe('create')
+        })
+
+        try {
+            await schema.execUp()
+            await trx.commit()
+        } catch (error) {
+            await trx.rollback()
+        }
+
+        await db.connection().schema.dropTable('schema_accounts')
+        await db.connection().schema.dropTable('schema_users')
     })
 });

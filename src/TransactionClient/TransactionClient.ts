@@ -14,6 +14,7 @@ import { EventEmitter } from 'events'
 import * as Knex from 'knex'
 import { DialectContract } from '../Contracts/Database/DialectContract';
 import { TransactionClientContract } from '../Contracts/Database/TransactionClientContract';
+import { Database } from '../Database/Database';
 import { DatabaseQueryBuilder } from '../Database/QueryBuilder/DatabaseQueryBuilder'
 import { InsertQueryBuilder } from '../Database/QueryBuilder/InsertQueryBuilder'
 import { RawQueryBuilder } from '../Database/QueryBuilder/RawQueryBuilder'
@@ -21,6 +22,10 @@ import { RawBuilder } from '../Database/StaticBuilder/RawBuilder'
 import { ReferenceBuilder } from '../Database/StaticBuilder/ReferenceBuilder'
 
 import { ModelQueryBuilder } from '../Orm/QueryBuilder/ModelQueryBuilder'
+import {RawBuilderContract} from "../Contracts/Database/RawBuilderContract";
+import {ReferenceBuilderContract} from "../Contracts/Database/ReferenceBuilderContract";
+import {dialects} from "../Dialects";
+import { resolveClientNameWithAliases } from 'knex/lib/helpers'
 
 /**
  * Transaction uses a dedicated connection from the connection pool
@@ -41,12 +46,20 @@ export class TransactionClient extends EventEmitter implements TransactionClient
     /**
      * The profiler to be used for profiling queries
      */
-    public profiler?: ProfilerRowContract
+    public profiler?: ProfilerRowContract;
+
+    /**
+     * The dialect in use
+     */
+    public dialect: DialectContract = new (
+        dialects[resolveClientNameWithAliases(this.dialectName)]
+    )(this);
 
     constructor(
         public knexClient: Knex.Transaction,
-        public dialect: DialectContract,
+        public dialectName: string,
         public connectionName: string,
+        public debug: boolean,
         public emitter: EmitterContract
     ) {
         super()
@@ -101,8 +114,8 @@ export class TransactionClient extends EventEmitter implements TransactionClient
      * added for API compatibility with the [[QueryClient]] class
      */
     public async columnsInfo(table: string, column?: string): Promise<any> {
-        const query = this.knexClient.select(table)
-        const result = await (column ? query.columnInfo(column) : query.columnInfo())
+        const query = this.knexClient.table(table)
+        const result = await (column ? query.columnInfo(column as never) : query.columnInfo())
         return result
     }
 
@@ -157,41 +170,80 @@ export class TransactionClient extends EventEmitter implements TransactionClient
      * cannot be executed. Use `rawQuery`, if you want to execute
      * queries raw queries.
      */
-    public raw(sql: string, bindings?: any) {
+    public raw(sql: string, bindings?: any): RawBuilderContract {
         return new RawBuilder(sql, bindings)
     }
 
     /**
      * Returns reference builder.
      */
-    public ref(reference: string) {
+    public ref(reference: string): ReferenceBuilderContract {
         return new ReferenceBuilder(reference)
     }
 
     /**
      * Returns another instance of transaction with save point
      */
-    public async transaction(callback?: (trx: TransactionClientContract) => Promise<any>): Promise<any> {
-        const trx = await this.knexClient.transaction()
-        const transaction = new TransactionClient(trx, this.dialect, this.connectionName, this.emitter)
+    public async transaction(options?, callback?: (trx: TransactionClientContract) => Promise<any>): Promise<any> {
+        if (typeof options === 'function') {
+            callback = options;
+            options = undefined;
+        }
+
+        let trx;
+
+        if (options && (options.transaction === null || options.transaction === undefined)) {
+            trx = await this.knexClient['parent'].transaction(null, {
+                userParams: {},
+                doNotRejectOnRollback: true,
+                dialect: this.dialect,
+                ...options
+            });
+        } else if ( options && options.transaction ) {
+            trx = await options.transaction.knexClient.transaction(null, {
+                userParams: {},
+                doNotRejectOnRollback: true,
+                dialect: this.dialect,
+                ...options
+            });
+        } else {
+            trx = await this.knexClient.transaction(null, {
+                userParams: {},
+                doNotRejectOnRollback: true,
+                dialect: this.dialect,
+                ...options
+            });
+        }
+
+        const transaction = new TransactionClient(trx, this.dialectName, this.connectionName, this.debug, this.emitter);
 
         /**
          * Always make sure to pass the profiler down the chain
          */
         transaction.profiler = this.profiler?.create('trx:begin', { state: 'begin' })
 
+        return transaction.runTransaction(options, callback);
+    }
+
+    runTransaction(options, callback) {
+        const transaction = this;
+
         /**
          * Self managed transaction
          */
         if ( typeof (callback) === 'function' ) {
-            try {
-                const response = await callback(transaction)
-                ! transaction.isCompleted && await transaction.commit()
-                return response
-            } catch (error) {
-                await transaction.rollback()
-                throw error
-            }
+            return Database.clsRun(async () => {
+                try {
+                    Database._cls && Database._cls.set('transaction', transaction);
+
+                    const response = await callback(transaction)
+                    ! transaction.isCompleted && await transaction.commit()
+                    return response
+                } catch (error) {
+                    await transaction.rollback()
+                    throw error
+                }
+            })
         }
 
         return transaction

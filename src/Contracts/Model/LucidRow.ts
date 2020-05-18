@@ -68,6 +68,22 @@ export type CacheNode = {
 }
 
 /**
+ * Shape for cherry picking fields
+ */
+export type CherryPickFields = string[] | {
+    pick?: string[],
+    omit?: string[],
+}
+
+/**
+ * Shape for cherry picking fields on nested relationships
+ */
+export type CherryPick = {
+    fields?: CherryPickFields,
+    relations?: { [relation: string]: CherryPick }
+}
+
+/**
  * Preload function on a model instance
  */
 interface ModelBuilderPreloadFn<Model extends LucidRow,
@@ -108,7 +124,10 @@ export interface LucidRow {
     $options?: ModelOptions
     $trx?: TransactionClientContract,
 
-    $setOptionsAndTrx(options?: ModelAdapterOptions): void
+    $setOptionsAndTrx(options?: ModelAdapterOptions): void;
+
+    useTransaction (trx: TransactionClientContract): this
+    useConnection (connection: string): this
 
     /**
      * Gives an option to the end user to define constraints for update, insert
@@ -172,19 +191,19 @@ export interface LucidRow {
     /**
      * Serialize attributes to a plain object
      */
-    serializeAttributes(fieldsToCherryPick?: ModelObject, raw?: boolean): ModelObject
+    serializeAttributes(fieldsToCherryPick?: CherryPickFields, raw?: boolean): ModelObject
 
     /**
      * Serialize computed properties to a plain object
      */
-    serializeComputed(fieldsToCherryPick?: string[]): ModelObject
+    serializeComputed(fields?: CherryPickFields): ModelObject
 
     /**
      * Serialize relationships to key-value pair of model instances and
      * their serializeAs keys
      */
     serializeRelations(
-        fieldsToCherryPick: ModelObject | undefined,
+        fields: undefined,
         raw: true
     ): { [key: string]: LucidRow | LucidRow[] }
 
@@ -192,16 +211,16 @@ export interface LucidRow {
      * Serialize relationships to key-value pair of plain nested objects
      */
     serializeRelations(
-        fieldsToCherryPick: ModelObject | undefined,
+        cherryPick: CherryPick['relations'] | undefined,
         raw: false | undefined
     ): ModelObject
 
-    serializeRelations(fieldsToCherryPick?: ModelObject, raw?: boolean): ModelObject
+    serializeRelations(cherryPick?: CherryPick['relations'], raw?: boolean): ModelObject
 
     /**
      * Serialize model to a plain object
      */
-    serialize(fieldsToCherryPick?: ModelObject): ModelObject
+    serialize(cherryPick?: CherryPick): ModelObject
 
     /**
      * Serialize everything

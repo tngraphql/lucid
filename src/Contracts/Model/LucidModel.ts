@@ -24,6 +24,7 @@ import {
     ModelColumnOptions,
     ModelRelationOptions
 } from './types';
+import { SimplePaginatorContract } from '../Database/SimplePaginatorContract';
 
 // export type LucidModel = typeof BaseModel & {new(): LucidRow};
 
@@ -233,6 +234,12 @@ export interface LucidModel {
         handler: HooksHandler<ModelQueryBuilderContract<Model>, Event>
     ): void
 
+    before<Model extends LucidModel> (
+        this: Model,
+        event: 'paginate',
+        handler: HooksHandler<[ModelQueryBuilderContract<Model>, ModelQueryBuilderContract<Model>], 'paginate'>,
+    ): void
+
     before<Model extends LucidModel, Event extends EventsList>(
         this: Model,
         event: Event,
@@ -246,6 +253,12 @@ export interface LucidModel {
         this: Model,
         event: 'fetch',
         handler: HooksHandler<InstanceType<Model>[], 'fetch'>
+    ): void
+
+    after<Model extends LucidModel> (
+        this: Model,
+        event: 'paginate',
+        handler: HooksHandler<SimplePaginatorContract<InstanceType<Model>[]>, 'paginate'>,
     ): void
 
     after<Model extends LucidModel, Event extends EventsList>(
@@ -291,6 +304,26 @@ export interface LucidModel {
     ): Promise<InstanceType<T>>
 
     /**
+     * Find one using a key-value pair
+     */
+    findBy<T extends LucidModel> (
+        this: T,
+        key: string,
+        value: any,
+        options?: ModelAdapterOptions,
+    ): Promise<null | InstanceType<T>>
+
+    /**
+     * Find one using a key-value pair or fail
+     */
+    findByOrFail<T extends LucidModel> (
+        this: T,
+        key: string,
+        value: any,
+        options?: ModelAdapterOptions,
+    ): Promise<InstanceType<T>>
+
+    /**
      * Same as `query().first()`
      */
     first<T extends LucidModel>(
@@ -321,7 +354,7 @@ export interface LucidModel {
      */
     firstOrNew<T extends LucidModel>(
         this: T,
-        search: Partial<ModelAttributes<InstanceType<T>>>,
+        searchPayload: Partial<ModelAttributes<InstanceType<T>>>,
         savePayload?: Partial<ModelAttributes<InstanceType<T>>>,
         options?: ModelAdapterOptions
     ): Promise<InstanceType<T>>
@@ -331,9 +364,19 @@ export interface LucidModel {
      */
     firstOrCreate<T extends LucidModel>(
         this: T,
-        search: Partial<ModelAttributes<InstanceType<T>>>,
+        searchPayload: Partial<ModelAttributes<InstanceType<T>>>,
         savePayload?: Partial<ModelAttributes<InstanceType<T>>>,
         options?: ModelAdapterOptions
+    ): Promise<InstanceType<T>>
+
+    /**
+     * Returns the first row or save it to the database
+     */
+    updateOrCreate<T extends LucidModel> (
+        this: T,
+        searchPayload: Partial<ModelAttributes<InstanceType<T>>>,
+        updatePayload: Partial<ModelAttributes<InstanceType<T>>>,
+        options?: ModelAdapterOptions,
     ): Promise<InstanceType<T>>
 
     /**
@@ -344,8 +387,7 @@ export interface LucidModel {
         this: T,
         uniqueKey: keyof ModelAttributes<InstanceType<T>>,
         payload: Partial<ModelAttributes<InstanceType<T>>>[],
-        options?: ModelAdapterOptions,
-        mergeAttributes?: boolean
+        options?: ModelAdapterOptions
     ): Promise<InstanceType<T>[]>
 
     /**
@@ -358,16 +400,6 @@ export interface LucidModel {
         payload: Partial<ModelAttributes<InstanceType<T>>>[],
         options?: ModelAdapterOptions
     ): Promise<InstanceType<T>[]>
-
-    /**
-     * Returns the first row or save it to the database
-     */
-    updateOrCreate<T extends LucidModel>(
-        this: T,
-        search: Partial<ModelAttributes<InstanceType<T>>>,
-        updatePayload: Partial<ModelAttributes<InstanceType<T>>>,
-        options?: ModelAdapterOptions
-    ): Promise<InstanceType<T>>
 
     /**
      * Update existing rows or create new one's.

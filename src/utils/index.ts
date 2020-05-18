@@ -9,10 +9,9 @@
  */
 
 import { Exception } from '@poppinss/utils/build'
-import { scryptSync } from 'crypto';
 import { QueryClientContract } from '../Contracts/Database/QueryClientContract';
 import { TransactionClientContract } from '../Contracts/Database/TransactionClientContract';
-import { LucidRow, ModelObject } from '../Contracts/Model/LucidRow';
+import {CherryPickFields, LucidRow, ModelObject} from '../Contracts/Model/LucidRow';
 import { RelationshipsContract } from '../Contracts/Orm/Relations/types';
 
 /**
@@ -98,7 +97,7 @@ export function unique(value: any[]) {
 export function syncDiff(original: ModelObject, incoming: ModelObject) {
     const diff = Object
         .keys(incoming)
-        .reduce<{ added: ModelObject, updated: ModelObject, removed: ModelObject }>((
+        .reduce<{ added: ModelObject, updated: ModelObject}>((
             result,
             incomingRowId
         ) => {
@@ -120,17 +119,7 @@ export function syncDiff(original: ModelObject, incoming: ModelObject) {
             }
 
             return result
-        }, { added: {}, updated: {}, removed: {} })
-
-    /**
-     * Deleted rows
-     */
-    diff.removed = Object.keys(original).reduce((result, originalRowId) => {
-        if ( ! incoming[originalRowId] ) {
-            result[originalRowId] = {}
-        }
-        return result
-    }, {})
+        }, { added: {}, updated: {} })
 
     return diff
 }
@@ -157,5 +146,56 @@ export async function managedTransaction<T>(
     } catch (error) {
         await trx.rollback()
         throw error
+    }
+}
+
+/**
+ * Collects values for a key inside an array. Similar to `Array.map`, but
+ * reports missing values.
+ */
+export function collectValues (payload: any[], key: string, missingCallback: () => void) {
+    return payload.map((row: any) => {
+        return ensureValue(row, key, missingCallback)
+    })
+}
+
+/**
+ * Returns the sql method for a DDL statement
+ */
+export function getDDLMethod (sql: string) {
+    if (typeof sql === "string") {
+        sql = sql.toLowerCase();
+    }
+
+    if (sql.startsWith('create')) {
+        return 'create';
+    }
+
+    if (sql.startsWith('alter')) {
+        return 'alter'
+    }
+
+    if (sql.startsWith('drop')) {
+        return 'drop'
+    }
+
+    return 'unknown'
+}
+
+/**
+ * Normalizes the cherry picking object to always be an object with
+ * `pick` and `omit` properties
+ */
+export function normalizeCherryPickObject (fields: CherryPickFields) {
+    if (Array.isArray(fields)) {
+        return {
+            pick: fields,
+            omit: [],
+        }
+    }
+
+    return {
+        pick: fields.pick,
+        omit: fields.omit,
     }
 }

@@ -10,6 +10,7 @@
 
 import { ProfilerContract, ProfilerRowContract } from '@ioc:Adonis/Core/Profiler';
 import { ConnectionContract } from './ConnectionContract';
+import {Logger} from "knex";
 
 /**
  * Connection node used by majority of database
@@ -21,6 +22,7 @@ type SharedConnectionNode = {
     password?: string,
     database?: string,
     port?: number,
+    options?: any
 }
 
 /**
@@ -52,6 +54,7 @@ type SharedConfigNode = {
     revision?: number,
     healthCheck?: boolean,
     migrations?: MigratorConfig,
+    log?: Logger,
     pool?: {
         afterCreate?: (conn: any, done: any) => void,
         min?: number,
@@ -117,7 +120,7 @@ export type MysqlConfig = SharedConfigNode & {
             connection: MysqlConfig['connection'][],
             pool?: MysqlConfig['pool'],
         },
-    },
+    }
 }
 
 /**
@@ -127,8 +130,20 @@ export type MysqlConfig = SharedConfigNode & {
  * Knex forwards all config options to the driver directly. So feel
  * free to define them (let us know, in case any options are missing)
  */
-export type Mysql2Config = MysqlConfig & {
+export type Mysql2Config = SharedConfigNode & {
     client: 'mysql2',
+    version?: string,
+    connection?: SharedConnectionNode & MysqlConnectionNode,
+    replicas?: {
+        write: {
+            connection: MysqlConfig['connection'],
+            pool?: MysqlConfig['pool'],
+        }
+        read: {
+            connection: MysqlConfig['connection'][],
+            pool?: MysqlConfig['pool'],
+        },
+    }
 }
 
 /**

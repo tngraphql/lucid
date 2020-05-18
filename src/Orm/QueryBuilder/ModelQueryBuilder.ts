@@ -85,9 +85,16 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
     protected wrapResultsToModelInstances: boolean = true
 
     /**
-     * Custom reporter data
+     * Custom data someone want to send to the profiler and the
+     * query event
      */
     private customReporterData: any
+
+    /**
+     * Control whether to debug the query or not. The initial
+     * value is inherited from the query client
+     */
+    private debugQueries: boolean = this.client.debug
 
     /**
      * Options that must be passed to all new model instances
@@ -242,7 +249,7 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
 
         const isWriteQuery = ['update', 'del', 'insert'].includes(this.knexQuery['_method'])
         const queryData = Object.assign(this.getQueryData(), this.customReporterData)
-        const rows = await new QueryRunner(this.client, queryData).run(this.knexQuery)
+        const rows = await new QueryRunner(this.client, this.debugQueries, queryData).run(this.knexQuery)
 
         /**
          * Return the rows as it is when query is a write query
@@ -406,10 +413,17 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
     }
 
     /**
+     * Alias for [[del]]
+     */
+    public delete (): this {
+        return this.del()
+    }
+
+    /**
      * Turn on/off debugging for this query
      */
     public debug(debug: boolean): this {
-        this.knexQuery.debug(debug)
+        this.debugQueries = debug;
         return this
     }
 
@@ -465,12 +479,25 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
      * Paginate through rows inside a given table
      */
     public async paginate(page: number, perPage: number = 20) {
-        const countQuery = this.clone().clearOrder().clearLimit().clearOffset().clearSelect().count('* as total')
+        const countQuery = this.clone().clearOrder().clearLimit().clearOffset().clearSelect().count('* as total');
+
+        /**
+         * We pass both the counts query and the main query to the
+         * paginate hook
+         */
+        await this.model.$hooks.exec('before', 'paginate', [countQuery, this]);
+        await this.model.$hooks.exec('before', 'fetch', this);
+
         const aggregateResult = await countQuery.execQuery()
         const total = this.hasGroupBy ? aggregateResult.length : aggregateResult[0].total
 
         const results = total > 0 ? await this.forPage(page, perPage).execQuery() : []
-        return new SimplePaginator(results, total, perPage, page)
+        const paginator = new SimplePaginator(results, total, perPage, page);
+
+        await this.model.$hooks.exec('after', 'paginate', paginator);
+        await this.model.$hooks.exec('after', 'fetch', results);
+
+        return paginator;
     }
 
     /**

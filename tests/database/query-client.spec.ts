@@ -12,7 +12,7 @@
 import { resolveClientNameWithAliases } from 'knex/lib/helpers'
 import { Connection } from '../../src/Connection/Connection';
 import { QueryClient } from '../../src/QueryClient/QueryClient';
-import { cleanup, getConfig, getEmitter, getLogger, resetTables, setup } from '../helpers';
+import {cleanup, getConfig, getEmitter, getLogger, hasMysql, resetTables, setup} from '../helpers';
 
 describe('Query client', () => {
     describe('Query client', () => {
@@ -361,12 +361,12 @@ describe('Query client', () => {
                 connection.connect()
 
                 const client = new QueryClient('dual', connection, getEmitter())
-                const lock = await client.dialect.getAdvisoryLock(1)
+                const lock = await client.getAdvisoryLock(1)
 
                 expect(lock).toBeTruthy()
                 expect(client.dialect.name).toBe(resolveClientNameWithAliases(connection.config.client))
 
-                await client.dialect.releaseAdvisoryLock(1)
+                await client.releaseAdvisoryLock(1)
                 await connection.disconnect()
             })
 
@@ -380,8 +380,8 @@ describe('Query client', () => {
                     return
                 }
 
-                await client.dialect.getAdvisoryLock(1)
-                const released = await client.dialect.releaseAdvisoryLock(1)
+                await client.getAdvisoryLock(1)
+                const released = await client.releaseAdvisoryLock(1)
                 expect(released).toBeTruthy()
 
                 await connection.disconnect()
@@ -408,7 +408,7 @@ describe('Query client', () => {
 
             const client = new QueryClient('dual', connection, getEmitter())
             const tables = await client.getAllTables(['public'])
-            if ( process.env.DB !== 'mysql' ) {
+            if ( !hasMysql(process.env.DB) ) {
                 expect(tables).toEqual([
                     'comments',
                     'countries',

@@ -9,8 +9,9 @@
  */
 import { DialectContract } from '../Contracts/Database/DialectContract';
 import { QueryClientContract } from '../Contracts/Database/QueryClientContract';
+import { AbstractDialect } from './AbstractDialect';
 
-export class RedshiftDialect implements DialectContract {
+export class RedshiftDialect extends AbstractDialect implements DialectContract {
     public readonly name = 'redshift'
     public readonly supportsAdvisoryLocks = false
 
@@ -19,9 +20,6 @@ export class RedshiftDialect implements DialectContract {
      * valid for luxon date parsing library
      */
     public readonly dateTimeFormat = 'yyyy-MM-dd\'T\'HH:mm:ss.SSSZZ'
-
-    constructor(private client: QueryClientContract) {
-    }
 
     /**
      * Returns an array of table names for one or many schemas.

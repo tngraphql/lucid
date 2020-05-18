@@ -15,7 +15,7 @@ import { MigrationSource } from '../../src/Migrator/MigrationSource';
 import { cleanup, getDb, resetTables, setup } from '../helpers';
 
 let db: ReturnType<typeof getDb>
-const fs = new Filesystem(join(__dirname, 'app'))
+let fs = new Filesystem(join(__dirname, 'app'))
 
 describe('MigrationSource', () => {
     beforeAll(async () => {
@@ -28,9 +28,14 @@ describe('MigrationSource', () => {
         await db.manager.closeAll()
     })
 
+    beforeEach(async () => {
+        fs = new Filesystem(join(__dirname, `app${Math.ceil(Number((Math.random()+'').replace('0.','')))}`))
+    });
+
     afterEach(async () => {
         await resetTables()
         await fs.cleanup()
+        jest.resetModules();
     })
 
     test('get list of migration files from database/migrations.js', async () => {

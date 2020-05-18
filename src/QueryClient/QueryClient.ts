@@ -27,6 +27,9 @@ import { ReferenceBuilder } from '../Database/StaticBuilder/ReferenceBuilder'
 import { dialects } from '../Dialects'
 import { ModelQueryBuilder } from '../Orm/QueryBuilder/ModelQueryBuilder'
 import { TransactionClient } from '../TransactionClient/TransactionClient'
+import {TransactionOptions} from "../Contracts/Database/TransactionOptions";
+
+const Bluebird = require('bluebird').getNewLibraryCopy();
 
 /**
  * Query client exposes the API to fetch instance of different query builders
@@ -53,7 +56,12 @@ export class QueryClient implements QueryClientContract {
     /**
      * Name of the connection in use
      */
-    public readonly connectionName = this.connection.name
+    public readonly connectionName = this.connection.name;
+
+    /**
+     * Is debugging enabled
+     */
+    public debug = !!this.connection.config.debug
 
     constructor(
         public readonly mode: 'dual' | 'write' | 'read',
@@ -126,31 +134,30 @@ export class QueryClient implements QueryClientContract {
      * Returns an instance of a transaction. Each transaction will
      * query and hold a single connection for all queries.
      */
-    public async transaction(callback?: (trx: TransactionClientContract) => Promise<any>): Promise<any> {
-        const trx = await this.getWriteClient().transaction()
-        const transaction: TransactionClientContract = new TransactionClient(trx, this.dialect, this.connectionName, this.emitter)
+    public async transaction<T = TransactionClientContract>(options?, callback?: (trx: TransactionClientContract) => Promise<T> | T): Promise<T> {
+        if (typeof options === 'function') {
+            callback = options;
+            options = undefined;
+        }
+
+        const client = this.getWriteClient();
+        const trx: any = await client.transaction(null, {
+            userParams: {},
+            doNotRejectOnRollback: true,
+            dialect: this.dialect,
+            ...options
+        })
+        trx.parent = client;
+
+        const transaction = new TransactionClient(trx, this.connection.config.client, this.connectionName, this.debug, this.emitter);
 
         /**
          * Always make sure to pass the profiler and emitter down to the transaction
          * client as well
          */
-        transaction.profiler = this.profiler?.create('trx:begin', { state: 'begin' })
+        transaction.profiler = this.profiler?.create('trx:begin', { state: 'begin' });
 
-        /**
-         * Self managed transaction
-         */
-        if ( typeof (callback) === 'function' ) {
-            try {
-                const response = await callback(transaction)
-                ! transaction.isCompleted && await transaction.commit()
-                return response
-            } catch (error) {
-                await transaction.rollback()
-                throw error
-            }
-        }
-
-        return transaction
+        return transaction.runTransaction(options, callback);
     }
 
     /**
@@ -234,14 +241,14 @@ export class QueryClient implements QueryClientContract {
     /**
      * Get advisory lock on the selected connection
      */
-    public getAdvisoryLock(key: string, timeout?: number): any {
+    public getAdvisoryLock(key: string| number, timeout?: number): any {
         return this.dialect.getAdvisoryLock(key, timeout)
     }
 
     /**
      * Release advisory lock
      */
-    public releaseAdvisoryLock(key: string): any {
+    public releaseAdvisoryLock(key: string| number): any {
         return this.dialect.releaseAdvisoryLock(key)
     }
 }

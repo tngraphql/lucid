@@ -86,6 +86,7 @@ export interface ModelQueryBuilderContract<Model extends LucidModel,
      * Perform delete operation
      */
     del(): ModelQueryBuilderContract<Model, number>
+    delete(): ModelQueryBuilderContract<Model, number>
 
     /**
      * Execute query with pagination

@@ -20,7 +20,8 @@ import { InsertQueryBuilderContract } from './InsertQueryBuilderContract';
 import { RawBuilderContract } from './RawBuilderContract';
 import { RawQueryBuilderContract } from './RawQueryBuilderContract';
 import { ReferenceBuilderContract } from './ReferenceBuilderContract';
-import { TransactionFn } from './TransactionFn';
+import { TransactionClientContract } from './TransactionClientContract';
+import {TransactionOptions} from "./TransactionOptions";
 
 /**
  * Shape of the query client, that is used to retrive instances
@@ -54,6 +55,12 @@ export interface QueryClientContract {
      * was originated
      */
     readonly connectionName: string
+
+    /**
+     * Is debug enabled on the connnection or not. Also opens up the API to
+     * disable debug for a given client
+     */
+    debug: boolean,
 
     /**
      * Returns schema instance for the write client
@@ -147,7 +154,9 @@ export interface QueryClientContract {
     /**
      * Get instance of transaction client
      */
-    transaction: TransactionFn,
+    // transaction: TransactionFn,
+    transaction<T = TransactionClientContract>(options?: TransactionOptions, callback?: (trx: TransactionClientContract) => Promise<T> | T): Promise<T>
+    transaction<T = TransactionClientContract>(callback?: (trx: TransactionClientContract) => Promise<T> | T): Promise<T>
 
     /**
      * Work with advisory locks

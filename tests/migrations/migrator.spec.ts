@@ -14,10 +14,11 @@ import { join } from "path";
 import { cleanup, getDb, getMigrator, resetTables, setup } from '../helpers';
 
 let db: ReturnType<typeof getDb>
-const fs = new Filesystem(join(__dirname, 'app'))
+let fs = new Filesystem(join(__dirname, 'app'))
 
 describe('Migrator', () => {
     beforeAll(async () => {
+        jest.setTimeout(20000);
         db = getDb()
         await setup()
     })
@@ -33,6 +34,10 @@ describe('Migrator', () => {
         await fs.cleanup();
         jest.resetModules();
     })
+
+    beforeEach(async () => {
+        fs = new Filesystem(join(__dirname, `app${Math.ceil(Number((Math.random()+'').replace('0.','')))}`))
+    });
 
     test('create the schema table when there are no migrations', async () => {
         const app = new Application(fs.basePath)
@@ -95,16 +100,16 @@ describe('Migrator', () => {
 
     test('do not migrate when schema up action fails', async () => {
         expect.assertions(8)
-        const app = new Application(fs.basePath)
+        const app = new Application(fs.basePath);
 
         await fs.add('database/migrations/users.ts', `
       import { Schema } from '../../../../../src/Schema'
       module.exports = class User extends Schema {
         public async up () {
           this.schema.createTable('schema_users', (table) => {
-            table.increments()
-            table['badMethod']('account_id')
-          })
+            table.increments();
+            table['badMethod']('account_id');
+          });
         }
       }
     `)
@@ -123,7 +128,7 @@ describe('Migrator', () => {
         const migrator = getMigrator(db, app, {
             direction: 'up',
             connectionName: 'primary',
-        })
+        });
 
         await migrator.run()
 

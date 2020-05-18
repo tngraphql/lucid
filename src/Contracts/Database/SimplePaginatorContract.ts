@@ -40,5 +40,5 @@ export interface SimplePaginatorContract<Result extends any[]> {
 
     getUrlsForRange(start: number, end: number): { url: string, page: number }[]
 
-    toJSON(): { meta: SimplePaginatorMeta, data: Result[] }
+    toJSON(): { meta: SimplePaginatorMeta, data: Result }
 }

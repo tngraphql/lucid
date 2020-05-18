@@ -38,7 +38,7 @@ import { Adapter } from '../src/Orm/Adapter/Adapter';
 import { BaseModel } from '../src/Orm/BaseModel/BaseModel';
 import { QueryClient } from '../src/QueryClient/QueryClient';
 import { Schema } from '../src/Schema';
-
+import { Emitter } from '@adonisjs/events/build/standalone'
 
 export const fs = new Filesystem(join(__dirname, 'tmp'))
 dotenv.config()
@@ -69,6 +69,18 @@ export function getConfig(): ConnectionConfig {
             },
             useNullAsDefault: true
         }
+    case 'mysql2':
+            return {
+                client: 'mysql2',
+                connection: {
+                    host: process.env.MYSQL_HOST as string,
+                    port: Number(process.env.MYSQL_PORT),
+                    database: process.env.DB_NAME as string,
+                    user: process.env.MYSQL_USER as string,
+                    password: process.env.MYSQL_PASSWORD as string
+                },
+                useNullAsDefault: true
+            }
     case 'pg':
         return {
             client: 'pg',
@@ -88,7 +100,10 @@ export function getConfig(): ConnectionConfig {
                 user: process.env.MSSQL_USER as string,
                 server: process.env.MSSQL_SERVER as string,
                 password: process.env.MSSQL_PASSWORD as string,
-                database: 'master'
+                database: 'master',
+                // options: {
+                //     enableArithAbort: true
+                // }
             },
             pool: {
                 min: 0,
@@ -98,6 +113,10 @@ export function getConfig(): ConnectionConfig {
     default:
         throw new Error(`Missing test config for ${ process.env.DB } connection`)
     }
+}
+
+export function hasMysql(db: string) {
+    return ['mysql', 'mysql2'].includes(db);
 }
 
 /**
@@ -258,9 +277,10 @@ export async function resetTables() {
  */
 export function getQueryClient(
     connection: ConnectionContract,
-    mode?: 'read' | 'write'
+    mode?: 'read' | 'write' | 'dual',
+    emitter?: Emitter,
 ): QueryClientContract {
-    return new QueryClient(mode || 'dual', connection, getEmitter()) as QueryClientContract
+    return new QueryClient(mode || 'dual', connection, emitter || getEmitter()) as QueryClientContract
 }
 
 /**
@@ -326,7 +346,7 @@ export function getProfiler(enabled: boolean = false) {
 /**
  * Returns the database instance
  */
-export function getDb() {
+export function getDb(emitter?: any) {
     const config = {
         connection: 'primary',
         connections: {
@@ -335,8 +355,7 @@ export function getDb() {
         }
     }
 
-    const emitter = getEmitter()
-    return new Database(config, getLogger(), getProfiler(), emitter) as DatabaseContract
+    return new Database(config, getLogger(), getProfiler(), emitter || getEmitter()) as DatabaseContract
 }
 
 /**

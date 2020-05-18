@@ -17,16 +17,17 @@ import { ConnectionManager } from '../Connection/ConnectionManager'
 import { ConnectionManagerContract } from '../Contracts/Connection/ConnectionManagerContract';
 import { DatabaseClientOptions, DatabaseConfig } from '../Contracts/Connection/types';
 import { DatabaseContract } from '../Contracts/Database/DatabaseContract';
+import { QueryClientContract } from '../Contracts/Database/QueryClientContract';
 import { TransactionClientContract } from '../Contracts/Database/TransactionClientContract';
 import { prettyPrint } from '../Helpers/prettyPrint'
 import { ModelQueryBuilder } from '../Orm/QueryBuilder/ModelQueryBuilder'
-
 import { QueryClient } from '../QueryClient/QueryClient'
 import { SimplePaginator } from './Paginator/SimplePaginator'
 import { DatabaseQueryBuilder } from './QueryBuilder/DatabaseQueryBuilder'
 import { InsertQueryBuilder } from './QueryBuilder/InsertQueryBuilder'
 import { RawBuilder } from './StaticBuilder/RawBuilder'
-import { ReferenceBuilder } from './StaticBuilder/ReferenceBuilder'
+import { ReferenceBuilder } from './StaticBuilder/ReferenceBuilder';
+import './customTransaction';
 
 /**
  * Database class exposes the API to manage multiple connections and obtain an instance
@@ -55,7 +56,16 @@ export class Database implements DatabaseContract {
     /**
      * A store of global transactions
      */
-    public connectionGlobalTransactions: Map<string, TransactionClientContract> = new Map()
+    public connectionGlobalTransactions: Map<string, TransactionClientContract> = new Map();
+
+    public hasHealthChecksEnabled = false
+
+    public prettyPrint = prettyPrint
+
+    /**
+     * A store of global transactions
+     */
+    static _cls;
 
     constructor(
         private config: DatabaseConfig,
@@ -64,10 +74,34 @@ export class Database implements DatabaseContract {
         private emitter: EmitterContract
     ) {
         this.manager = new ConnectionManager(this.logger, this.emitter)
-        this.registerConnections()
+        this.registerConnections();
+        this.findIfHealthChecksAreEnabled()
     }
 
-    public prettyPrint = prettyPrint
+    /**
+     * Compute whether health check is enabled or not after registering the connections.
+     * There are chances that all pre-registered connections are not using health
+     * checks but a dynamic connection is using it. We don't support that use case
+     * for now, since it complicates things a lot and forces us to register the
+     * health checker on demand.
+     */
+    private findIfHealthChecksAreEnabled () {
+        for (let [,conn] of this.manager.connections) {
+            if (conn.config.healthCheck) {
+                this.hasHealthChecksEnabled = true
+                break
+            }
+        }
+    }
+
+    public static clsRun(fn: (ctx?: any) => void) {
+        const ns = this._cls;
+        if ( ! ns ) return fn();
+
+        let res;
+        ns.run(context => res = fn(context));
+        return res;
+    }
 
     /**
      * Registering all connections with the manager, so that we can fetch
@@ -89,7 +123,7 @@ export class Database implements DatabaseContract {
     /**
      * Returns the query client for a given connection
      */
-    public connection(connection: string = this.primaryConnectionName, options?: DatabaseClientOptions) {
+    public connection(connection: string = this.primaryConnectionName, options?: DatabaseClientOptions): QueryClientContract {
         options = options || {}
 
         /**
@@ -115,10 +149,15 @@ export class Database implements DatabaseContract {
         /**
          * Return the global transaction when it already exists.
          */
-        if ( this.connectionGlobalTransactions.has(connection) ) {
-            this.logger.trace({ connection }, 'using pre-existing global transaction connection')
-            const globalTransactionClient = this.connectionGlobalTransactions.get(connection)!
-            return globalTransactionClient
+        if ( Database._cls ) {
+            const t = Database._cls.get('transaction');
+            if ( t ) {
+                this.logger.trace({ connection }, 'using pre-existing global transaction connection');
+                return t;
+            }
+            // this.logger.trace({ connection }, 'using pre-existing global transaction connection');
+            // const globalTransactionClient = this.connectionGlobalTransactions.get(connection)!
+            // return globalTransactionClient
         }
 
         /**
@@ -222,8 +261,12 @@ export class Database implements DatabaseContract {
      * Returns a transaction instance on the default
      * connection
      */
-    public transaction() {
-        return this.connection().transaction()
+    public async transaction<T = TransactionClientContract>(options?, autoCallback?): Promise<T> {
+        if (typeof options === 'function') {
+            autoCallback = options;
+            options = undefined;
+        }
+        return this.connection().transaction<T>(options, autoCallback);
     }
 
     /**
@@ -233,75 +276,75 @@ export class Database implements DatabaseContract {
         return this.manager.report()
     }
 
-    /**
-     * Begin a new global transaction
-     */
-    public async beginGlobalTransaction(
-        connectionName?: string,
-        options?: Omit<DatabaseClientOptions, 'mode'>
-    ) {
-        connectionName = connectionName || this.primaryConnectionName
-
-        /**
-         * Return global transaction as it is
-         */
-        const globalTrx = this.connectionGlobalTransactions.get(connectionName)
-        if ( globalTrx ) {
-            return globalTrx
-        }
-
-        /**
-         * Create a new transaction and store a reference to it
-         */
-        const trx = await this.connection(connectionName, options).transaction()
-        this.connectionGlobalTransactions.set(trx.connectionName, trx)
-
-        /**
-         * Listen for events to drop the reference when transaction
-         * is over
-         */
-        trx.on('commit', ($trx) => {
-            this.connectionGlobalTransactions.delete($trx.connectionName)
-        })
-
-        trx.on('rollback', ($trx) => {
-            this.connectionGlobalTransactions.delete($trx.connectionName)
-        })
-
-        return trx
-    }
-
-    /**
-     * Commit an existing global transaction
-     */
-    public async commitGlobalTransaction(connectionName?: string) {
-        connectionName = connectionName || this.primaryConnectionName
-        const trx = this.connectionGlobalTransactions.get(connectionName)
-
-        if ( ! trx ) {
-            throw new Exception([
-                'Cannot commit a non-existing global transaction.',
-                ' Make sure you are not calling "commitGlobalTransaction" twice'
-            ].join(''))
-        }
-
-        await trx.commit()
-    }
-
-    /**
-     * Rollback an existing global transaction
-     */
-    public async rollbackGlobalTransaction(connectionName?: string) {
-        connectionName = connectionName || this.primaryConnectionName
-        const trx = this.connectionGlobalTransactions.get(connectionName)
-
-        if ( ! trx ) {
-            throw new Exception([
-                'Cannot rollback a non-existing global transaction.',
-                ' Make sure you are not calling "commitGlobalTransaction" twice'
-            ].join(''))
-        }
-
-        await trx.rollback()
-    }
+    // /**
+    //  * Begin a new global transaction
+    //  */
+    // public async beginGlobalTransaction(
+    //     connectionName?: string,
+    //     options?: Omit<DatabaseClientOptions, 'mode'>
+    // ) {
+    //     connectionName = connectionName || this.primaryConnectionName
+    //
+    //     /**
+    //      * Return global transaction as it is
+    //      */
+    //     const globalTrx = this.connectionGlobalTransactions.get(connectionName)
+    //     if ( globalTrx ) {
+    //         return globalTrx
+    //     }
+    //
+    //     /**
+    //      * Create a new transaction and store a reference to it
+    //      */
+    //     const trx = await this.connection(connectionName, options).transaction()
+    //     this.connectionGlobalTransactions.set(trx.connectionName, trx)
+    //
+    //     /**
+    //      * Listen for events to drop the reference when transaction
+    //      * is over
+    //      */
+    //     trx.on('commit', ($trx) => {
+    //         this.connectionGlobalTransactions.delete($trx.connectionName)
+    //     })
+    //
+    //     trx.on('rollback', ($trx) => {
+    //         this.connectionGlobalTransactions.delete($trx.connectionName)
+    //     })
+    //
+    //     return trx
+    // }
+    //
+    // /**
+    //  * Commit an existing global transaction
+    //  */
+    // public async commitGlobalTransaction(connectionName?: string) {
+    //     connectionName = connectionName || this.primaryConnectionName
+    //     const trx = this.connectionGlobalTransactions.get(connectionName)
+    //
+    //     if ( ! trx ) {
+    //         throw new Exception([
+    //             'Cannot commit a non-existing global transaction.',
+    //             ' Make sure you are not calling "commitGlobalTransaction" twice'
+    //         ].join(''))
+    //     }
+    //
+    //     await trx.commit()
+    // }
+    //
+    // /**
+    //  * Rollback an existing global transaction
+    //  */
+    // public async rollbackGlobalTransaction(connectionName?: string) {
+    //     connectionName = connectionName || this.primaryConnectionName
+    //     const trx = this.connectionGlobalTransactions.get(connectionName)
+    //
+    //     if ( ! trx ) {
+    //         throw new Exception([
+    //             'Cannot rollback a non-existing global transaction.',
+    //             ' Make sure you are not calling "commitGlobalTransaction" twice'
+    //         ].join(''))
+    //     }
+    //
+    //     await trx.rollback()
+    // }
 }
