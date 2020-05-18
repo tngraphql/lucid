@@ -36,6 +36,7 @@ export interface DatabaseQueryBuilderContract<Result extends any = Dictionary<an
      * Perform delete operation
      */
     del(): this
+    delete(): this
 
     /**
      * A shorthand to define limit and offset based upon the

@@ -111,6 +111,13 @@ export class DatabaseQueryBuilder extends Chainable implements DatabaseQueryBuil
     }
 
     /**
+     * Alias for [[del]]
+     */
+    public delete (): this {
+        return this.del()
+    }
+
+    /**
      * Clone the current query builder
      */
     public clone<Result = Dictionary<any, string>>(): DatabaseQueryBuilderContract<Result> {
