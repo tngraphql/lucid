@@ -9,10 +9,9 @@
  */
 
 import { Exception } from '@poppinss/utils/build'
-import { scryptSync } from 'crypto';
 import { QueryClientContract } from '../Contracts/Database/QueryClientContract';
 import { TransactionClientContract } from '../Contracts/Database/TransactionClientContract';
-import { LucidRow, ModelObject } from '../Contracts/Model/LucidRow';
+import {CherryPickFields, LucidRow, ModelObject} from '../Contracts/Model/LucidRow';
 import { RelationshipsContract } from '../Contracts/Orm/Relations/types';
 
 /**
@@ -181,4 +180,22 @@ export function getDDLMethod (sql: string) {
     }
 
     return 'unknown'
+}
+
+/**
+ * Normalizes the cherry picking object to always be an object with
+ * `pick` and `omit` properties
+ */
+export function normalizeCherryPickObject (fields: CherryPickFields) {
+    if (Array.isArray(fields)) {
+        return {
+            pick: fields,
+            omit: [],
+        }
+    }
+
+    return {
+        pick: fields.pick || [],
+        omit: fields.omit || [],
+    }
 }

@@ -17,7 +17,7 @@ import { QueryClientContract } from '../../Contracts/Database/QueryClientContrac
 import { TransactionClientContract } from '../../Contracts/Database/TransactionClientContract';
 import { ColumnOptions } from '../../Contracts/Model/ColumnOptions';
 import { LucidModel } from '../../Contracts/Model/LucidModel';
-import { CacheNode, LucidRow, ModelAdapterOptions, ModelObject, ModelOptions } from '../../Contracts/Model/LucidRow';
+import { CacheNode, LucidRow, ModelAdapterOptions, ModelObject, ModelOptions, CherryPick, CherryPickFields } from '../../Contracts/Model/LucidRow';
 import { ModelKeysContract } from '../../Contracts/Model/ModelKeysContract';
 import { ModelQueryBuilderContract } from '../../Contracts/Model/ModelQueryBuilderContract';
 import { OrmConfig } from '../../Contracts/Model/OrmConfig';
@@ -37,7 +37,7 @@ import {
     ThroughRelationOptions
 } from '../../Contracts/Orm/Relations/types';
 import { ScopeType } from '../../Contracts/types';
-import { ensureRelation, collectValues, isObject, managedTransaction } from '../../utils'
+import { ensureRelation, collectValues, isObject, managedTransaction, normalizeCherryPickObject } from '../../utils'
 
 import { Config } from '../Config'
 import { ModelKeys } from '../ModelKeys/ModelKeys'
@@ -969,7 +969,7 @@ export class BaseModel implements LucidRow {
      */
     private shouldSerializeField(
         serializeAs: string | null,
-        cherryPickObject?: ModelObject
+        fields?: CherryPickFields,
     ): serializeAs is string {
         /**
          * If explicit serializing is turned off, then never
@@ -980,18 +980,25 @@ export class BaseModel implements LucidRow {
         }
 
         /**
-         * If their is no cherry picking object defined, then always
-         * include the field
+         * If not explicit fields are defined, then always include the field
          */
-        if ( ! cherryPickObject ) {
+        if ( ! fields ) {
             return true
         }
 
+        const { pick, omit } = normalizeCherryPickObject(fields)
+
         /**
-         * Otherwise ensure the cherry picking object has marked
-         * the field as true
+         * Return false, when under omit array
          */
-        return cherryPickObject[serializeAs] === true || isObject(cherryPickObject[serializeAs])
+        if (omit.includes(serializeAs)) {
+            return false
+        }
+
+        /**
+         * Otherwise ensure is inside pick array
+         */
+        return pick.includes(serializeAs);
     }
 
     /**
@@ -1634,14 +1641,14 @@ export class BaseModel implements LucidRow {
      * Serializes model attributes to a plain object
      */
     public serializeAttributes(
-        fieldsToCherryPick?: ModelObject,
+        fields?: CherryPickFields,
         raw: boolean = false
     ): ModelObject {
         const Model = this.constructor as LucidModel
 
         return Object.keys(this.$attributes).reduce<ModelObject>((result, key) => {
             const column = Model.$getColumn(key)!
-            if ( ! this.shouldSerializeField(column.serializeAs, fieldsToCherryPick) ) {
+            if (!this.shouldSerializeField(column.serializeAs, fields)) {
                 return result
             }
 
@@ -1657,13 +1664,13 @@ export class BaseModel implements LucidRow {
     /**
      * Serializes model compute properties to an object.
      */
-    public serializeComputed(fieldsToCherryPick?: ModelObject): ModelObject {
+    public serializeComputed(fields?: CherryPickFields): ModelObject {
         const Model = this.constructor as LucidModel
         const result: ModelObject = {}
 
         Model.$computedDefinitions.forEach((value, key) => {
             const computedValue = this[key]
-            if ( computedValue !== undefined && this.shouldSerializeField(value.serializeAs, fieldsToCherryPick) ) {
+            if (computedValue !== undefined && this.shouldSerializeField(value.serializeAs, fields)) {
                 result[value.serializeAs] = computedValue
             }
         })
@@ -1675,44 +1682,50 @@ export class BaseModel implements LucidRow {
      * Serializes relationships to a plain object. When `raw=true`, it will
      * recurisvely serialize the relationships as well.
      */
-    public serializeRelations(
-        fieldsToCherryPick: ModelObject | undefined,
-        raw: true
-    ): { [key: string]: LucidRow | LucidRow[] }
+    // public serializeRelations(
+    //     cherryPick?: CherryPick['relations'],
+    //     raw: true
+    // ): { [key: string]: LucidRow | LucidRow[] }
+    //
+    // public serializeRelations(
+    //     cherryPick?: CherryPick['relations'],
+    //     raw: false | undefined
+    // ): ModelObject
 
     public serializeRelations(
-        fieldsToCherryPick: ModelObject | undefined,
-        raw: false | undefined
-    ): ModelObject
-
-    public serializeRelations(
-        fieldsToCherryPick?: ModelObject,
+        cherryPick?: CherryPick['relations'],
         raw: boolean = false
     ): ModelObject | { [key: string]: LucidRow | LucidRow[] } {
         const Model = this.constructor as LucidModel
 
         return Object.keys(this.$preloaded).reduce((result, key) => {
             const relation = Model.$getRelation(key as any)! as RelationshipsContract
-            if ( ! this.shouldSerializeField(relation.serializeAs, fieldsToCherryPick) ) {
+
+            /**
+             * Do not serialize relationship, when serializeAs is null
+             */
+            if (!relation.serializeAs) {
                 return result
             }
 
-            const value = this.$preloaded[key]
+            const value = this.$preloaded[key];
+
+            /**
+             * Return relationship model as it is, when `raw` is true.
+             */
             if ( raw ) {
-                result[relation.serializeAs] = value
-                return result
+                result[relation.serializeAs] = value;
+                return result;
             }
 
             /**
              * Always make sure we passing a valid object or undefined
              * to the relationships
              */
-            let relationCherryPickKeys = (fieldsToCherryPick || {})[relation.serializeAs]
-            relationCherryPickKeys = isObject(relationCherryPickKeys) ? relationCherryPickKeys : undefined
-
+            const relationOptions = cherryPick ? cherryPick[relation.serializeAs] : undefined
             result[relation.serializeAs] = Array.isArray(value)
-                ? value.map((one) => one.serialize(relationCherryPickKeys))
-                : value.serialize(relationCherryPickKeys)
+                ? value.map((one) => one.serialize(relationOptions))
+                : value.serialize(relationOptions)
 
             return result
         }, {})
@@ -1721,11 +1734,11 @@ export class BaseModel implements LucidRow {
     /**
      * Converting model to it's JSON representation
      */
-    public serialize(fieldsToCherryPick?: ModelObject) {
+    public serialize(cherryPick?: CherryPick) {
         return {
-            ...this.serializeAttributes(fieldsToCherryPick, false),
-            ...this.serializeRelations(fieldsToCherryPick, false),
-            ...this.serializeComputed(fieldsToCherryPick)
+            ...this.serializeAttributes(cherryPick?.fields, false),
+            ...this.serializeRelations(cherryPick?.relations, false),
+            ...this.serializeComputed(cherryPick?.fields),
         }
     }
 

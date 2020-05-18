@@ -10,7 +10,7 @@
 
 import { DateTime } from 'luxon'
 import { LucidRow } from '../../src/Contracts/Model/LucidRow';
-import { HasMany, HasOne } from '../../src/Contracts/Orm/Relations/types';
+import {BelongsTo, HasMany, HasOne} from '../../src/Contracts/Orm/Relations/types';
 import {
     afterCreate,
     afterDelete,
@@ -23,7 +23,7 @@ import {
     beforeFetch,
     beforeFind,
     beforeSave,
-    beforeUpdate,
+    beforeUpdate, belongsTo,
     column,
     computed,
     hasMany,
@@ -1033,7 +1033,7 @@ describe('Base model', () => {
             expect(user.serializeAttributes()).toEqual({})
         })
 
-        test('cherry pick fields', async () => {
+        test('pick fields during serialization', async () => {
             class User extends BaseModel {
                 @column()
                 public username: string
@@ -1046,10 +1046,10 @@ describe('Base model', () => {
             user.username = 'virk'
             user.id = '1'
 
-            expect(user.serializeAttributes({ id: true })).toEqual({ id: '1' })
+            expect(user.serializeAttributes(['id'])).toEqual({ id: '1' })
         })
 
-        test('ignore fields marked as false', async () => {
+        test('ignore fields under omit', async () => {
             class User extends BaseModel {
                 @column()
                 public username: string
@@ -1062,10 +1062,13 @@ describe('Base model', () => {
             user.username = 'virk'
             user.id = '1'
 
-            expect(user.serializeAttributes({ id: true, username: false })).toEqual({ id: '1' })
+            expect(user.serializeAttributes({
+                pick: ['id', 'username'],
+                omit: ['username'],
+            })).toEqual({ id: '1' })
         })
 
-        test('ignore fields that has serializeAs = null, even when part of cherry picking object', async () => {
+        test('ignore fields that has serializeAs = null, even when part of pick array', async () => {
             class User extends BaseModel {
                 @column()
                 public username: string
@@ -1078,7 +1081,7 @@ describe('Base model', () => {
             user.username = 'virk'
             user.id = '1'
 
-            expect(user.serializeAttributes({ id: true })).toEqual({})
+            expect(user.serializeAttributes(['id'])).toEqual({})
         })
 
         test('do not invoke custom serialize method when raw flag is on', async () => {
@@ -1130,10 +1133,10 @@ describe('Base model', () => {
             user.username = 'virk'
             user.id = '1'
 
-            expect(user.serializeAttributes({ id: true }, true)).toEqual({ id: '1' })
+            expect(user.serializeAttributes(['id'], true)).toEqual({ id: '1' })
         })
 
-        test('ignore fields marked as false in raw mode', async () => {
+        test('ignore fields under omit array in raw mode', async () => {
             class User extends BaseModel {
                 @column()
                 public username: string
@@ -1146,7 +1149,10 @@ describe('Base model', () => {
             user.username = 'virk'
             user.id = '1'
 
-            expect(user.serializeAttributes({ id: true, username: false }, true)).toEqual({ id: '1' })
+            expect(user.serializeAttributes({
+                pick: ['id', 'username'],
+                omit: ['username'],
+            }, true)).toEqual({ id: '1' })
         })
     });
 
@@ -1355,45 +1361,18 @@ describe('Base model', () => {
             profile.userId = 1
 
             user.$setRelated('profile', profile)
-            expect(user.serializeRelations({ profile: { user_id: true } })).toEqual({
+            expect(user.serializeRelations({
+                profile: {
+                    fields: ['user_id'],
+                },
+            })).toEqual({
                 profile: {
                     user_id: 1
                 }
             })
         })
 
-        test('select all fields when relationship node value is a boolean', async () => {
-            class Profile extends BaseModel {
-                @column()
-                public username: string
-
-                @column()
-                public userId: number
-            }
-
-            class User extends BaseModel {
-                @column({ isPrimary: true })
-                public id: number
-
-                @hasOne(() => Profile)
-                public profile: HasOne<typeof Profile>
-            }
-
-            const user = new User()
-            const profile = new Profile()
-            profile.username = 'virk'
-            profile.userId = 1
-
-            user.$setRelated('profile', profile)
-            expect(user.serializeRelations({ profile: true })).toEqual({
-                profile: {
-                    user_id: 1,
-                    username: 'virk'
-                }
-            })
-        })
-
-        test('do not select any fields when relationship node value is an object', async () => {
+        test('select all fields when no custom fields are defined for a relationship', async () => {
             class Profile extends BaseModel {
                 @column()
                 public username: string
@@ -1417,9 +1396,40 @@ describe('Base model', () => {
 
             user.$setRelated('profile', profile)
             expect(user.serializeRelations({ profile: {} })).toEqual({
-                profile: {}
+                profile: {
+                    user_id: 1,
+                    username: 'virk'
+                }
             })
         })
+
+        test('do not select any fields when relationship fields is an empty array', async () => {
+            class Profile extends BaseModel {
+                @column()
+                public username: string
+
+                @column()
+                public userId: number
+            }
+
+            class User extends BaseModel {
+                @column({isPrimary: true})
+                public id: number
+
+                @hasOne(() => Profile)
+                public profile: HasOne<typeof Profile>
+            }
+
+            const user = new User()
+            const profile = new Profile()
+            profile.username = 'virk'
+            profile.userId = 1
+
+            user.$setRelated('profile', profile)
+            expect(user.serializeRelations({profile: {fields: []}})).toEqual({
+                profile: {}
+            })
+        });
     });
 
     describe('Base Model | toJSON', () => {
@@ -1518,7 +1528,7 @@ describe('Base model', () => {
             const user = new User()
             user.username = 'virk'
 
-            expect(user.serialize({ username: true })).toEqual({ username: 'virk' })
+            expect(user.serialize({ fields: ['username'], })).toEqual({ username: 'virk' })
         })
     });
 
@@ -2037,13 +2047,81 @@ describe('Base model', () => {
             user.$setRelated('profile', profile)
             profile.userId = 1
 
-            expect(user.serialize({ id: true, profile: { username: true } })).toEqual({
+            expect(user.serialize({
+                fields: ['id'],
+                relations: {
+                    profile: {
+                        fields: ['username'],
+                    },
+                },
+            })).toEqual({
                 id: 1,
                 profile: {
                     username: 'virk'
                 }
             })
         })
+
+        test('cherry pick nested relationship keys during serialize', async () => {
+            const adapter = new FakeAdapter()
+
+            class Profile extends BaseModel {
+                @column()
+                public username: string
+
+                @column()
+                public userId: number
+
+                @belongsTo(() => User)
+                public user: BelongsTo<typeof User>
+            }
+
+            class User extends BaseModel {
+                @column({isPrimary: true})
+                public id: number
+
+                @column()
+                public email: string
+
+                @hasOne(() => Profile)
+                public profile: HasOne<typeof Profile>
+            }
+
+            Profile.$adapter = adapter
+
+            const user = new User()
+            user.$consumeAdapterResult({id: 1, email: 'virk@adonisjs.com'})
+
+            const profileUser = new User()
+            profileUser.$consumeAdapterResult({id: 1, email: 'virk@adonisjs.com'})
+
+            const profile = await Profile.create({username: 'virk'})
+            user.$setRelated('profile', profile)
+            profile.$setRelated('user', profileUser)
+            profile.userId = 1;
+
+            expect(user.serialize({
+                fields: ['id'],
+                relations: {
+                    profile: {
+                        fields: ['username'],
+                        relations: {
+                            user: {
+                                fields: ['email'],
+                            },
+                        },
+                    },
+                },
+            })).toEqual({
+                id: 1,
+                profile: {
+                    username: 'virk',
+                    user: {
+                        email: 'virk@adonisjs.com',
+                    },
+                },
+            });
+        });
 
         test('serialize relation toJSON with custom serializeAs key', async () => {
             const adapter = new FakeAdapter()
