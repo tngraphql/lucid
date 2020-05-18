@@ -1175,6 +1175,7 @@ export class BaseModel implements LucidRow {
      */
     public set $options(options: ModelOptions | undefined) {
         if ( ! options ) {
+            this.modelOptions = undefined;
             return
         }
 
@@ -1186,6 +1187,22 @@ export class BaseModel implements LucidRow {
         if ( options.profiler ) {
             this.modelOptions.profiler = options.profiler
         }
+    }
+
+    /**
+     * A chainable method to set transaction on the model
+     */
+    public useTransaction (trx: TransactionClientContract): this {
+        this.$trx = trx
+        return this
+    }
+
+    /**
+     * A chainable method to set transaction on the model
+     */
+    public useConnection (connection: string): this {
+        this.$options = { connection }
+        return this
     }
 
     static _cls: any;

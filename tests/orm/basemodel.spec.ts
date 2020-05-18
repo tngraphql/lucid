@@ -39,7 +39,8 @@ import {
     hasMysql,
     ormAdapter,
     resetTables,
-    setup
+    setup,
+    getProfiler
 } from '../helpers';
 
 let db: ReturnType<typeof getDb>
@@ -142,6 +143,46 @@ describe('Base model', () => {
             expect(User.$keys.columnsToAttributes.get('user_name')).toBe('userName');
         });
     });
+
+    describe('Base Model | options', () => {
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+        })
+
+        afterAll(async () => {
+            await db.manager.closeAll()
+        })
+
+        test('set connection using useConnection method', () => {
+            class User extends BaseModel {
+                @column()
+                public username: string
+            }
+
+            const user = new User()
+            user.username = 'virk'
+
+            user.useConnection('foo')
+            expect(user.$options).toEqual({connection: 'foo'});
+        })
+
+        test('set connection do not overwrite profiler from the options', () => {
+            class User extends BaseModel {
+                @column()
+                public username: string
+            }
+
+            const user = new User()
+            user.username = 'virk'
+
+            const profiler = getProfiler()
+            user.$options = { profiler: profiler }
+
+            user.useConnection('foo')
+            expect(user.$options).toEqual({ connection: 'foo', profiler: profiler });
+        })
+    })
 
     describe('Base Model | getter-setters', () => {
         beforeAll(async () => {

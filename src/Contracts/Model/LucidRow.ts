@@ -108,7 +108,10 @@ export interface LucidRow {
     $options?: ModelOptions
     $trx?: TransactionClientContract,
 
-    $setOptionsAndTrx(options?: ModelAdapterOptions): void
+    $setOptionsAndTrx(options?: ModelAdapterOptions): void;
+
+    useTransaction (trx: TransactionClientContract): this
+    useConnection (connection: string): this
 
     /**
      * Gives an option to the end user to define constraints for update, insert
