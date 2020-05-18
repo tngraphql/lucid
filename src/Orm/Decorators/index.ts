@@ -212,3 +212,19 @@ export const afterFetch: HooksDecorator = () => {
         target.after('fetch', target[property].bind(target))
     }
 }
+
+/**
+ * Before/After paginate hook
+ */
+export const beforePaginate: HooksDecorator = () => {
+    return function decorateAsColumn (target, property) {
+        target.bootIfNotBooted()
+        target.before('paginate', target[property].bind(target))
+    }
+}
+export const afterPaginate: HooksDecorator = () => {
+    return function decorateAsColumn (target, property) {
+        target.bootIfNotBooted()
+        target.after('paginate', target[property].bind(target))
+    }
+}

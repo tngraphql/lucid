@@ -109,7 +109,7 @@ type PickProperties<T, P> = Pick<T, { [K in keyof T]: T[K] extends P ? K : never
 /**
  * List of events for which a model will trigger hooks
  */
-export type EventsList = 'save' | 'create' | 'update' | 'delete' | 'fetch' | 'find'
+export type EventsList = 'save' | 'create' | 'update' | 'delete' | 'fetch' | 'find' | 'paginate'
 export type HooksHandler<Data extends any,
     Event extends EventsList,
     > = ((data: Data, event: Event) => Promise<void> | void) | string;

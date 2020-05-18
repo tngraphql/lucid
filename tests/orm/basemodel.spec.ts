@@ -27,7 +27,9 @@ import {
     column,
     computed,
     hasMany,
-    hasOne
+    hasOne,
+    afterPaginate,
+    beforePaginate,
 } from '../../src/Orm/Decorators';
 import { ModelQueryBuilder } from '../../src/Orm/QueryBuilder/ModelQueryBuilder';
 import {
@@ -42,6 +44,7 @@ import {
     setup,
     getProfiler
 } from '../helpers';
+import {SimplePaginator} from '../../src/Database/Paginator/SimplePaginator'
 
 let db: ReturnType<typeof getDb>
 let BaseModel: ReturnType<typeof getBaseModel>
@@ -2773,6 +2776,65 @@ describe('Base model', () => {
             await db.insertQuery().table('users').insert({ username: 'virk' })
             await User.query().where('id', 1).first()
         })
+
+        test('invoke before and after paginate hooks', async () => {
+            expect.assertions(5);
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public username: string
+
+                @column()
+                public email: string
+
+                @beforePaginate()
+                public static beforePaginateHook ([countQuery, query]: [ModelQueryBuilder, ModelQueryBuilder]) {
+                    expect(query).toBeInstanceOf(ModelQueryBuilder);
+                    expect(countQuery).toBeInstanceOf(ModelQueryBuilder);
+                    expect(countQuery).not.toEqual(query);
+                }
+
+                @afterPaginate()
+                public static afterPaginateHook (paginator: SimplePaginator) {
+                    expect(Number(paginator.total)).toBe(1);
+                    expect(paginator.all()[0].username).toBe('virk');
+                }
+            }
+
+            await db.insertQuery().table('users').insert({ username: 'virk' })
+            await User.query().paginate(1)
+        })
+
+        test('invoke before and after fetch hooks on paginate', async () => {
+            expect.assertions(2);
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public username: string
+
+                @column()
+                public email: string
+
+                @beforeFetch()
+                public static beforeFetchHook (query: ModelQueryBuilder) {
+                    expect(query).toBeInstanceOf(ModelQueryBuilder);
+                }
+
+                @afterFetch()
+                public static afterFetchHook (users: User[]) {
+                    expect(users[0].username).toBe('virk');
+                }
+            }
+
+            await db.insertQuery().table('users').insert({ username: 'virk' })
+            await User.query().paginate(1)
+        })
     });
 
     describe('Base model | extend', () => {
@@ -3562,6 +3624,7 @@ describe('Base model', () => {
         })
 
         test('always set datetime value when autoUpdate is true', async () => {
+            expect.assertions(2);
             const adapter = new FakeAdapter()
 
             class User extends BaseModel {
@@ -3587,8 +3650,6 @@ describe('Base model', () => {
 
             user.username = 'nikk'
             await user.save();
-
-            // expect(originalDateTimeString).not.toEqual(user.joinedAt.toString());
         })
 
         test('do not set autoUpdate field datetime when model is not dirty', async () => {

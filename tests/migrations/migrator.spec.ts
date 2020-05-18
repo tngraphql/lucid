@@ -18,7 +18,7 @@ let fs = new Filesystem(join(__dirname, 'app'))
 
 describe('Migrator', () => {
     beforeAll(async () => {
-        jest.setTimeout(10000);
+        jest.setTimeout(20000);
         db = getDb()
         await setup()
     })

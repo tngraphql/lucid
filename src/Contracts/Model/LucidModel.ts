@@ -24,6 +24,7 @@ import {
     ModelColumnOptions,
     ModelRelationOptions
 } from './types';
+import { SimplePaginatorContract } from '../Database/SimplePaginatorContract';
 
 // export type LucidModel = typeof BaseModel & {new(): LucidRow};
 
@@ -233,6 +234,12 @@ export interface LucidModel {
         handler: HooksHandler<ModelQueryBuilderContract<Model>, Event>
     ): void
 
+    before<Model extends LucidModel> (
+        this: Model,
+        event: 'paginate',
+        handler: HooksHandler<[ModelQueryBuilderContract<Model>, ModelQueryBuilderContract<Model>], 'paginate'>,
+    ): void
+
     before<Model extends LucidModel, Event extends EventsList>(
         this: Model,
         event: Event,
@@ -246,6 +253,12 @@ export interface LucidModel {
         this: Model,
         event: 'fetch',
         handler: HooksHandler<InstanceType<Model>[], 'fetch'>
+    ): void
+
+    after<Model extends LucidModel> (
+        this: Model,
+        event: 'paginate',
+        handler: HooksHandler<SimplePaginatorContract<InstanceType<Model>[]>, 'paginate'>,
     ): void
 
     after<Model extends LucidModel, Event extends EventsList>(
