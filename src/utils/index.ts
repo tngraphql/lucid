@@ -159,3 +159,26 @@ export function collectValues (payload: any[], key: string, missingCallback: () 
         return ensureValue(row, key, missingCallback)
     })
 }
+
+/**
+ * Returns the sql method for a DDL statement
+ */
+export function getDDLMethod (sql: string) {
+    if (typeof sql === "string") {
+        sql = sql.toLowerCase();
+    }
+
+    if (sql.startsWith('create')) {
+        return 'create';
+    }
+
+    if (sql.startsWith('alter')) {
+        return 'alter'
+    }
+
+    if (sql.startsWith('drop')) {
+        return 'drop'
+    }
+
+    return 'unknown'
+}

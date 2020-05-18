@@ -185,6 +185,17 @@ describe('database', () => {
             expect(client.profiler).toEqual(row);
             await db.manager.closeAll()
         })
+
+        it('set hasHealthChecks enabled flag to true, when one ore more connections are using health checks', async () => {
+            const config = {
+                connection: 'primary',
+                connections: {primary: Object.assign({}, getConfig(), {healthCheck: true})},
+            }
+
+            const db = new Database(config, getLogger(), getProfiler(), getEmitter())
+            expect(db.hasHealthChecksEnabled).toBeTruthy();
+            await db.manager.closeAll()
+        })
     });
 
     describe('Database | extend', () => {

@@ -13,6 +13,7 @@ import { SchemaBuilder, Sql } from 'knex'
 import { QueryClientContract } from '../Contracts/Database/QueryClientContract';
 import { DeferCallback, SchemaContract } from '../Contracts/SchemaConstructorContract';
 import { QueryReporter } from '../QueryReporter/QueryReporter'
+import { getDDLMethod } from '../utils/index';
 
 /**
  * Exposes the API to define table schema using deferred database
@@ -67,29 +68,6 @@ export class Schema implements SchemaContract {
     }
 
     /**
-     * Returns the DDL method for the SQL query
-     */
-    private getDDLMethod (sql: string) {
-        if (typeof sql === "string") {
-            sql = sql.toLowerCase();
-        }
-
-        if (sql.startsWith('create')) {
-            return 'create';
-        }
-
-        if (sql.startsWith('alter')) {
-            return 'alter'
-        }
-
-        if (sql.startsWith('drop')) {
-            return 'drop'
-        }
-
-        return 'unknown'
-    }
-
-    /**
      * Returns reporter instance
      */
     private getReporter () {
@@ -103,7 +81,7 @@ export class Schema implements SchemaContract {
         return {
             connection: this.db.connectionName,
             inTransaction: this.db.isTransaction,
-            method: this.getDDLMethod(sql.sql),
+            method: getDDLMethod(sql.sql),
             ddl: true,
             ...sql,
         }
