@@ -57,6 +57,12 @@ export interface QueryClientContract {
     readonly connectionName: string
 
     /**
+     * Is debug enabled on the connnection or not. Also opens up the API to
+     * disable debug for a given client
+     */
+    debug: boolean,
+
+    /**
      * Returns schema instance for the write client
      */
     schema: Knex.SchemaBuilder

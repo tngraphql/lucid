@@ -18,7 +18,17 @@ import { QueryRunner } from '../../QueryRunner/QueryRunner'
  * Exposes the API to execute raw queries
  */
 export class RawQueryBuilder implements RawQueryBuilderContract {
+    /**
+     * Custom data someone want to send to the profiler and the
+     * query event
+     */
     private customReporterData: any
+
+    /**
+     * Control whether to debug the query or not. The initial
+     * value is inherited from the query client
+     */
+    private debugQueries: boolean = this.client.debug
 
     constructor(public knexQuery: Knex.Raw, public client: QueryClientContract) {
     }
@@ -55,7 +65,7 @@ export class RawQueryBuilder implements RawQueryBuilderContract {
      * Turn on/off debugging for this query
      */
     public debug(debug: boolean): this {
-        this.knexQuery.debug(debug)
+        this.debugQueries = debug
         return this
     }
 
@@ -86,7 +96,7 @@ export class RawQueryBuilder implements RawQueryBuilderContract {
      * Executes the query
      */
     public async exec(): Promise<any> {
-        return new QueryRunner(this.client, this.getQueryData()).run(this.knexQuery)
+        return new QueryRunner(this.client, this.debugQueries, this.getQueryData()).run(this.knexQuery)
     }
 
     /**

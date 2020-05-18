@@ -59,6 +59,7 @@ export class TransactionClient extends EventEmitter implements TransactionClient
         public knexClient: Knex.Transaction,
         public dialectName: string,
         public connectionName: string,
+        public debug: boolean,
         public emitter: EmitterContract
     ) {
         super()
@@ -214,7 +215,7 @@ export class TransactionClient extends EventEmitter implements TransactionClient
             });
         }
 
-        const transaction = new TransactionClient(trx, this.dialectName, this.connectionName, this.emitter)
+        const transaction = new TransactionClient(trx, this.dialectName, this.connectionName, this.debug, this.emitter);
 
         /**
          * Always make sure to pass the profiler down the chain

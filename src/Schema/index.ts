@@ -9,7 +9,7 @@
  */
 
 import { Exception } from '@poppinss/utils'
-import { SchemaBuilder } from 'knex'
+import { SchemaBuilder, Sql } from 'knex'
 import { QueryClientContract } from '../Contracts/Database/QueryClientContract';
 import { DeferCallback, SchemaContract } from '../Contracts/SchemaConstructorContract';
 import { QueryReporter } from '../QueryReporter/QueryReporter'
@@ -33,7 +33,7 @@ export class Schema implements SchemaContract {
     /**
      * Enable/disable transactions for this schema
      */
-    public static disableTransactions = false
+    public static disableTransactions = false;
 
     /**
      * Returns the schema to build database tables
@@ -43,6 +43,12 @@ export class Schema implements SchemaContract {
         this.trackedCalls.push(schema)
         return schema
     }
+
+    /**
+     * Control whether to debug the query or not. The initial
+     * value is inherited from the query client
+     */
+    public debug: boolean = this.db.debug;
 
     constructor(
         public db: QueryClientContract,
@@ -61,6 +67,49 @@ export class Schema implements SchemaContract {
     }
 
     /**
+     * Returns the DDL method for the SQL query
+     */
+    private getDDLMethod (sql: string) {
+        if (typeof sql === "string") {
+            sql = sql.toLowerCase();
+        }
+
+        if (sql.startsWith('create')) {
+            return 'create';
+        }
+
+        if (sql.startsWith('alter')) {
+            return 'alter'
+        }
+
+        if (sql.startsWith('drop')) {
+            return 'drop'
+        }
+
+        return 'unknown'
+    }
+
+    /**
+     * Returns reporter instance
+     */
+    private getReporter () {
+        return new QueryReporter(this.db, this.debug, {})
+    }
+
+    /**
+     * Returns the log data
+     */
+    private getQueryData (sql: Sql) {
+        return {
+            connection: this.db.connectionName,
+            inTransaction: this.db.isTransaction,
+            method: this.getDDLMethod(sql.sql),
+            ddl: true,
+            ...sql,
+        }
+    }
+
+    /**
      * Executes schema queries and defer calls in sequence
      */
     private async executeQueries() {
@@ -68,10 +117,13 @@ export class Schema implements SchemaContract {
             if ( typeof (trackedCall) === 'function' ) {
                 await trackedCall(this.db)
             } else {
-                const queries = trackedCall.toSQL()
-                const reporter = new QueryReporter(this.db, { queries, connection: this.db.connectionName }).begin()
+                const reporter = this.getReporter()
                 try {
-                    await trackedCall
+                    trackedCall['once']('query', (sql) => reporter.begin(this.getQueryData(sql)));
+                    await trackedCall.catch(e => {
+                        reporter.begin();
+                        throw e;
+                    });
                     reporter.end()
                 } catch (error) {
                     reporter.end(error)

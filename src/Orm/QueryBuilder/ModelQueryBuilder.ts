@@ -85,9 +85,16 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
     protected wrapResultsToModelInstances: boolean = true
 
     /**
-     * Custom reporter data
+     * Custom data someone want to send to the profiler and the
+     * query event
      */
     private customReporterData: any
+
+    /**
+     * Control whether to debug the query or not. The initial
+     * value is inherited from the query client
+     */
+    private debugQueries: boolean = this.client.debug
 
     /**
      * Options that must be passed to all new model instances
@@ -242,7 +249,7 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
 
         const isWriteQuery = ['update', 'del', 'insert'].includes(this.knexQuery['_method'])
         const queryData = Object.assign(this.getQueryData(), this.customReporterData)
-        const rows = await new QueryRunner(this.client, queryData).run(this.knexQuery)
+        const rows = await new QueryRunner(this.client, this.debugQueries, queryData).run(this.knexQuery)
 
         /**
          * Return the rows as it is when query is a write query
@@ -409,7 +416,7 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
      * Turn on/off debugging for this query
      */
     public debug(debug: boolean): this {
-        this.knexQuery.debug(debug)
+        this.debugQueries = debug;
         return this
     }
 

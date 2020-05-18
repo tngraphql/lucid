@@ -54,7 +54,7 @@ describe('Query Builder', () => {
                     return this.connection.client
                 }
 
-                await new QueryRunner(client, null).run(db.select('*').from('users').knexQuery)
+                await new QueryRunner(client, false, null).run(db.select('*').from('users').knexQuery)
                 await connection.disconnect()
             })
 
@@ -71,7 +71,7 @@ describe('Query Builder', () => {
                     return this.connection.client
                 }
 
-                await new QueryRunner(client, null).run(db.from('users').update('username', 'virk').knexQuery)
+                await new QueryRunner(client, false, null).run(db.from('users').update('username', 'virk').knexQuery)
                 await connection.disconnect()
             })
 
@@ -88,7 +88,7 @@ describe('Query Builder', () => {
                     return this.connection.client
                 }
 
-                await new QueryRunner(client, null).run(db.from('users').del().knexQuery)
+                await new QueryRunner(client, false, null).run(db.from('users').del().knexQuery)
                 await connection.disconnect()
             })
 
@@ -105,7 +105,7 @@ describe('Query Builder', () => {
                     return this.connection.client
                 }
 
-                await new QueryRunner(client, null).run(db.table('users').insert({ username: 'virk' }).knexQuery)
+                await new QueryRunner(client, false, null).run(db.table('users').insert({ username: 'virk' }).knexQuery)
                 await connection.disconnect()
             })
 
@@ -121,7 +121,7 @@ describe('Query Builder', () => {
                 }
 
                 const trx = await client.transaction()
-                await new QueryRunner(client, null).run(db.select('*').from('users').useTransaction(trx).knexQuery)
+                await new QueryRunner(client, false, null).run(db.select('*').from('users').useTransaction(trx).knexQuery)
                 await trx.commit()
                 await connection.disconnect()
             })
@@ -139,7 +139,7 @@ describe('Query Builder', () => {
 
                 const trx = await client.transaction()
 
-                await new QueryRunner(client, null)
+                await new QueryRunner(client, false, null)
                     .run(db.table('users').useTransaction(trx).insert({ username: 'virk' }).knexQuery)
 
                 await trx.rollback()
@@ -157,7 +157,7 @@ describe('Query Builder', () => {
                 }
 
                 const trx = await client.transaction()
-                await new QueryRunner(client, null).run(trx.query().select('*').from('users').knexQuery)
+                await new QueryRunner(client, false, null).run(trx.query().select('*').from('users').knexQuery)
                 await trx.commit()
                 await connection.disconnect()
             })
@@ -173,7 +173,7 @@ describe('Query Builder', () => {
                     throw new Error('Never expected to reach here')
                 }
 
-                await new QueryRunner(trx, null)
+                await new QueryRunner(trx, false, null)
                     .run(trx.insertQuery().table('users').insert({ username: 'virk' }).knexQuery)
                 await trx.commit()
             })

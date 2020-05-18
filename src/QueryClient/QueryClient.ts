@@ -56,7 +56,12 @@ export class QueryClient implements QueryClientContract {
     /**
      * Name of the connection in use
      */
-    public readonly connectionName = this.connection.name
+    public readonly connectionName = this.connection.name;
+
+    /**
+     * Is debugging enabled
+     */
+    public debug = !!this.connection.config.debug
 
     constructor(
         public readonly mode: 'dual' | 'write' | 'read',
@@ -144,7 +149,7 @@ export class QueryClient implements QueryClientContract {
         })
         trx.parent = client;
 
-        const transaction = new TransactionClient(trx, this.connection.config.client, this.connectionName, this.emitter);
+        const transaction = new TransactionClient(trx, this.connection.config.client, this.connectionName, this.debug, this.emitter);
 
         /**
          * Always make sure to pass the profiler and emitter down to the transaction

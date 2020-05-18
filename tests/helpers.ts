@@ -38,7 +38,7 @@ import { Adapter } from '../src/Orm/Adapter/Adapter';
 import { BaseModel } from '../src/Orm/BaseModel/BaseModel';
 import { QueryClient } from '../src/QueryClient/QueryClient';
 import { Schema } from '../src/Schema';
-
+import { Emitter } from '@adonisjs/events/build/standalone'
 
 export const fs = new Filesystem(join(__dirname, 'tmp'))
 dotenv.config()
@@ -277,9 +277,10 @@ export async function resetTables() {
  */
 export function getQueryClient(
     connection: ConnectionContract,
-    mode?: 'read' | 'write'
+    mode?: 'read' | 'write' | 'dual',
+    emitter?: Emitter,
 ): QueryClientContract {
-    return new QueryClient(mode || 'dual', connection, getEmitter()) as QueryClientContract
+    return new QueryClient(mode || 'dual', connection, emitter || getEmitter()) as QueryClientContract
 }
 
 /**
@@ -345,7 +346,7 @@ export function getProfiler(enabled: boolean = false) {
 /**
  * Returns the database instance
  */
-export function getDb() {
+export function getDb(emitter?: any) {
     const config = {
         connection: 'primary',
         connections: {
@@ -354,8 +355,7 @@ export function getDb() {
         }
     }
 
-    const emitter = getEmitter()
-    return new Database(config, getLogger(), getProfiler(), emitter) as DatabaseContract
+    return new Database(config, getLogger(), getProfiler(), emitter || getEmitter()) as DatabaseContract
 }
 
 /**
