@@ -2,10 +2,10 @@
   "name": "@tngraphql/lucid",
   "version": "1.0.2",
   "description": "<div align=\"center\">\r   <img src=\"https://phantrungnguyen.com/63026323.png\" width=\"200px\">\r </div>",
-  "main": "dist/src/Database/Database.js",
-  "types": "./dist/src/Database/Database.d.ts",
+  "main": "build/src/Database/Database.js",
+  "types": "./build/src/Database/Database.d.ts",
   "files": [
-    "dist"
+    "build"
   ],
   "publishConfig": {
     "access": "public"
@@ -29,7 +29,7 @@
     "test:docker": "npm run test:sqlite && npm run test:mysql && npm run test:pg && npm run test:mssql",
     "test:windw": "npm run test:sqlite && npm run test:mysql && npm run test:mysql2 && npm run test:mssql",
     "test": "cross-env DEBUG=knex:query jest --verbose --coverage --runInBand",
-    "clean": "rimraf dist",
+    "clean": "rimraf build",
     "compile": "npm run clean && tsc -b && npm run copy:files",
     "copy:files": "copyfiles \"templates/**/*.txt\" build",
     "build": "npm run compile",
