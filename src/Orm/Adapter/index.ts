@@ -4,4 +4,4 @@
  * Date: 5/19/2020
  * Time: 5:20 PM
  */
-export * from './BaseModel';
+export * from './Adapter';
