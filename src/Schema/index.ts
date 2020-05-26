@@ -107,6 +107,10 @@ export class Schema implements SchemaContract {
 
                     reporter.end();
                 } catch (error) {
+                    if (!reporter.isReady()) {
+                        reporter.begin(this.getQueryData({} as any));
+                    }
+
                     reporter.end(error)
                     throw error
                 }
