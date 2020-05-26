@@ -20,7 +20,7 @@ export class QueryReporter {
     private eventName = 'db:query'
     private startTime: [number, number] | undefined
     private profilerAction: ProfilerActionContract | undefined
-    private isReady = false
+    private _isReady = false
 
     constructor(
         private client: QueryClientContract | TransactionClientContract,
@@ -77,7 +77,7 @@ export class QueryReporter {
      * overwrite the existing data object
      */
     public begin(data?: any): this {
-        this.isReady = true
+        this._isReady = true
         this.data = data || this.data
         this.initStartTime()
         this.initProfilerAction()
@@ -88,10 +88,14 @@ export class QueryReporter {
      * End query reporting
      */
     public end(error?: Error) {
-        if ( ! this.isReady ) {
+        if ( ! this._isReady ) {
             throw new Error('Cannot end the query reporter, since the begin was never called')
         }
         this.commitProfilerAction(error)
         this.emitQueryEvent(error)
+    }
+
+    public isReady() {
+        return this._isReady;
     }
 }

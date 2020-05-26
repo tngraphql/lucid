@@ -98,11 +98,14 @@ export class Schema implements SchemaContract {
                 const reporter = this.getReporter()
                 try {
                     trackedCall['once']('query', (sql) => reporter.begin(this.getQueryData(sql)));
-                    await trackedCall.catch(e => {
-                        reporter.begin();
-                        throw e;
-                    });
-                    reporter.end()
+
+                    await trackedCall;
+
+                    if (!reporter.isReady()) {
+                        reporter.begin(this.getQueryData({} as any));
+                    }
+
+                    reporter.end();
                 } catch (error) {
                     reporter.end(error)
                     throw error
