@@ -1,6 +1,6 @@
 {
   "name": "@tngraphql/lucid",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "<div align=\"center\">\r   <img src=\"https://phantrungnguyen.com/63026323.png\" width=\"200px\">\r </div>",
   "main": "build/src/Database/Database.js",
   "types": "./build/src/Database/Database.d.ts",
