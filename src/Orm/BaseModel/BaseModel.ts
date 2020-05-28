@@ -1585,14 +1585,16 @@ export class BaseModel implements LucidRow {
             await Model.$hooks.exec('before', 'save', this)
 
             this.initiateAutoCreateColumns();
-            await Model.$adapter.insert(this, this.prepareForAdapter(this.$attributes))
-
+            const [result] = (await Model.$adapter.insert(this, this.prepareForAdapter(this.$attributes))) || [null];
             this.$hydrateOriginals()
-            this.$isPersisted = true
+            if (result) {
+                this.$isPersisted = true;
+            }
 
             await Model.$hooks.exec('after', 'create', this)
             await Model.$hooks.exec('after', 'save', this)
-            return
+
+            return result;
         }
 
         /**
@@ -1614,12 +1616,14 @@ export class BaseModel implements LucidRow {
          * Perform update
          */
         this.initiateAutoUpdateColumns()
-        await Model.$adapter.update(this, this.prepareForAdapter(this.$dirty))
+        const [result] = (await Model.$adapter.update(this, this.prepareForAdapter(this.$dirty))) || [null];
         this.$hydrateOriginals()
-        this.$isPersisted = true
+
+        if (result) this.$isPersisted = true
 
         await Model.$hooks.exec('after', 'update', this)
         await Model.$hooks.exec('after', 'save', this)
+        return result;
     }
 
     /**
@@ -1630,11 +1634,14 @@ export class BaseModel implements LucidRow {
         const Model = this.constructor as typeof BaseModel
 
         await Model.$hooks.exec('before', 'delete', this)
-
-        await Model.$adapter.delete(this)
-        this.$isDeleted = true
+        const [result] = await Model.$adapter.delete(this)
+        if (result) {
+            this.$isDeleted = true;
+        }
 
         await Model.$hooks.exec('after', 'delete', this)
+
+        return result;
     }
 
     /**
