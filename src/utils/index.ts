@@ -163,6 +163,10 @@ export function collectValues (payload: any[], key: string, missingCallback: () 
  * Returns the sql method for a DDL statement
  */
 export function getDDLMethod (sql: string) {
+    if (!sql) {
+        return 'unknown';
+    }
+
     if (typeof sql === "string") {
         sql = sql.toLowerCase();
     }

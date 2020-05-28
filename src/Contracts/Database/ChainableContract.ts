@@ -185,4 +185,6 @@ export interface ChainableContract {
     skipLocked(): this
 
     noWait(): this
+
+    [key: string]: any | (() => this);
 }

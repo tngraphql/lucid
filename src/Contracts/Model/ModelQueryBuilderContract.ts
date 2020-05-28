@@ -23,7 +23,6 @@ import { ExtractScopes } from './types';
 export interface ModelQueryBuilderContract<Model extends LucidModel,
     Result extends any = InstanceType<Model>>
     extends ChainableContract, ExcutableQueryBuilderContract<Result[]> {
-    [key: string]: any | (() => this);
 
     model: Model
 

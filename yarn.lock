@@ -762,7 +762,7 @@
     figures "^3.2.0"
     string-width "^4.2.0"
 
-"@poppinss/hooks@^1.0.3":
+"@poppinss/hooks@^1.0.3", "@poppinss/hooks@^1.0.5":
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/@poppinss/hooks/-/hooks-1.0.5.tgz#4ebe5142ea4453fa09149c3abfa012d286459817"
   integrity sha512-cMJ+OFx1I4B1O5upwiuVilQZZnq/n5bKmGdTP3btkkLqd6dFZR/0tKAHBFHfC2GuGy8QQmkAVtvBmNBu8w2OOw==
@@ -5441,6 +5441,11 @@ luxon@^1.22.0, luxon@^1.23.0:
   version "1.23.0"
   resolved "https://registry.yarnpkg.com/luxon/-/luxon-1.23.0.tgz#23b748ad0f2d5494dc4d2878c19278c1e651410c"
   integrity sha512-+6a/bXsCWrrR8vfbL41iM92es12zwV2Rum/KPkT+ubOZnnU3Sqbqok/FmD1xsWlWN2Y9Hu0fU/vNgU24ns7bpA==
+
+luxon@^1.24.1:
+  version "1.24.1"
+  resolved "https://registry.yarnpkg.com/luxon/-/luxon-1.24.1.tgz#a8383266131ed4eaed4b5f430f96f3695403a52a"
+  integrity sha512-CgnIMKAWT0ghcuWFfCWBnWGOddM0zu6c4wZAWmD0NN7MZTnro0+833DF6tJep+xlxRPg4KtsYEHYLfTMBQKwYg==
 
 macroable@^4.0.2, macroable@^4.0.3, macroable@^4.0.4:
   version "4.0.4"

@@ -83,10 +83,14 @@ export class QueryRunner {
          * toSQL too many times and also get the actual time it took to
          * execute the query
          */
-        query['once']('query', (sql) => this.reporter.begin({ ...this.logData, ...sql }))
+        query['once']('query', (sql) => this.reporter.begin({ ...this.logData, ...sql }));
 
         const [error, result] = await this.executeQuery(query)
-        this.reporter.end(error)
+        if (!this.reporter.isReady()) {
+            this.reporter.begin(this.logData);
+        }
+
+        this.reporter.end(error);
 
         if ( error ) {
             throw error
@@ -119,6 +123,11 @@ export class QueryRunner {
          * Execute query and report event and profiler data
          */
         const [error, result] = await this.executeQuery(query)
+
+        if (!this.reporter.isReady()) {
+            this.reporter.begin(this.logData);
+        }
+
         this.reporter.end(error)
 
         /**

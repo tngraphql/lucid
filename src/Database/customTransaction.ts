@@ -125,6 +125,25 @@ Transaction.prototype._evaluateContainer = async function (config, container) {
     });
 }
 
+Transaction.prototype.acquireConnection = async function (config, cb) {
+    const configConnection = config && config.connection;
+    const connection =
+        configConnection || (await this.client.acquireConnection());
+
+    try {
+        connection.__knexTxId = this.txid;
+        return await cb(connection);
+    } finally {
+        if (!configConnection) {
+            debug('%s: releasing connection', this.txid);
+            this.client.releaseConnection(connection);
+            connection.__knexTxId = void (0);
+        } else {
+            debug('%s: not releasing external connection', this.txid);
+        }
+    }
+}
+
 // The transactor is a full featured knex object, with a "commit", a "rollback"
 // and a "savepoint" function. The "savepoint" is just sugar for creating a new
 // transaction. If the rollback is run inside a savepoint, it rolls back to the
