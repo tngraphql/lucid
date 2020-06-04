@@ -275,6 +275,25 @@ describe('Query Builder', () => {
             await connection.disconnect()
         })
 
+        test('define columns as object', async () => {
+            const connection = new Connection('primary', getConfig(), getLogger())
+            connection.connect()
+
+            const db = getQueryBuilder(getQueryClient(connection))
+            const { sql, bindings } = db.from('users').select({
+                'username': 'username',
+                'email': 'email'
+            }).toSQL()
+            const { sql: knexSql, bindings: knexBindings } = connection.client!
+                .from('users')
+                .select({'username': 'username', 'email': 'email'})
+                .toSQL()
+
+            expect(sql).toBe(knexSql)
+            expect(bindings).toEqual(knexBindings)
+            await connection.disconnect()
+        })
+
         test('define columns as multiple arguments with aliases', async () => {
             const connection = new Connection('primary', getConfig(), getLogger())
             connection.connect()

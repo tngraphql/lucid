@@ -68,7 +68,7 @@ describe('connection', () => {
                 if ( process.env.DB === 'mssql' ) {
                     expect(readConfig.connection).toEqual({ database: 'master' });
                 } else {
-                    expect(readConfig.connection).toEqual({ database: 'lucid' });
+                    expect(readConfig.connection).toEqual({ database: process.env.DB_NAME });
                 }
             });
         });

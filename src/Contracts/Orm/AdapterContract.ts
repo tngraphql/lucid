@@ -12,6 +12,8 @@ import { QueryClientContract } from '../Database/QueryClientContract';
 import { LucidModel } from '../Model/LucidModel';
 import { LucidRow, ModelAdapterOptions, ModelObject } from '../Model/LucidRow';
 import { ModelQueryBuilderContract } from '../Model/ModelQueryBuilderContract';
+import {DatabaseQueryBuilderContract} from "../Database/DatabaseQueryBuilderContract";
+import { InsertQueryBuilderContract } from '../Database/InsertQueryBuilderContract';
 
 /**
  * Every adapter must adhere to the Adapter contract
@@ -33,17 +35,17 @@ export interface AdapterContract {
     /**
      * Delete model instance
      */
-    delete(instance: LucidRow): Promise<void>
+    delete(instance: LucidRow): DatabaseQueryBuilderContract<number>
 
     /**
      * Perform insert
      */
-    insert(instance: LucidRow, attributes: ModelObject): Promise<void>
+    insert(instance: LucidRow, attributes: ModelObject): InsertQueryBuilderContract<number[]>
 
     /**
      * Perform update
      */
-    update(instance: LucidRow, attributes: ModelObject): Promise<void>
+    update(instance: LucidRow, attributes: ModelObject): DatabaseQueryBuilderContract<number>
 
     /**
      * Must return the query builder for the model

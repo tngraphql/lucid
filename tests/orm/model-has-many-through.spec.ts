@@ -1158,6 +1158,336 @@ describe('Model | Has Many Through', () => {
         })
     })
 
+    describe('Model | Has Many Through | select', () => {
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+            await setup()
+        })
+
+        afterAll(async () => {
+            await cleanup()
+            await db.manager.closeAll()
+        })
+
+        afterEach(async () => {
+            await resetTables()
+        })
+
+        it('define columns as array', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public countryId: number
+            }
+
+            class Post extends BaseModel {
+                @column()
+                public id: number
+
+                @column()
+                public title: number
+
+                @column()
+                public userId: number
+            }
+
+            class Country extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasManyThrough([() => Post, () => User])
+                public posts: HasManyThrough<typeof Post>
+            }
+
+            await db.table('countries').multiInsert([{ name: 'India' }, { name: 'Switzerland' }])
+
+            const country = await Country.find(1)
+            const {sql, bindings} = country!.related('posts').query().select(['userId']).toSQL();
+            const {sql: knexSql, bindings: knexBindings} = db.from('posts')
+                .select(['posts.user_id'])
+                .select({
+                    through_country_id: 'users.country_id'
+                })
+                .innerJoin('users', 'users.id', '=', 'posts.user_id')
+                .where('users.country_id', 1)
+                .toSQL()
+            expect(sql).toBe(knexSql);
+            expect(bindings).toEqual(knexBindings);
+        });
+
+        it('define columns with aliases', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public countryId: number
+            }
+
+            class Post extends BaseModel {
+                @column()
+                public id: number
+
+                @column()
+                public title: number
+
+                @column()
+                public userId: number
+            }
+
+            class Country extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasManyThrough([() => Post, () => User])
+                public posts: HasManyThrough<typeof Post>
+            }
+
+            await db.table('countries').multiInsert([{ name: 'India' }, { name: 'Switzerland' }])
+
+            const country = await Country.find(1)
+            const {sql, bindings} = country!.related('posts').query().select(['userId as u']).toSQL();
+            const {sql: knexSql, bindings: knexBindings} = db.from('posts')
+                .select(['posts.user_id as u'])
+                .select({
+                    through_country_id: 'users.country_id'
+                })
+                .innerJoin('users', 'users.id', '=', 'posts.user_id')
+                .where('users.country_id', 1)
+                .toSQL()
+            expect(sql).toBe(knexSql);
+            expect(bindings).toEqual(knexBindings);
+        });
+
+        it('define columns as multiple arguments', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public countryId: number
+            }
+
+            class Post extends BaseModel {
+                @column()
+                public id: number
+
+                @column()
+                public title: number
+
+                @column()
+                public userId: number
+            }
+
+            class Country extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasManyThrough([() => Post, () => User])
+                public posts: HasManyThrough<typeof Post>
+            }
+
+            await db.table('countries').multiInsert([{ name: 'India' }, { name: 'Switzerland' }])
+
+            const country = await Country.find(1)
+            const {sql, bindings} = country!.related('posts').query().select(['title','userId']).toSQL();
+            const {sql: knexSql, bindings: knexBindings} = db.from('posts')
+                .select(['posts.title', 'posts.user_id'])
+                .select({
+                    through_country_id: 'users.country_id'
+                })
+                .innerJoin('users', 'users.id', '=', 'posts.user_id')
+                .where('users.country_id', 1)
+                .toSQL()
+            expect(sql).toBe(knexSql);
+            expect(bindings).toEqual(knexBindings);
+        });
+
+        it('define columns as object', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public countryId: number
+            }
+
+            class Post extends BaseModel {
+                @column()
+                public id: number
+
+                @column()
+                public title: number
+
+                @column()
+                public userId: number
+            }
+
+            class Country extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasManyThrough([() => Post, () => User])
+                public posts: HasManyThrough<typeof Post>
+            }
+
+            await db.table('countries').multiInsert([{ name: 'India' }, { name: 'Switzerland' }])
+
+            const country = await Country.find(1)
+            const {sql, bindings} = country!.related('posts').query().select({
+                'title': 'title',
+                'userId': 'userId'
+            }).toSQL();
+            const {sql: knexSql, bindings: knexBindings} = db.from('posts')
+                .select(['posts.title as title', 'posts.user_id as userId'])
+                .select({
+                    through_country_id: 'users.country_id'
+                })
+                .innerJoin('users', 'users.id', '=', 'posts.user_id')
+                .where('users.country_id', 1)
+                .toSQL()
+            expect(sql).toBe(knexSql);
+            expect(bindings).toEqual(knexBindings);
+        });
+
+        it('define columns as multiple arguments with aliases', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public countryId: number
+            }
+
+            class Post extends BaseModel {
+                @column()
+                public id: number
+
+                @column()
+                public title: number
+
+                @column()
+                public userId: number
+            }
+
+            class Country extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasManyThrough([() => Post, () => User])
+                public posts: HasManyThrough<typeof Post>
+            }
+
+            await db.table('countries').multiInsert([{ name: 'India' }, { name: 'Switzerland' }])
+
+            const country = await Country.find(1)
+            const {sql, bindings} = country!.related('posts').query().select('title as title', 'userId as userId').toSQL();
+            const {sql: knexSql, bindings: knexBindings} = db.from('posts')
+                .select(['posts.title as title', 'posts.user_id as userId'])
+                .select({
+                    through_country_id: 'users.country_id'
+                })
+                .innerJoin('users', 'users.id', '=', 'posts.user_id')
+                .where('users.country_id', 1)
+                .toSQL()
+            expect(sql).toBe(knexSql);
+            expect(bindings).toEqual(knexBindings);
+        });
+
+        it('define columns as subqueries', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public countryId: number
+            }
+
+            class Post extends BaseModel {
+                @column()
+                public id: number
+
+                @column()
+                public title: number
+
+                @column()
+                public userId: number
+            }
+
+            class Country extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasManyThrough([() => Post, () => User])
+                public posts: HasManyThrough<typeof Post>
+            }
+
+            await db.table('countries').multiInsert([{ name: 'India' }, { name: 'Switzerland' }])
+
+            const country = await Country.find(1)
+            const {sql, bindings} = country!.related('posts').query()
+                .select(db.from('addresses').count('* as total').as('addresses_total')).toSQL();
+            const {sql: knexSql, bindings: knexBindings} = db.from('posts')
+                .select(db.from('addresses').count('* as total').as('addresses_total'))
+                .select({
+                    through_country_id: 'users.country_id'
+                })
+                .innerJoin('users', 'users.id', '=', 'posts.user_id')
+                .where('users.country_id', 1)
+                .toSQL()
+            expect(sql).toBe(knexSql);
+            expect(bindings).toEqual(knexBindings);
+        });
+
+        it('define columns as subqueries inside an array', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public countryId: number
+            }
+
+            class Post extends BaseModel {
+                @column()
+                public id: number
+
+                @column()
+                public title: number
+
+                @column()
+                public userId: number
+            }
+
+            class Country extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasManyThrough([() => Post, () => User])
+                public posts: HasManyThrough<typeof Post>
+            }
+
+            await db.table('countries').multiInsert([{ name: 'India' }, { name: 'Switzerland' }])
+
+            const country = await Country.find(1)
+            const {sql, bindings} = country!.related('posts').query()
+                .select([db.from('addresses').count('* as total').as('addresses_total')]).toSQL();
+            const {sql: knexSql, bindings: knexBindings} = db.from('posts')
+                .select(db.from('addresses').count('* as total').as('addresses_total'))
+                .select({
+                    through_country_id: 'users.country_id'
+                })
+                .innerJoin('users', 'users.id', '=', 'posts.user_id')
+                .where('users.country_id', 1)
+                .toSQL()
+            expect(sql).toBe(knexSql);
+            expect(bindings).toEqual(knexBindings);
+        });
+    });
+
     describe('Model | Has Many Through | pagination', () => {
         beforeAll(async () => {
             db = getDb()

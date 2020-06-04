@@ -458,6 +458,7 @@ describe('Base model', () => {
             User.$adapter = adapter
             adapter.on('insert', (model) => {
                 model.$consumeAdapterResult({ id: 1 })
+                return [1];
             })
 
             const user = new User()
@@ -492,6 +493,7 @@ describe('Base model', () => {
             User.$adapter = adapter
             adapter.on('insert', (model) => {
                 model.$consumeAdapterResult({ id: 1 })
+                return [1];
             })
 
             const user = new User()
@@ -508,36 +510,6 @@ describe('Base model', () => {
 
             expect(user.$attributes).toEqual({ username: 'virk', id: 1 })
             expect(user.$original).toEqual({ username: 'virk', id: 1 })
-        })
-
-        test('do not merge adapter results when not part of model columns', async () => {
-            const adapter = new FakeAdapter()
-
-            class User extends BaseModel {
-                @column()
-                public username: string
-            }
-
-            User.$adapter = adapter
-            adapter.on('insert', () => {
-                return { id: 1 }
-            })
-
-            const user = new User()
-            user.username = 'virk'
-
-            await user.save()
-            expect(user.$isPersisted).toBeTruthy();
-            expect(user.$isDirty).toBeFalsy();
-
-            expect(adapter.operations).toEqual([{
-                type: 'insert',
-                instance: user,
-                attributes: { username: 'virk' }
-            }])
-
-            expect(user.$attributes).toEqual({ username: 'virk' })
-            expect(user.$original).toEqual({ username: 'virk' })
         })
 
         test('issue update when model has already been persisted', async () => {
@@ -2621,7 +2593,7 @@ describe('Base model', () => {
         })
 
         test('invoke before and after delete hooks', async () => {
-            expect.assertions(3)
+            expect.assertions(4)
 
             class User extends BaseModel {
                 @column({ isPrimary: true })
@@ -2646,7 +2618,7 @@ describe('Base model', () => {
 
             await db.insertQuery().table('users').insert({ username: 'virk' })
             const user = await User.findOrFail(1)
-            await user.delete()
+            expect(await user.delete()).toBe(1);
 
             const usersCount = await db.from('users').count('*', 'total')
             expect(Number(usersCount[0].total)).toBe(0)
@@ -3771,10 +3743,13 @@ describe('Base model', () => {
             const user = User.query();
 
             expect(user).toBeInstanceOf(ModelQueryBuilder);
-            if ( hasMysql(process.env.DB) ) {
-                expect(user.toSQL().sql).toBe('select * from `users`');
-                expect(user.select('id').toSQL().sql).toBe(['select `id`', ' from `users`'].join(''));
-            }
+
+            const { sql, bindings } = db.from('users').select(
+                'id'
+            ).toSQL()
+
+            expect(user.toSQL().sql).toBe(db.from('users').toSQL().sql);
+            expect(user.select('id').toSQL().sql).toBe(sql);
         });
     });
 
@@ -4771,6 +4746,58 @@ describe('Base model', () => {
 
             const usersList = await db.query().from('users')
             expect(usersList).toHaveLength(0);
+        });
+    });
+
+    describe('Base Model | Save', () => {
+        let User;
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+            await setup()
+        })
+
+        afterAll(async () => {
+            await cleanup()
+            await db.manager.closeAll()
+        })
+
+        afterEach(async () => {
+            await resetTables()
+        })
+
+        beforeEach(async () => {
+            class UserModel extends BaseModel {
+                static table = 'users';
+
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public username: string
+
+                @column()
+                public createdAt: string
+
+                @column({ columnName: 'updated_at' })
+                public updatedAt: string
+            }
+
+            User = UserModel
+        });
+
+        it('save insert success should return number', async () => {
+            const user = new User()
+            user.username = 'virk';
+            expect(await user.save()).toBe(1);
+        });
+
+        it('save update success should return number', async () => {
+            const user = new User()
+            user.username = 'virk';
+            await user.save();
+            user.username = 'nguyen';
+            expect(await user.save()).toBe(1);
         });
     });
 })

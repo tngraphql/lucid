@@ -12,6 +12,7 @@ import { DatabaseContract } from '../../Contracts/Database/DatabaseContract';
 import { LucidModel } from '../../Contracts/Model/LucidModel';
 import { LucidRow, ModelAdapterOptions } from '../../Contracts/Model/LucidRow';
 import { AdapterContract } from '../../Contracts/Orm/AdapterContract';
+import {InsertQueryBuilderContract} from "../../Contracts/Database/InsertQueryBuilderContract";
 
 /**
  * Adapter exposes the API to make database queries and constructor
@@ -53,7 +54,7 @@ export class Adapter implements AdapterContract {
     /**
      * Perform insert query on a given model instance
      */
-    public async insert(instance: LucidRow, attributes: any) {
+    public insert(instance: LucidRow, attributes: any) {
         const modelConstructor = instance.constructor as unknown as LucidModel
         const query = instance.$getQueryFor('insert', this.modelClient(instance))
 
@@ -62,21 +63,24 @@ export class Adapter implements AdapterContract {
             modelConstructor.primaryKey
         )
 
-        const result = await query.insert(attributes).reporterData({ model: modelConstructor.name })
-        instance.$consumeAdapterResult({ [primaryKeyColumnName]: result[0] })
+        return query.insert(attributes).reporterData({ model: modelConstructor.name })
+            .then(result => {
+                instance.$consumeAdapterResult({ [primaryKeyColumnName]: result[0] })
+                return result;
+            }) as InsertQueryBuilderContract<number[]>;
     }
 
     /**
      * Perform update query on a given model instance
      */
-    public async update(instance: LucidRow, dirty: any) {
-        await instance.$getQueryFor('update', this.modelClient(instance)).update(dirty)
+    public update(instance: LucidRow, dirty: any) {
+        return instance.$getQueryFor('update', this.modelClient(instance)).update(dirty)
     }
 
     /**
      * Perform delete query on a given model instance
      */
-    public async delete(instance: LucidRow) {
-        await instance.$getQueryFor('delete', this.modelClient(instance)).del()
+    public delete(instance: LucidRow) {
+        return instance.$getQueryFor('delete', this.modelClient(instance)).del()
     }
 }
