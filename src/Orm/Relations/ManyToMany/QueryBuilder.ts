@@ -119,24 +119,24 @@ export class ManyToManyQueryBuilder extends BaseQueryBuilder implements ManyToMa
             return columns
         }
 
-        const relatedTable = this.relation.relatedModel().getTable()
+        if (Array.isArray(columns[0])) {
+            return this.transformRelatedTableColumns(columns[0]);
+        }
+
+        const relatedTable = this.relation.relatedModel().getTable();
         return columns.map((column) => {
             if ( typeof (column) === 'string' ) {
-                return `${ relatedTable }.${ column }`
+                return `${ relatedTable }.${ this.resolveKey(column) }`
             }
 
-            if ( Array.isArray(column) ) {
-                return this.transformRelatedTableColumns(column)
-            }
-
-            if ( isObject(column) ) {
+            if ( column.constructor === Object ) {
                 return Object.keys(column).reduce((result, alias) => {
-                    result[alias] = `${ relatedTable }.${ column[alias] }`
+                    result[alias] = `${ relatedTable }.${ this.resolveKey(column[alias]) }`
                     return result
                 }, {})
             }
 
-            return column
+            return this.transformValue(column)
         })
     }
 
@@ -158,7 +158,7 @@ export class ManyToManyQueryBuilder extends BaseQueryBuilder implements ManyToMa
      */
     public select(...args: any): this {
         this.cherryPickingKeys = true
-        this.knexQuery.select(this.transformRelatedTableColumns(args))
+        super.select(this.transformRelatedTableColumns(args))
         return this
     }
 

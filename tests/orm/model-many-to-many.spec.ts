@@ -1016,7 +1016,7 @@ describe('Model | ManyToMany', () => {
             ])
 
             const users = await User.query().preload('skills', (builder) => {
-                return builder.select('name')
+                return builder.select(['name'])
             })
 
             expect(users).toHaveLength(1)
@@ -1095,6 +1095,212 @@ describe('Model | ManyToMany', () => {
             expect(users).toHaveLength(0)
         })
     })
+
+    describe('Model | ManyToMany | Select', () => {
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+            await setup()
+        })
+
+        afterAll(async () => {
+            await cleanup()
+            await db.manager.closeAll()
+        })
+
+        it('define columns as array', async () => {
+            class Skill extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public isActive: number
+            }
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @manyToMany(() => Skill)
+                public skills: ManyToMany<typeof Skill>
+            }
+
+            const user = new User()
+            const query = user!.related('skills').query()
+
+            query['appliedConstraints'] = true
+
+            const {sql, bindings} = query.select(['isActive']).toSQL();
+            const {sql: knexSql, bindings: knexBindings} = db.from('skills').select('skills.is_active').toSQL();
+            expect(sql).toBe(knexSql);
+        });
+
+        it('define columns with aliases', async () => {
+            class Skill extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public isActive: number
+            }
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @manyToMany(() => Skill)
+                public skills: ManyToMany<typeof Skill>
+            }
+
+            const user = new User()
+            const query = user!.related('skills').query()
+
+            query['appliedConstraints'] = true
+
+            const {sql, bindings} = query.select('isActive as a').toSQL();
+            const {sql: knexSql, bindings: knexBindings} = db.from('skills').select('skills.is_active as a').toSQL();
+            expect(sql).toBe(knexSql);
+        });
+
+        it('define columns as multiple arguments', async () => {
+            class Skill extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public isActive: number
+            }
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @manyToMany(() => Skill)
+                public skills: ManyToMany<typeof Skill>
+            }
+
+            const user = new User()
+            const query = user!.related('skills').query()
+
+            query['appliedConstraints'] = true
+
+            const {sql, bindings} = query.select('name', 'isActive').toSQL();
+            const {sql: knexSql, bindings: knexBindings} = db.from('skills').select('skills.name', 'skills.is_active').toSQL();
+            expect(sql).toBe(knexSql);
+        });
+
+        it('define columns as object', async () => {
+            class Skill extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public isActive: number
+            }
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @manyToMany(() => Skill)
+                public skills: ManyToMany<typeof Skill>
+            }
+
+            const user = new User()
+            const query = user!.related('skills').query()
+
+            query['appliedConstraints'] = true
+
+            const {sql, bindings} = query.select({name:'name', isActive:'isActive'}).toSQL();
+            const {sql: knexSql, bindings: knexBindings} =
+                db.from('skills').select({name:'skills.name', isActive: 'skills.is_active'}).toSQL();
+            expect(sql).toBe(knexSql);
+        });
+
+        it('define columns as multiple arguments with aliases', async () => {
+            class Skill extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public isActive: number
+            }
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @manyToMany(() => Skill)
+                public skills: ManyToMany<typeof Skill>
+            }
+
+            const user = new User()
+            const query = user!.related('skills').query()
+
+            query['appliedConstraints'] = true
+
+            const {sql, bindings} = query.select('name as n', 'isActive as a').toSQL();
+            const {sql: knexSql, bindings: knexBindings} =
+                db.from('skills').select('skills.name as n', 'skills.is_active as a').toSQL();
+            expect(sql).toBe(knexSql);
+        });
+
+        it('define columns as subqueries', async () => {
+            class Skill extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public isActive: number
+            }
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @manyToMany(() => Skill)
+                public skills: ManyToMany<typeof Skill>
+            }
+
+            const user = new User()
+            const query = user!.related('skills').query()
+
+            query['appliedConstraints'] = true
+
+            const {sql, bindings} = query.select(db.from('addresses').count('* as total').as('addresses_total')).toSQL();
+            const {sql: knexSql, bindings: knexBindings} =
+                db.from('skills').select(db.from('addresses').count('* as total').as('addresses_total')).toSQL();
+            expect(sql).toBe(knexSql);
+        });
+
+        it('define columns as subqueries inside an array', async () => {
+            class Skill extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public isActive: number
+            }
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @manyToMany(() => Skill)
+                public skills: ManyToMany<typeof Skill>
+            }
+
+            const user = new User()
+            const query = user!.related('skills').query()
+
+            query['appliedConstraints'] = true
+
+            const {sql, bindings} = query.select([db.from('addresses').count('* as total').as('addresses_total')]).toSQL();
+            const {sql: knexSql, bindings: knexBindings} =
+                db.from('skills').select(db.from('addresses').count('* as total').as('addresses_total')).toSQL();
+            expect(sql).toBe(knexSql);
+        });
+    });
 
     describe('Model | ManyToMany | wherePivot', () => {
         beforeAll(async () => {

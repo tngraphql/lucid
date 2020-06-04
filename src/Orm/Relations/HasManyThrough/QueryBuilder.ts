@@ -93,25 +93,25 @@ export class HasManyThroughQueryBuilder extends BaseQueryBuilder {
      * table name
      */
     private transformRelatedTableColumns(columns: any[]) {
+        if (Array.isArray(columns[0])) {
+            return this.transformRelatedTableColumns(columns[0]);
+        }
+
         const relatedTable = this.relation.relatedModel().getTable()
 
         return columns.map((column) => {
             if ( typeof (column) === 'string' ) {
-                return `${ relatedTable }.${ column }`
+                return `${ relatedTable }.${ this.resolveKey(column) }`
             }
 
-            if ( Array.isArray(column) ) {
-                return this.transformRelatedTableColumns(column)
-            }
-
-            if ( isObject(column) ) {
+            if ( column.constructor === Object ) {
                 return Object.keys(column).reduce((result, alias) => {
-                    result[alias] = `${ relatedTable }.${ column[alias] }`
+                    result[alias] = `${ relatedTable }.${ this.resolveKey(column[alias]) }`
                     return result
                 }, {})
             }
 
-            return column
+            return this.transformValue(column)
         })
     }
 

@@ -168,6 +168,7 @@ export async function setup(destroyDb: boolean = true) {
         await db.schema.createTable('skills', (table) => {
             table.increments()
             table.string('name').notNullable()
+            table.integer('is_active').nullable()
             table.timestamps()
         })
     }
