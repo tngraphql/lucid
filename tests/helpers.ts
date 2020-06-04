@@ -168,6 +168,7 @@ export async function setup(destroyDb: boolean = true) {
         await db.schema.createTable('skills', (table) => {
             table.increments()
             table.string('name').notNullable()
+            table.integer('is_active').nullable()
             table.timestamps()
         })
     }
@@ -442,10 +443,10 @@ export class FakeAdapter implements AdapterContract {
     public operations: any[] = []
 
     private _handlers: any = {
-        insert: null,
-        update: null,
+        insert: [1],
+        update: [1],
         find: null,
-        delete: null,
+        delete: [1],
         findAll: null
     }
 
@@ -457,6 +458,7 @@ export class FakeAdapter implements AdapterContract {
         if ( typeof (this._handlers[action]) === 'function' ) {
             return this._handlers[action](model, options)
         }
+        return this._handlers[action];
     }
 
     public query(): any {
@@ -487,17 +489,17 @@ export class FakeAdapter implements AdapterContract {
     public modelConstructorClient(): any {
     }
 
-    public async insert(instance: LucidRow, attributes: any) {
+    public insert(instance: LucidRow, attributes: any) {
         this.operations.push({ type: 'insert', instance, attributes })
         return this._invokeHandler('insert', instance, attributes)
     }
 
-    public async delete(instance: LucidRow) {
+    public delete(instance: LucidRow) {
         this.operations.push({ type: 'delete', instance })
         return this._invokeHandler('delete', instance)
     }
 
-    public async update(instance: LucidRow, attributes: any) {
+    public update(instance: LucidRow, attributes: any) {
         this.operations.push({ type: 'update', instance, attributes })
         return this._invokeHandler('update', instance, attributes)
     }

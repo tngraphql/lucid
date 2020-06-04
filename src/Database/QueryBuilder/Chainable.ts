@@ -200,6 +200,7 @@ export abstract class Chainable extends Macroable implements ChainableContract {
             if ( typeof (column) === 'string' ) {
                 return this.resolveKey(column, true)
             }
+
             return this.transformValue(column)
         }))
         return this

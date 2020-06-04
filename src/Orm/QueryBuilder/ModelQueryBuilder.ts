@@ -133,7 +133,14 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
             }
         }
     ) {
-        super(builder, customFn, model.$keys.attributesToColumns.resolve.bind(model.$keys.attributesToColumns))
+        super(builder, customFn, (key: string) => {
+            let [column, alias] = key.split('as').map(x => x.trim());
+            column = model.$keys.attributesToColumns.resolve.bind(model.$keys.attributesToColumns)(column);
+            if (alias) {
+                return [column, alias].join(' as ');
+            }
+            return column;
+        })
         builder.table(model.getTable());
 
         const p = new Proxy(this, {

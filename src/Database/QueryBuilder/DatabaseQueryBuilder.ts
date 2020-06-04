@@ -104,7 +104,7 @@ export class DatabaseQueryBuilder extends Chainable implements DatabaseQueryBuil
     /**
      * Delete rows under the current query
      */
-    public del(): this {
+    public del() {
         this.ensureCanPerformWrites()
         this.knexQuery.del()
         return this
@@ -113,7 +113,7 @@ export class DatabaseQueryBuilder extends Chainable implements DatabaseQueryBuil
     /**
      * Alias for [[del]]
      */
-    public delete (): this {
+    public delete () {
         return this.del()
     }
 
