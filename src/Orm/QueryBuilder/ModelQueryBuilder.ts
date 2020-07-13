@@ -134,7 +134,7 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
         }
     ) {
         super(builder, customFn, (key: string) => {
-            let [column, alias] = key.split('as').map(x => x.trim());
+            let [column, as, alias] = key.split(' ').map(x => x.trim());
             column = model.$keys.attributesToColumns.resolve.bind(model.$keys.attributesToColumns)(column);
             if (alias) {
                 return [column, alias].join(' as ');
