@@ -43,7 +43,7 @@ export class SoftDeletingScope implements ScopeContract {
      */
     protected getDeletedAtColumn(builder: ModelQueryBuilderContract<LucidModel>): string {
         // @ts-ignore
-        return builder.model.getQualifiedDeletedAtColumn();
+        return builder.model.getDeletedAtColumn();
     }
 
     /**

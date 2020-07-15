@@ -724,7 +724,7 @@ describe('Model query builder', () => {
 
             const {sql: knexSql, bindings: knexBindings} = db.from('friends').whereNull('friends.deleted_at')
                 .update({
-                    'friends.deleted_at': '',
+                    'deleted_at': '',
                     updated_at: ''
                 })
                 .toSQL();
