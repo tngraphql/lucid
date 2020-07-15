@@ -8,19 +8,27 @@
  * file that was distributed with this source code.
  */
 
-import { DateTime } from 'luxon';
-import { Hooks } from '@poppinss/hooks/build';
-import { Exception } from '@poppinss/utils/build';
-import { InvalidArgumentException } from '@tngraphql/illuminate';
-import { ApplicationContract } from '@tngraphql/illuminate/dist/Contracts/ApplicationContract';
-import { QueryClientContract } from '../../Contracts/Database/QueryClientContract';
-import { TransactionClientContract } from '../../Contracts/Database/TransactionClientContract';
-import { ColumnOptions } from '../../Contracts/Model/ColumnOptions';
-import { LucidModel } from '../../Contracts/Model/LucidModel';
-import { CacheNode, LucidRow, ModelAdapterOptions, ModelObject, ModelOptions, CherryPick, CherryPickFields } from '../../Contracts/Model/LucidRow';
-import { ModelKeysContract } from '../../Contracts/Model/ModelKeysContract';
-import { ModelQueryBuilderContract } from '../../Contracts/Model/ModelQueryBuilderContract';
-import { OrmConfig } from '../../Contracts/Model/OrmConfig';
+import {DateTime} from 'luxon';
+import {Hooks} from '@poppinss/hooks/build';
+import {Exception} from '@poppinss/utils/build';
+import {InvalidArgumentException} from '@tngraphql/illuminate';
+import {ApplicationContract} from '@tngraphql/illuminate/dist/Contracts/ApplicationContract';
+import {QueryClientContract} from '../../Contracts/Database/QueryClientContract';
+import {TransactionClientContract} from '../../Contracts/Database/TransactionClientContract';
+import {ColumnOptions} from '../../Contracts/Model/ColumnOptions';
+import {LucidModel} from '../../Contracts/Model/LucidModel';
+import {
+    CacheNode,
+    LucidRow,
+    ModelAdapterOptions,
+    ModelObject,
+    ModelOptions,
+    CherryPick,
+    CherryPickFields
+} from '../../Contracts/Model/LucidRow';
+import {ModelKeysContract} from '../../Contracts/Model/ModelKeysContract';
+import {ModelQueryBuilderContract} from '../../Contracts/Model/ModelQueryBuilderContract';
+import {OrmConfig} from '../../Contracts/Model/OrmConfig';
 import {
     ComputedOptions,
     EventsList, GlobalScope,
@@ -28,7 +36,7 @@ import {
     ModelColumnOptions,
     ModelRelationOptions
 } from '../../Contracts/Model/types';
-import { AdapterContract } from '../../Contracts/Orm/AdapterContract';
+import {AdapterContract} from '../../Contracts/Orm/AdapterContract';
 import {
     ManyToManyRelationOptions,
     ModelRelations,
@@ -36,20 +44,20 @@ import {
     RelationshipsContract,
     ThroughRelationOptions
 } from '../../Contracts/Orm/Relations/types';
-import { ScopeType } from '../../Contracts/types';
-import { ensureRelation, collectValues, isObject, managedTransaction, normalizeCherryPickObject } from '../../utils'
+import {ScopeType} from '../../Contracts/types';
+import {ensureRelation, collectValues, isObject, managedTransaction, normalizeCherryPickObject} from '../../utils'
 
-import { Config } from '../Config'
-import { ModelKeys } from '../ModelKeys/ModelKeys'
-import { Preloader } from '../Preloader/Preloader'
-import { BelongsTo } from '../Relations/BelongsTo/BelongsTo'
-import { HasMany } from '../Relations/HasMany'
-import { HasManyThrough } from '../Relations/HasManyThrough'
-import { HasOne } from '../Relations/HasOne'
-import { ManyToMany } from '../Relations/ManyToMany'
-import { ModelEventEmitter } from './ModelEventEmitter';
-import { proxyHandler } from './proxyHandler'
-import { DATE_TIME_TYPES } from '../Decorators/date';
+import {Config} from '../Config'
+import {ModelKeys} from '../ModelKeys/ModelKeys'
+import {Preloader} from '../Preloader/Preloader'
+import {BelongsTo} from '../Relations/BelongsTo/BelongsTo'
+import {HasMany} from '../Relations/HasMany'
+import {HasManyThrough} from '../Relations/HasManyThrough'
+import {HasOne} from '../Relations/HasOne'
+import {ManyToMany} from '../Relations/ManyToMany'
+import {ModelEventEmitter} from './ModelEventEmitter';
+import {proxyHandler} from './proxyHandler'
+import {DATE_TIME_TYPES} from '../Decorators/date';
 
 const MANY_RELATIONS = ['hasMany', 'manyToMany', 'hasManyThrough']
 
@@ -160,12 +168,24 @@ export class BaseModel implements LucidRow {
      *
      * @param options
      */
-    protected static newQuery(options?: ModelAdapterOptions): any {
+    public static newQuery(options?: ModelAdapterOptions): any {
         const query = this.$adapter.query(this, options);
 
         this.registerGlobalScopes(query);
 
         return query;
+    }
+
+    /**
+     * Get a new query builder that doesn't have any global scopes or eager loading.
+     */
+    public static newModelQuery(options?: ModelAdapterOptions): any {
+        return this.$adapter.query(this, options);
+    }
+
+    public newModelQuery() {
+        const Model = this.constructor as typeof BaseModel;
+        return Model.newModelQuery();
     }
 
     public static withoutGlobalScope(scope): any {
@@ -199,7 +219,7 @@ export class BaseModel implements LucidRow {
         sideloadAttributes?: ModelObject,
         options?: ModelAdapterOptions
     ): any | null {
-        if ( typeof (adapterResult) !== 'object' || Array.isArray(adapterResult) ) {
+        if (typeof (adapterResult) !== 'object' || Array.isArray(adapterResult)) {
             return null
         }
 
@@ -227,12 +247,12 @@ export class BaseModel implements LucidRow {
         sideloadAttributes?: ModelObject,
         options?: ModelAdapterOptions
     ): InstanceType<T>[] {
-        if ( ! Array.isArray(adapterResults) ) {
+        if (!Array.isArray(adapterResults)) {
             return []
         }
 
         return adapterResults.reduce((models, row) => {
-            if ( isObject(row) ) {
+            if (isObject(row)) {
                 models.push(this['$createFromAdapterResult'](row, sideloadAttributes, options))
             }
             return models
@@ -249,8 +269,8 @@ export class BaseModel implements LucidRow {
         const column: ModelColumnOptions = {
             isPrimary: options.isPrimary || false,
             columnName: options.columnName || this.$configurator.getColumnName(this, name),
-            hasGetter: !! (descriptor && descriptor.get),
-            hasSetter: !! (descriptor && descriptor.set),
+            hasGetter: !!(descriptor && descriptor.get),
+            hasSetter: !!(descriptor && descriptor.set),
             serializeAs: options.serializeAs !== undefined
                 ? options.serializeAs
                 : this.$configurator.getSerializeAsKey(this, name),
@@ -263,7 +283,7 @@ export class BaseModel implements LucidRow {
         /**
          * Set column as the primary column, when `primary` is to true
          */
-        if ( column.isPrimary ) {
+        if (column.isPrimary) {
             this.primaryKey = name
         }
 
@@ -386,23 +406,23 @@ export class BaseModel implements LucidRow {
         options: ModelRelationOptions
     ) {
         switch (type) {
-        case 'hasOne':
-            this.$addHasOne(name, relatedModel, options)
-            break
-        case 'hasMany':
-            this.$addHasMany(name, relatedModel, options)
-            break
-        case 'belongsTo':
-            this.$addBelongsTo(name, relatedModel, options)
-            break
-        case 'manyToMany':
-            this.$addManyToMany(name, relatedModel, options as ManyToManyRelationOptions<ModelRelations>)
-            break
-        case 'hasManyThrough':
-            this.$addHasManyThrough(name, relatedModel, options as ThroughRelationOptions<ModelRelations>)
-            break
-        default:
-            throw new Error(`${ type } is not a supported relation type`)
+            case 'hasOne':
+                this.$addHasOne(name, relatedModel, options)
+                break
+            case 'hasMany':
+                this.$addHasMany(name, relatedModel, options)
+                break
+            case 'belongsTo':
+                this.$addBelongsTo(name, relatedModel, options)
+                break
+            case 'manyToMany':
+                this.$addManyToMany(name, relatedModel, options as ManyToManyRelationOptions<ModelRelations>)
+                break
+            case 'hasManyThrough':
+                this.$addHasManyThrough(name, relatedModel, options as ThroughRelationOptions<ModelRelations>)
+                break
+            default:
+                throw new Error(`${type} is not a supported relation type`)
         }
     }
 
@@ -437,16 +457,49 @@ export class BaseModel implements LucidRow {
             }
         })
 
-        Object.defineProperty(this, '$columnsDefinitions', { value: new Map() })
-        Object.defineProperty(this, '$computedDefinitions', { value: new Map() })
-        Object.defineProperty(this, '$relationsDefinitions', { value: new Map() })
+        Object.defineProperty(this, '$columnsDefinitions', {value: new Map()})
+        Object.defineProperty(this, '$computedDefinitions', {value: new Map()})
+        Object.defineProperty(this, '$relationsDefinitions', {value: new Map()})
 
         Object.defineProperty(this, '$hooks', {
             // value: new Hooks(this.$container.getResolver(undefined, 'modelHooks', 'App/Models/Hooks'))
             value: new Hooks()
         })
 
-        // this.table = this.table === undefined ? this.$configurator.getTableName(this) : this.table
+        this._classUse = [];
+    }
+
+    protected static _classUse = [];
+
+    public static use(mixin) {
+        if (this._classUse.includes(mixin)) {
+            return;
+        }
+        const methods = Object.getOwnPropertyNames(mixin.prototype).filter(x => !['constructor'].includes(x));
+        const staticMethods = Object.getOwnPropertyNames(mixin).filter(x => !['length', 'prototype', 'name'].includes(x));
+
+        methods.forEach(method => {
+            this.prototype[method] = mixin.prototype[method];
+        });
+        staticMethods.forEach(method => {
+            this[method] = mixin[method];
+        });
+
+        const method = 'boot' + mixin.name;
+
+        this[method] && this[method]();
+
+        this._classUse.push(mixin);
+    }
+
+    public static uses(mixins) {
+        if (!Array.isArray(mixins)) {
+            mixins = [];
+        }
+
+        mixins.forEach(mixin => {
+            this.use(mixin)
+        })
     }
 
     /**
@@ -476,7 +529,7 @@ export class BaseModel implements LucidRow {
      * Check if the model needs to be booted and if so, do it.
      */
     public static bootIfNotBooted() {
-        if ( this._booted ) {
+        if (this._booted) {
             return;
         }
 
@@ -494,7 +547,7 @@ export class BaseModel implements LucidRow {
     private static _modelEvent: ModelEventEmitter;
 
     protected static get modelEvent(): ModelEventEmitter {
-        if ( this._modelEvent ) {
+        if (this._modelEvent) {
             return this._modelEvent;
         }
 
@@ -547,8 +600,8 @@ export class BaseModel implements LucidRow {
 
         return managedTransaction(client, async (trx) => {
             const modelInstances: LucidRow[] = []
-            for( let row of values ) {
-                const modelInstance = await this.create(row, { client: trx })
+            for (let row of values) {
+                const modelInstance = await this.create(row, {client: trx})
                 modelInstances.push(modelInstance)
             }
             return modelInstances
@@ -559,7 +612,7 @@ export class BaseModel implements LucidRow {
      * Find model instance using the primary key
      */
     public static async find(value: any, options?: ModelAdapterOptions) {
-        if ( value === undefined ) {
+        if (value === undefined) {
             throw new Exception('"find" expects a value. Received undefined')
         }
 
@@ -570,7 +623,7 @@ export class BaseModel implements LucidRow {
      * Find model instance using the primary key
      */
     public static async findOrFail(value: any, options?: ModelAdapterOptions) {
-        if ( value === undefined ) {
+        if (value === undefined) {
             throw new Exception('"findOrFail" expects a value. Received undefined')
         }
         return this.findByOrFail(this.primaryKey, value, options);
@@ -579,7 +632,7 @@ export class BaseModel implements LucidRow {
     /**
      * Find model instance using a key/value pair
      */
-    public static async findBy (key: string, value: any, options?: ModelAdapterOptions) {
+    public static async findBy(key: string, value: any, options?: ModelAdapterOptions) {
         if (value === undefined) {
             throw new Exception('"findBy" expects a value. Received undefined')
         }
@@ -590,7 +643,7 @@ export class BaseModel implements LucidRow {
     /**
      * Find model instance using a key/value pair
      */
-    public static async findByOrFail (key: string, value: any, options?: ModelAdapterOptions) {
+    public static async findByOrFail(key: string, value: any, options?: ModelAdapterOptions) {
         if (value === undefined) {
             throw new Exception('"findByOrFail" expects a value. Received undefined')
         }
@@ -615,7 +668,7 @@ export class BaseModel implements LucidRow {
      * Find model instance using a key/value pair
      */
     public static async findMany(value: any[], options?: ModelAdapterOptions) {
-        if ( value === undefined ) {
+        if (value === undefined) {
             throw new Exception('"findMany" expects a value. Received undefined')
         }
 
@@ -848,23 +901,23 @@ export class BaseModel implements LucidRow {
      *
      */
     public static addGlobalScope(scope: ScopeType, callback?: (builder: ModelQueryBuilderContract<LucidModel>) => any) {
-        if ( ! this.$globalScopes.has(this) ) {
+        if (!this.$globalScopes.has(this)) {
             this.$globalScopes.set(this, []);
         }
 
         const instance = this.$globalScopes.get(this);
 
-        if ( typeof scope === 'string' && callback ) {
+        if (typeof scope === 'string' && callback) {
             return instance.push({
                 scope,
                 callback
             });
-        } else if ( typeof scope === 'function' ) {
+        } else if (typeof scope === 'function') {
             return instance.push({
                 scope,
                 callback: scope
             });
-        } else if ( Reflect.has(scope as object, 'apply') ) {
+        } else if (Reflect.has(scope as object, 'apply')) {
             return instance.push({
                 scope: scope.constructor,
                 callback: scope as object
@@ -938,7 +991,7 @@ export class BaseModel implements LucidRow {
      * Raises exception when mutations are performed on a delete model
      */
     private ensureIsntDeleted() {
-        if ( this.$isDeleted ) {
+        if (this.$isDeleted) {
             throw new Exception('Cannot mutate delete model instance', 500, 'E_MODEL_DELETED')
         }
     }
@@ -948,17 +1001,36 @@ export class BaseModel implements LucidRow {
      * to create the object with the property names to be
      * used by the adapter.
      */
-    protected prepareForAdapter(attributes: ModelObject) {
-        const Model = this.constructor as typeof BaseModel
+    public prepareForAdapter(attributes: ModelObject) {
+        const Model = this.constructor as LucidModel
+
+        return Model.prepareForAdapter(attributes)
+    }
+
+    public static prepareForAdapter(attributes: ModelObject) {
+        const Model = this;
 
         return Object.keys(attributes).reduce((result, key) => {
-            const column = Model.$getColumn(key)!
+            let column = Model.$getColumn(key);
+            let columnName = column && column.columnName;
+
+            if (key.includes('.')) {
+                const [table, field] = key.split('.');
+
+                column = Model.$getColumn(field);
+                columnName = table + '.' + column.columnName;
+            }
+
+            if (!column) {
+                result[key] = attributes[key];
+                return result;
+            }
 
             const value = typeof (column.prepare) === 'function'
-                ? column.prepare(attributes[key], key, this)
-                : attributes[key]
+                ? column.prepare(attributes[key], key, this.prototype)
+                : attributes[key];
 
-            result[column.columnName] = value
+            result[columnName] = value
             return result
         }, {})
     }
@@ -975,18 +1047,18 @@ export class BaseModel implements LucidRow {
          * If explicit serializing is turned off, then never
          * return the field
          */
-        if ( ! serializeAs ) {
+        if (!serializeAs) {
             return false
         }
 
         /**
          * If not explicit fields are defined, then always include the field
          */
-        if ( ! fields ) {
+        if (!fields) {
             return true
         }
 
-        const { pick, omit } = normalizeCherryPickObject(fields)
+        const {pick, omit} = normalizeCherryPickObject(fields)
 
         /**
          * Return false, when under omit array
@@ -1073,7 +1145,7 @@ export class BaseModel implements LucidRow {
         const model = this.constructor as typeof BaseModel
         const column = model.$getColumn(model.primaryKey)
 
-        if ( column && column.hasGetter ) {
+        if (column && column.hasGetter) {
             return this[model.primaryKey]
         }
 
@@ -1084,7 +1156,7 @@ export class BaseModel implements LucidRow {
      * Opposite of [[this.isPersisted]]
      */
     public get $isNew(): boolean {
-        return ! this.$isPersisted
+        return !this.$isPersisted
     }
 
     /**
@@ -1097,7 +1169,7 @@ export class BaseModel implements LucidRow {
         /**
          * Do not compute diff, when model has never been persisted
          */
-        if ( ! this.$isPersisted ) {
+        if (!this.$isPersisted) {
             return this.$attributes
         }
 
@@ -1105,11 +1177,11 @@ export class BaseModel implements LucidRow {
             const value = this.$attributes[key]
             const originalValue = this.$original[key]
 
-            if ( originalValue !== value ) {
+            if (originalValue !== value) {
                 result[key] = value
             }
 
-            if ( this.fillInvoked ) {
+            if (this.fillInvoked) {
                 processedKeys.push(key)
             }
 
@@ -1120,12 +1192,12 @@ export class BaseModel implements LucidRow {
          * Find negative diff if fill was invoked, since we may have removed values
          * that exists in originals
          */
-        if ( this.fillInvoked ) {
+        if (this.fillInvoked) {
             Object.keys(this.$original)
-                  .filter((key) => ! processedKeys.includes(key))
-                  .forEach((key) => {
-                      dirty[key] = null
-                  })
+                .filter((key) => !processedKeys.includes(key))
+                .forEach((key) => {
+                    dirty[key] = null
+                })
         }
 
         return dirty
@@ -1149,7 +1221,7 @@ export class BaseModel implements LucidRow {
      * Set the trx to be used by the model to executing queries
      */
     public set $trx(trx: TransactionClientContract | undefined) {
-        if ( ! trx ) {
+        if (!trx) {
             this.modelTrx = undefined
             return
         }
@@ -1157,7 +1229,7 @@ export class BaseModel implements LucidRow {
         /**
          * Remove old listeners
          */
-        if ( this.modelTrx ) {
+        if (this.modelTrx) {
             this.modelTrx.removeListener('commit', this.transactionListener)
             this.modelTrx.removeListener('rollback', this.transactionListener)
         }
@@ -1181,17 +1253,17 @@ export class BaseModel implements LucidRow {
      * Set options
      */
     public set $options(options: ModelOptions | undefined) {
-        if ( ! options ) {
+        if (!options) {
             this.modelOptions = undefined;
             return
         }
 
         this.modelOptions = this.modelOptions || {}
-        if ( options.connection ) {
+        if (options.connection) {
             this.modelOptions.connection = options.connection
         }
 
-        if ( options.profiler ) {
+        if (options.profiler) {
             this.modelOptions.profiler = options.profiler
         }
     }
@@ -1199,7 +1271,7 @@ export class BaseModel implements LucidRow {
     /**
      * A chainable method to set transaction on the model
      */
-    public useTransaction (trx: TransactionClientContract): this {
+    public useTransaction(trx: TransactionClientContract): this {
         this.$trx = trx
         return this
     }
@@ -1207,8 +1279,8 @@ export class BaseModel implements LucidRow {
     /**
      * A chainable method to set transaction on the model
      */
-    public useConnection (connection: string): this {
-        this.$options = { connection }
+    public useConnection(connection: string): this {
+        this.$options = {connection}
         return this
     }
 
@@ -1218,11 +1290,11 @@ export class BaseModel implements LucidRow {
      * Set options on the model instance along with transaction
      */
     public $setOptionsAndTrx(options?: ModelAdapterOptions): void {
-        if ( ! options ) {
+        if (!options) {
             return;
         }
 
-        if ( options.client && options.client.isTransaction ) {
+        if (options.client && options.client.isTransaction) {
             this.$trx = options.client as TransactionClientContract
         }
 
@@ -1257,7 +1329,7 @@ export class BaseModel implements LucidRow {
          * Return the resolved value from cache when cache original is same
          * as the attribute value
          */
-        if ( cached && cached.original === original ) {
+        if (cached && cached.original === original) {
             return cached.resolved
         }
 
@@ -1266,11 +1338,11 @@ export class BaseModel implements LucidRow {
          */
         const resolved = callback(original)
 
-        if ( ! cached ) {
+        if (!cached) {
             /**
              * Create cache entry
              */
-            this.cachedGetters[key] = { getter: callback, original, resolved }
+            this.cachedGetters[key] = {getter: callback, original, resolved}
         } else {
             /**
              * Update original and resolved keys
@@ -1307,17 +1379,17 @@ export class BaseModel implements LucidRow {
         /**
          * Ignore when relation is not defined
          */
-        if ( ! relation ) {
+        if (!relation) {
             return
         }
 
         /**
          * Reset array before invoking $pushRelated
          */
-        if ( MANY_RELATIONS.includes(relation.type) ) {
-            if ( ! Array.isArray(models) ) {
+        if (MANY_RELATIONS.includes(relation.type)) {
+            if (!Array.isArray(models)) {
                 throw new Exception(
-                    `"${ Model.name }.${ key }" must be an array when setting "${ relation.type }" relationship`
+                    `"${Model.name}.${key}" must be an array when setting "${relation.type}" relationship`
                 )
             }
             this.$preloaded[key] = []
@@ -1336,14 +1408,14 @@ export class BaseModel implements LucidRow {
         /**
          * Ignore when relation is not defined
          */
-        if ( ! relation ) {
+        if (!relation) {
             return
         }
 
         /**
          * Create multiple for `hasMany` `manyToMany` and `hasManyThrough`
          */
-        if ( MANY_RELATIONS.includes(relation.type) ) {
+        if (MANY_RELATIONS.includes(relation.type)) {
             this.$preloaded[key] = ((this.$preloaded[key] || []) as LucidRow[]).concat(models)
             return
         }
@@ -1351,9 +1423,9 @@ export class BaseModel implements LucidRow {
         /**
          * Dis-allow setting multiple model instances for a one to one relationship
          */
-        if ( Array.isArray(models) ) {
+        if (Array.isArray(models)) {
             throw new Error(
-                `"${ Model.name }.${ key }" cannot reference more than one instance of "${ relation.relatedModel().name }" model`
+                `"${Model.name}.${key}" cannot reference more than one instance of "${relation.relatedModel().name}" model`
             )
         }
 
@@ -1374,7 +1446,7 @@ export class BaseModel implements LucidRow {
          * Merging sideloaded attributes with the existing sideloaded values
          * on the model instance
          */
-        if ( sideloadedAttributes ) {
+        if (sideloadedAttributes) {
             this.$sideloaded = Object.assign({}, this.$sideloaded, sideloadedAttributes)
         }
 
@@ -1383,14 +1455,14 @@ export class BaseModel implements LucidRow {
          * the adapter to hydrate models with properties generated
          * as a result of insert or update
          */
-        if ( isObject(adapterResult) ) {
+        if (isObject(adapterResult)) {
             Object.keys(adapterResult).forEach((key) => {
                 /**
                  * Pull the attribute name from the column name, since adapter
                  * results always holds the column names.
                  */
                 const attributeName = Model.$keys.columnsToAttributes.get(key)
-                if ( attributeName ) {
+                if (attributeName) {
                     const attribute = Model.$getColumn(attributeName)!
 
                     /**
@@ -1413,7 +1485,7 @@ export class BaseModel implements LucidRow {
                  * If key is defined as a relation, then ignore it, since one
                  * must pass a qualified model to `this.$setRelated()`
                  */
-                if ( Model.$relationsDefinitions.has(key) ) {
+                if (Model.$relationsDefinitions.has(key)) {
                     return
                 }
 
@@ -1453,14 +1525,14 @@ export class BaseModel implements LucidRow {
         /**
          * Merge values with the attributes
          */
-        if ( isObject(values) ) {
+        if (isObject(values)) {
             Object.keys(values).forEach((key) => {
                 const value = values[key]
 
                 /**
                  * Set as column
                  */
-                if ( Model.$hasColumn(key) ) {
+                if (Model.$hasColumn(key)) {
                     this[key] = value
                     return
                 }
@@ -1471,7 +1543,7 @@ export class BaseModel implements LucidRow {
                  * accepting them directly from the API.
                  */
                 const attributeName = Model.$keys.columnsToAttributes.get(key)
-                if ( attributeName ) {
+                if (attributeName) {
                     this[attributeName] = value
                     return
                 }
@@ -1480,16 +1552,16 @@ export class BaseModel implements LucidRow {
                  * If key is defined as a relation, then ignore it, since one
                  * must pass a qualified model to `this.$setRelated()`
                  */
-                if ( Model.$relationsDefinitions.has(key) ) {
+                if (Model.$relationsDefinitions.has(key)) {
                     return
                 }
 
                 /**
                  * Raise error when not instructed to ignore non-existing properties.
                  */
-                if ( ! allowNonExtraProperties ) {
+                if (!allowNonExtraProperties) {
                     throw new Error(
-                        `Cannot define "${ key }" on "${ Model.name }" model, since it is not defined as a model property`
+                        `Cannot define "${key}" on "${Model.name}" model, since it is not defined as a model property`
                     )
                 }
 
@@ -1505,7 +1577,7 @@ export class BaseModel implements LucidRow {
         const constructor = this.constructor as LucidModel
         const preloader = new Preloader(constructor)
 
-        if ( typeof (relationName) === 'function' ) {
+        if (typeof (relationName) === 'function') {
             relationName(preloader)
         } else {
             preloader.preload(relationName, callback)
@@ -1521,7 +1593,7 @@ export class BaseModel implements LucidRow {
      * all `datetime` columns, if there are not initiated already
      * and `autoCreate` or `autoUpdate` flags are turned on.
      */
-    protected initiateAutoCreateColumns () {
+    protected initiateAutoCreateColumns() {
         const model = this.constructor as LucidModel
 
         model.$columnsDefinitions.forEach((column, attributeName) => {
@@ -1553,7 +1625,7 @@ export class BaseModel implements LucidRow {
      * all `datetime` columns, if there have `autoUpdate` flag
      * turned on.
      */
-    protected initiateAutoUpdateColumns () {
+    protected initiateAutoUpdateColumns() {
         const model = this.constructor as LucidModel
 
         model.$columnsDefinitions.forEach((column, attributeName) => {
@@ -1580,7 +1652,7 @@ export class BaseModel implements LucidRow {
         /**
          * Persit the model when it's not persisted already
          */
-        if ( ! this.$isPersisted ) {
+        if (!this.$isPersisted) {
             await Model.$hooks.exec('before', 'create', this)
             await Model.$hooks.exec('before', 'save', this)
 
@@ -1634,14 +1706,32 @@ export class BaseModel implements LucidRow {
         const Model = this.constructor as typeof BaseModel
 
         await Model.$hooks.exec('before', 'delete', this)
+
+        const result = await this.performDeleteOnModel();
+
+        await Model.$hooks.exec('after', 'delete', this)
+
+        return result;
+    }
+
+    protected async performDeleteOnModel() {
+        const Model = this.constructor as typeof BaseModel;
+
         const [result] = await Model.$adapter.delete(this)
         if (result) {
             this.$isDeleted = true;
         }
 
-        await Model.$hooks.exec('after', 'delete', this)
-
         return result;
+    }
+
+    /**
+     * Force a hard delete on a soft deleted model.
+     *
+     * This method protects developers from running forceDelete when trait is missing.
+     */
+    public async forceDelete() {
+        return this.delete();
     }
 
     /**
@@ -1660,7 +1750,7 @@ export class BaseModel implements LucidRow {
             }
 
             const value = this[key]
-            result[column.serializeAs] = typeof (column.serialize) === 'function' && ! raw
+            result[column.serializeAs] = typeof (column.serialize) === 'function' && !raw
                 ? column.serialize(value, key, this)
                 : value
 
@@ -1720,7 +1810,7 @@ export class BaseModel implements LucidRow {
             /**
              * Return relationship model as it is, when `raw` is true.
              */
-            if ( raw ) {
+            if (raw) {
                 result[relation.serializeAs] = value;
                 return result;
             }
@@ -1775,7 +1865,7 @@ export class BaseModel implements LucidRow {
         /**
          * Returning insert query for the inserts
          */
-        if ( action === 'insert' ) {
+        if (action === 'insert') {
             const insertQuery = client.insertQuery().table(modelConstructor.getTable())
             insertQuery.returning(primaryKeyColumn)
             return insertQuery
@@ -1816,7 +1906,7 @@ export class BaseModel implements LucidRow {
         /**
          * Noop when model instance is not persisted
          */
-        if ( ! this.$isPersisted ) {
+        if (!this.$isPersisted) {
             return
         }
 
@@ -1825,11 +1915,11 @@ export class BaseModel implements LucidRow {
          * the row
          */
         const freshModelInstance = await modelConstructor.find(this.$primaryKeyValue)
-        if ( ! freshModelInstance ) {
+        if (!freshModelInstance) {
             throw new Exception(
                 [
                     '"Model.refresh" failed. ',
-                    `Unable to lookup "${ table }" table where "${ primaryKeyColumn }" = ${ this.$primaryKeyValue }`
+                    `Unable to lookup "${table}" table where "${primaryKeyColumn}" = ${this.$primaryKeyValue}`
                 ].join('')
             )
         }
@@ -1887,5 +1977,27 @@ export class BaseModel implements LucidRow {
          */
         row.$setOptionsAndTrx(options)
         return row
+    }
+
+    /**
+     * Qualify the given column name by the model's table.
+     */
+    public static qualifyColumn(column: string) {
+        if (column.includes('.')) {
+            return column;
+        }
+
+        const model = this.constructor as LucidModel;
+
+        return this.getTable() + '.' + column;
+    }
+
+    /**
+     * Qualify the given column name by the model's table.
+     */
+    public qualifyColumn(column: string) {
+        const model = this.constructor as typeof BaseModel;
+
+        return model.qualifyColumn(column);
     }
 }

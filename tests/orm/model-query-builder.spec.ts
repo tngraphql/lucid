@@ -15,6 +15,8 @@ import { scope } from '../../src/Helpers/scope';
 import { column } from '../../src/Orm/Decorators';
 import { ModelQueryBuilder } from '../../src/Orm/QueryBuilder/ModelQueryBuilder';
 import { cleanup, getBaseModel, getDb, getProfiler, ormAdapter, resetTables, setup } from '../helpers';
+import { SoftDeletes } from '../../src/Orm/SoftDeletes';
+import {DateTime} from "luxon";
 
 let db: ReturnType<typeof getDb>
 let BaseModel: ReturnType<typeof getBaseModel>
@@ -633,5 +635,236 @@ describe('Model query builder', () => {
             const users = await User.query().count('* as total')
             expect(Number(users[0].total)).toBe(2)
         })
+    });
+
+    describe('Soft Deletes', () => {
+        let FriendClass;
+        beforeEach(async () => {
+            class Friend extends BaseModel {
+                static table = 'friends';
+
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                username: string;
+
+                @column.dateTime({autoCreate: true})
+                public createdAt: DateTime;
+
+                @column.dateTime({ autoCreate: true, autoUpdate: true })
+                public updatedAt: DateTime
+
+                @column.dateTime()
+                public deletedAt: DateTime
+
+                static boot() {
+                    super.boot();
+
+                    this.use(SoftDeletes);
+                }
+            }
+
+            FriendClass = Friend;
+        });
+
+        it('model delete', async () => {
+            const friend = new FriendClass();
+            friend.name = 1;
+            await friend.save();
+
+            db.enableQueryLog();
+            await friend.delete();
+
+            const stack = db.getQueryLog();
+            const {sql, bindings} = db.from('friends').where('id', 1).update({deleted_at: '', updated_at: ''}).toSQL();
+            expect(stack[0].sql).toEqual(sql)
+        });
+
+        it('model force delete', async () => {
+            const friend = new FriendClass();
+            friend.name = 1;
+            await friend.save();
+            db.enableQueryLog();
+            await friend.forceDelete();
+            expect(friend.isForceDeleting()).toBeFalsy();
+            const stack = db.getQueryLog();
+            const {sql, bindings} = db.from('friends').where('id', 1).delete().toSQL();
+            expect(stack[0].sql).toEqual(sql)
+        });
+
+        it('model restore', async () => {
+            const friend = new FriendClass();
+            friend.name = 1;
+            await friend.save();
+
+
+            await friend.delete();
+
+            db.enableQueryLog();
+
+            if (friend.trashed()) {
+                await friend.restore();
+            }
+
+            const stack = db.getQueryLog();
+
+            expect(stack).toHaveLength(1);
+            const {sql, bindings} = stack[0];
+            const {sql: knexSql} = db.from('friends').where('id', 1).update({updated_at: '', deleted_at: ''}).toSQL();
+            expect(sql).toEqual(knexSql);
+            expect(bindings.includes(null)).toBeTruthy();
+        });
+
+        it('builder delete', async () => {
+            db.enableQueryLog();
+            await FriendClass.query().delete();
+
+            const {sql} = db.getQueryLog()[0];
+
+            const {sql: knexSql, bindings: knexBindings} = db.from('friends').whereNull('friends.deleted_at')
+                .update({
+                    'deleted_at': '',
+                    updated_at: ''
+                })
+                .toSQL();
+
+            expect(sql).toEqual(knexSql);
+        });
+
+        it('builder force delete', async () => {
+            db.enableQueryLog();
+
+            await FriendClass.query().forceDelete();
+
+            const {sql} = db.getQueryLog()[0];
+
+            const {sql: knexSql, bindings: knexBindings} = db.from('friends').delete().toSQL();
+            expect(sql).toEqual(knexSql);
+        });
+
+        it('builder restore', async () => {
+            const friend = new FriendClass();
+            friend.name = 1;
+            await friend.save();
+
+            const d = await FriendClass.query().where('id', friend.id).delete();
+            db.enableQueryLog();
+
+            await FriendClass.query().where('id', friend.id).restore();
+
+            const {sql} = db.getQueryLog()[0];
+            const {sql: knexSql} = db.from('friends')
+                .where('id', friend.id)
+                .update({
+                    'deleted_at': '',
+                    'updated_at': ''
+                })
+                .toSQL();
+            expect(sql).toEqual(knexSql);
+        });
+
+        it('query columns not delete', async () => {
+            for (const item of [1, 2, 3]) {
+                const friend = new FriendClass();
+                friend.name = 1;
+                await friend.save();
+            }
+            const friend = new FriendClass();
+            friend.name = 1;
+            await friend.save();
+            await friend.delete();
+
+            db.enableQueryLog();
+            const data = await FriendClass.query();
+            const {sql, bindings} = db.getQueryLog()[0];
+            const {sql: knexSql, bindings: knexBindings} = db.from('friends').whereNull('friends.deleted_at').toSQL();
+            expect(data).toHaveLength(3);
+            expect(sql).toEqual(knexSql);
+            expect(bindings).toEqual(knexBindings);
+        });
+
+        it('query using withTrashed', async () => {
+            for (const item of [1, 2, 3]) {
+                const friend = new FriendClass();
+                friend.name = 1;
+                await friend.save();
+            }
+            const friend = new FriendClass();
+            friend.name = 1;
+            await friend.save();
+            await friend.delete();
+
+            db.enableQueryLog();
+            const data = await FriendClass.query().withTrashed();
+
+            const {sql, bindings} = db.getQueryLog()[0];
+            const {sql: knexSql, bindings: knexBindings} = db.from('friends').toSQL();
+            expect(data).toHaveLength(4);
+            expect(sql).toEqual(knexSql);
+            expect(bindings).toEqual(knexBindings);
+        });
+
+        it('query using withTrashed and withTrashed =  false', async () => {
+            for (const item of [1, 2, 3]) {
+                const friend = new FriendClass();
+                friend.name = 1;
+                await friend.save();
+            }
+            const friend = new FriendClass();
+            friend.name = 1;
+            await friend.save();
+            await friend.delete();
+
+            db.enableQueryLog();
+            const data = await FriendClass.query().withTrashed(false);
+
+            const {sql, bindings} = db.getQueryLog()[0];
+            const {sql: knexSql, bindings: knexBindings} = db.from('friends').whereNull('friends.deleted_at').toSQL();
+            expect(data).toHaveLength(3);
+            expect(sql).toEqual(knexSql);
+            expect(bindings).toEqual(knexBindings);
+        });
+
+        it('query using withoutTrashed', async () => {
+            for (const item of [1, 2, 3]) {
+                const friend = new FriendClass();
+                friend.name = 1;
+                await friend.save();
+            }
+            const friend = new FriendClass();
+            friend.name = 1;
+            await friend.save();
+            await friend.delete();
+
+            db.enableQueryLog();
+            const data = await FriendClass.query().withoutTrashed();
+            const {sql, bindings} = db.getQueryLog()[0];
+            const {sql: knexSql, bindings: knexBindings} = db.from('friends').whereNull('friends.deleted_at').toSQL();
+            expect(data).toHaveLength(3);
+            expect(sql).toEqual(knexSql);
+            expect(bindings).toEqual(knexBindings);
+        });
+
+        it('query using only trashed', async () => {
+            for (const item of [1, 2, 3]) {
+                const friend = new FriendClass();
+                friend.name = 1;
+                await friend.save();
+            }
+            const friend = new FriendClass();
+            friend.name = 1;
+            await friend.save();
+            await friend.delete();
+
+            db.enableQueryLog();
+            const data = await FriendClass.query().onlyTrashed();
+
+            const {sql, bindings} = db.getQueryLog()[0];
+            const {sql: knexSql, bindings: knexBindings} = db.from('friends').whereNotNull('friends.deleted_at').toSQL();
+            expect(data).toHaveLength(1);
+            expect(sql).toEqual(knexSql);
+            expect(bindings).toEqual(knexBindings);
+        });
     });
 })

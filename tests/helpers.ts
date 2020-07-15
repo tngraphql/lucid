@@ -149,8 +149,8 @@ export async function setup(destroyDb: boolean = true) {
         await db.schema.createTable('friends', (table) => {
             table.increments()
             table.string('username', 100).unique()
-            table.timestamp('created_at').defaultTo(db.fn.now())
-            table.timestamp('updated_at').nullable()
+            table.timestamp('deleted_at').nullable()
+            table.timestamps()
         })
     }
 

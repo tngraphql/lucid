@@ -19,6 +19,8 @@ import {
     QueryBuilderPreloadFn
 } from '../Orm/Relations/types';
 import { OneOrMany } from './types';
+import {ModelQueryBuilderContract} from "./ModelQueryBuilderContract";
+import {LucidModel} from "./LucidModel";
 
 /**
  * Reusable interface to define an object.
@@ -184,6 +186,8 @@ export interface LucidRow {
 
     delete(): Promise<number>
 
+    forceDelete(): Promise<number>
+
     refresh(): Promise<void>
 
     preload: ModelBuilderPreloadFn<this>
@@ -233,4 +237,14 @@ export interface LucidRow {
     related<Name extends ExtractModelRelations<this>>(
         relation: Name
     ): this[Name] extends ModelRelations ? this[Name]['client'] : never
+
+
+    /**
+     * Qualify the given column name by the model's table.
+     */
+    qualifyColumn(column: string): string;
+
+    prepareForAdapter(attributes: ModelObject);
+
+    newModelQuery(): ModelQueryBuilderContract<LucidModel>
 }

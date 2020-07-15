@@ -25,6 +25,8 @@ import { isObject } from '../../utils';
 
 import { Preloader } from '../Preloader/Preloader'
 import _ = require('lodash');
+import {DATE_TIME_TYPES} from "../Decorators/date";
+import {DateTime} from "luxon";
 
 /**
  * A wrapper to invoke scope methods on the query builder
@@ -121,6 +123,8 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
 
     protected _removedScopes = [];
 
+    protected _onDelete;
+
     constructor(
         builder: Knex.QueryBuilder,
         public model: LucidModel,
@@ -134,13 +138,23 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
         }
     ) {
         super(builder, customFn, (key: string) => {
+            if (key.includes('.')) {
+                let [table, column] = key.split('.');
+
+                return [table, f(model, column)].join('.');
+            }
+            return f(model, key);
+        });
+
+        function f(model, key) {
             let [column, as, alias] = key.split(' ').map(x => x.trim());
             column = model.$keys.attributesToColumns.resolve.bind(model.$keys.attributesToColumns)(column);
             if (alias) {
                 return [column, alias].join(' as ');
             }
             return column;
-        })
+        }
+
         builder.table(model.getTable());
 
         const p = new Proxy(this, {
@@ -171,6 +185,10 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
     public withGlobalScope(scope, callback): this {
         if ( ! this._scopes ) {
             this._scopes = [];
+        }
+
+        if (isObject(callback) && Reflect.has(callback, 'extend')) {
+            callback.extend(this);
         }
 
         this._scopes.push({ scope, callback });
@@ -387,7 +405,7 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
      */
     public increment(column: any, counter?: any): any {
         this.ensureCanPerformWrites()
-        this.knexQuery.increment(column, counter)
+        this.knexQuery.increment(this.resolveKey(column, true), counter)
         return this
     }
 
@@ -397,7 +415,7 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
      */
     public decrement(column: any, counter?: any): any {
         this.ensureCanPerformWrites()
-        this.knexQuery.decrement(column, counter)
+        this.knexQuery.decrement(this.resolveKey(column, true), counter)
         return this
     }
 
@@ -406,8 +424,28 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
      */
     public update(columns: any): any {
         this.ensureCanPerformWrites()
-        this.knexQuery.update(columns)
+
+        this.model.$columnsDefinitions.forEach((column, attributeName) => {
+            const columnType = column.meta?.type
+
+            /**
+             * Return early when not dealing with date time columns
+             */
+            if (!columnType || !DATE_TIME_TYPES[columnType] || !column.meta.autoUpdate) {
+                return
+            }
+
+            const time = DateTime.local()
+
+            columns[attributeName] = time;
+        });
+
+        this.knexQuery.update(this.resolveKey(this.model.prepareForAdapter(columns), true))
         return this
+    }
+
+    public onDelete(callback: (builder: this) => any) {
+        this._onDelete = callback;
     }
 
     /**
@@ -415,7 +453,9 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
      */
     public del(): any {
         this.ensureCanPerformWrites()
-        this.knexQuery.del()
+
+        this._onDelete ? this._onDelete(this) : this.knexQuery.del();
+
         return this
     }
 
@@ -424,6 +464,17 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
      */
     public delete (): this {
         return this.del()
+    }
+
+    /**
+     * Run the default delete function on the builder.
+     *
+     * Since we do not apply scopes here, the row will actually be deleted.
+     */
+    public forceDelete() {
+        this._scopes = [];
+        this.knexQuery.del();
+        return this;
     }
 
     /**

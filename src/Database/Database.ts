@@ -276,6 +276,23 @@ export class Database implements DatabaseContract {
         return this.manager.report()
     }
 
+    protected _logs = [];
+    public enableQueryLog() {
+        this._logs = [];
+        this.knexQuery().client.once('query', data => {
+            this._logs.push(data);
+        });
+    }
+
+    protected onEvent(data) {
+        this._logs.push(data);
+    }
+
+    public getQueryLog() {
+        const logs = this._logs;
+        return logs;
+    }
+
     // /**
     //  * Begin a new global transaction
     //  */
