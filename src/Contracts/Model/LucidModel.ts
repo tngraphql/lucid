@@ -211,6 +211,9 @@ export interface LucidModel {
 
     booted(): void
 
+    use(mixin: any): void;
+    uses(mixins: any[]): void;
+
     emit(event: string, value: any): void;
 
     on(event: string, callback: (data: any) => void): void;
@@ -442,6 +445,13 @@ export interface LucidModel {
      * Truncate model table
      */
     truncate(cascade?: boolean): Promise<void>
+
+    /**
+     * Qualify the given column name by the model's table.
+     */
+    qualifyColumn(column: string): string;
+
+    prepareForAdapter(attributes: ModelObject);
 
     new(): LucidRow
 }

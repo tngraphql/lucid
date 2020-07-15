@@ -81,6 +81,8 @@ export interface ModelQueryBuilderContract<Model extends LucidModel,
      */
     firstOrFail(): Promise<Result>
 
+    onDelete(callback: (builder: this) => any): void;
+
     /**
      * Perform delete operation
      */

@@ -149,6 +149,10 @@ export interface DatabaseContract {
      */
     report(): Promise<HealthReportEntry & { meta: ReportNode[] }>
 
+    enableQueryLog();
+
+    getQueryLog(): any[];
+
     /**
      * Begin a new global transaction. Multiple calls to this
      * method is a noop
