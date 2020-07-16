@@ -166,7 +166,7 @@ export class ManyToMany implements ManyToManyRelationContract<LucidModel, LucidM
                 parentModel,
                 related.filter((relatedModel) => {
                     const value = parentModel[this.localKey]
-                    return value !== undefined && relatedModel.$extras[pivotForeignKeyAlias] === value
+                    return value !== undefined && relatedModel.$extras[pivotForeignKeyAlias] == value
                 })
             )
         })
