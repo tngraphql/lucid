@@ -114,6 +114,8 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
 
     protected _scopes: GlobalScope[] = [];
 
+    protected _applyScope = false;
+
     /**
      * The methods that should be returned from query builder.
      */
@@ -234,9 +236,13 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
         return this._removedScopes;
     }
 
-    public applyScopes(): this {
+    public applyScopes(): ModelQueryBuilder {
         if ( ! this._scopes ) {
             return this;
+        }
+
+        if (this._applyScope) {
+            return;
         }
 
         for( let item of this._scopes ) {
@@ -246,22 +252,16 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
 
             const scope: any = item.callback;
 
-            this.callScope((builder = this) => {
-                if ( isObject(scope) && Reflect.has(scope, 'apply') ) {
-                    scope.apply(builder, this.model);
-                }
+            if ( isObject(scope) && Reflect.has(scope, 'apply') ) {
+                scope.apply(this, this.model);
+            }
 
-                if ( typeof scope === 'function' ) {
-                    scope(builder);
-                }
-            });
+            if ( typeof scope === 'function' ) {
+                scope(this);
+            }
         }
 
-        return this;
-    }
-
-    protected callScope(scope): this {
-        scope(this);
+        this._applyScope = true;
 
         return this;
     }
@@ -295,7 +295,10 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
         /**
          * Preload for model instances
          */
-        await this.preloader.sideload(this.sideloaded).processAllForMany(modelInstances, this.client)
+        await this.preloader.sideload(this.sideloaded).processAllForMany(modelInstances, this.client);
+
+        this._applyScope = false;
+
         return modelInstances
     }
 
@@ -334,10 +337,29 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
      * Clone the current query builder
      */
     public clone(): ModelQueryBuilder {
-        const clonedQuery = new ModelQueryBuilder(this.knexQuery.clone(), this.model, this.client)
+        const clonedQuery = new ModelQueryBuilder(this.knexQuery.clone(), this.model, this.client);
+
         this.applyQueryFlags(clonedQuery)
         clonedQuery.sideloaded = Object.assign({}, this.sideloaded)
         return clonedQuery
+    }
+
+    protected applyQueryFlags(query) {
+        this.registerGlobalScopes(query);
+
+        return super.applyQueryFlags(query);
+    }
+
+    protected registerGlobalScopes(builder) {
+        for (let scope of this._scopes) {
+            builder.withGlobalScope(scope.scope, scope.callback);
+        }
+
+        return builder;
+    }
+
+    public newQuery(){
+        return this.model.query() as any;
     }
 
     /**

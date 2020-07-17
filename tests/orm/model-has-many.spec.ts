@@ -1888,6 +1888,131 @@ describe('Model | HasMany', () => {
         })
     })
 
+    describe('Model | HasMany | global scopes', () => {
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+            await setup()
+            const [ userId ] = await db.table('users').insert({ username: 'virk' }).returning('id')
+            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Lucid 101' })
+            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'lucid 101' })
+        })
+
+        afterAll(async () => {
+            await cleanup()
+            await db.manager.closeAll()
+        })
+
+        it('apply scopes during eagerload', async () => {
+            class Post extends BaseModel {
+                @column()
+                public userId: number
+
+                @column()
+                public title: string
+
+                public static boot() {
+                    this.addGlobalScope(query => query.where('title', 'lucid 101'));
+                };
+
+            }
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasMany(() => Post)
+                public posts: HasMany<typeof Post>
+            }
+
+            db.enableQueryLog();
+            await User.query().preload('posts').firstOrFail();
+
+            const {sql} = db.getQueryLog()[1];
+            const {sql: knexSql} = db.from('posts').whereIn('user_id', [1]).where('title', 'lucid 101').toSQL();
+            expect(sql).toEqual(knexSql);
+        });
+
+        it('apply scopes on related query', async () => {
+            class Post extends BaseModel {
+                @column()
+                public userId: number
+
+                @column()
+                public title: string
+
+                public static boot() {
+                    this.addGlobalScope(query => query.where('title', 'lucid 101'));
+                };
+
+            }
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasMany(() => Post)
+                public posts: HasMany<typeof Post>
+            }
+
+            db.enableQueryLog();
+            const user = await User.findOrFail(1)
+
+            const posts = await user.related('posts').query();
+
+            const {sql} = db.getQueryLog()[1];
+            const {sql: knexSql} = db.from('posts').where('user_id', 1).where('title', 'lucid 101').toSQL();
+            expect(sql).toEqual(knexSql);
+        });
+
+        it('apply scopes on related paginate', async () => {
+            class Post extends BaseModel {
+                @column()
+                public userId: number
+
+                @column()
+                public title: string
+
+                public static boot() {
+                    this.addGlobalScope(query => query.where('title', 'lucid 101'));
+                };
+
+            }
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasMany(() => Post)
+                public posts: HasMany<typeof Post>
+            }
+
+
+            const user = await User.findOrFail(1)
+            db.enableQueryLog();
+            const posts = await user.related('posts').query().paginate(1, 20);
+            console.log(db.getQueryLog())
+            {
+                const {sql} = db.getQueryLog()[0];
+                const {sql: knexSql} = db.from('posts')
+                    .where('title', 'lucid 101')
+                    .where('user_id', 1)
+                    .count('* as total')
+                    .toSQL();
+                expect(sql).toEqual(knexSql);
+            }
+            {
+                const {sql} = db.getQueryLog()[1];
+                const {sql: knexSql} = db.from('posts')
+                    .where('title', 'lucid 101')
+                    .where('user_id', 1)
+                    .limit(20)
+                    .toSQL();
+                expect(sql).toEqual(knexSql);
+            }
+        });
+    });
+
     describe('Model | HasMany | onQuery', () => {
         beforeAll(async () => {
             db = getDb()

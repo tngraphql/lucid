@@ -202,7 +202,7 @@ export class BaseModel implements LucidRow {
      *
      * @param builder
      */
-    protected static registerGlobalScopes(builder) {
+    public static registerGlobalScopes(builder) {
         this.getGlobalScopes().map(({scope, callback}) => {
             builder.withGlobalScope(scope, callback);
         });
@@ -444,6 +444,10 @@ export class BaseModel implements LucidRow {
      * Boot the model
      */
     public static boot() {
+
+    }
+
+    public static start() {
         this.primaryKey = this.primaryKey || 'id'
 
         Object.defineProperty(this, '$keys', {
@@ -538,6 +542,7 @@ export class BaseModel implements LucidRow {
         this.emit('booting', true);
 
         this.booting();
+        this.start();
         this.boot();
         this.booted();
 

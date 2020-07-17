@@ -33,8 +33,13 @@ export class HasManyQueryClient implements HasManyClientContract<HasMany, LucidM
     /**
      * Generate a related query builder
      */
-    public static query(client: QueryClientContract, relation: HasMany, rows: OneOrMany<LucidRow>) {
-        const query = new HasManyQueryBuilder(client.knexQuery(), client, rows, relation)
+    public static query(client: QueryClientContract, relation: HasMany, rows: OneOrMany<LucidRow>, isEagerQuery = false) {
+        const builder = new HasManyQueryBuilder(client.knexQuery(), client, rows, relation)
+
+        const query = relation.relatedModel().registerGlobalScopes(builder);
+
+        query.isEagerQuery = isEagerQuery;
+
         typeof (relation.onQueryHook) === 'function' && relation.onQueryHook(query)
         return query
     }
@@ -43,11 +48,7 @@ export class HasManyQueryClient implements HasManyClientContract<HasMany, LucidM
      * Generate a related eager query builder
      */
     public static eagerQuery(client: QueryClientContract, relation: HasMany, rows: OneOrMany<LucidRow>) {
-        const query = new HasManyQueryBuilder(client.knexQuery(), client, rows, relation)
-
-        query.isEagerQuery = true
-        typeof (relation.onQueryHook) === 'function' && relation.onQueryHook(query)
-        return query
+        return this.query(client, relation, rows, true);
     }
 
     /**

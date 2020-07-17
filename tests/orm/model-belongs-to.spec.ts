@@ -1199,15 +1199,13 @@ describe('Model | BelongsTo | Options', () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
             await setup()
+            await db.insertQuery().table('users').insert({ username: 'virk' })
+            await db.insertQuery().table('profiles').insert({ display_name: 'Hvirk', user_id: 1 })
         })
 
         afterAll(async () => {
             await cleanup()
             await db.manager.closeAll()
-        })
-
-        afterEach(async () => {
-            await resetTables()
         })
 
         test('apply scopes during eagerload', async () => {
@@ -1223,8 +1221,6 @@ describe('Model | BelongsTo | Options', () => {
                 })
             }
 
-
-
             class Profile extends BaseModel {
                 @column()
                 public userId: number
@@ -1235,11 +1231,6 @@ describe('Model | BelongsTo | Options', () => {
                 @belongsTo(() => User)
                 public user: BelongsTo<typeof User>
             }
-
-
-
-            await db.insertQuery().table('users').insert({ username: 'virk' })
-            await db.insertQuery().table('profiles').insert({ display_name: 'Hvirk', user_id: 1 })
 
             const profile = await Profile.query().preload('user', (builder) => {
                 builder.apply((scopes) => scopes.fromCountry(1))
@@ -1263,7 +1254,61 @@ describe('Model | BelongsTo | Options', () => {
                 })
             }
 
+            class Profile extends BaseModel {
+                @column()
+                public userId: number
 
+                @column()
+                public displayName: string
+
+                @belongsTo(() => User)
+                public user: BelongsTo<typeof User>
+            }
+
+            const profile = await Profile.query().firstOrFail()
+            const profileUser = await profile.related('user').query().apply((scopes) => {
+                scopes.fromCountry(1)
+            }).first()
+            const profileUserWithoutScopes = await profile.related('user').query().first()
+
+            expect(profileUser).toBeNull()
+            expect(profileUserWithoutScopes).toBeInstanceOf(User)
+        })
+    })
+
+    describe('Model | BelongsTo | gloabl scopes', () => {
+        let UserModel;
+        let ProfileModel;
+
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+            await setup()
+            await db.insertQuery().table('users').insert({ username: 'virk' })
+            await db.insertQuery().table('profiles').insert({ display_name: 'Hvirk', user_id: 1 })
+        })
+
+        afterAll(async () => {
+            await cleanup()
+            await db.manager.closeAll()
+        })
+
+        beforeEach(async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public username: string
+
+                public static boot() {
+                    super.boot();
+
+                    this.addGlobalScope(builder => {
+                        builder.where('country_id', 1)
+                    })
+                }
+            }
 
             class Profile extends BaseModel {
                 @column()
@@ -1276,21 +1321,29 @@ describe('Model | BelongsTo | Options', () => {
                 public user: BelongsTo<typeof User>
             }
 
-
-
-            await db.insertQuery().table('users').insert({ username: 'virk' })
-            await db.insertQuery().table('profiles').insert({ display_name: 'Hvirk', user_id: 1 })
-
-            const profile = await Profile.query().firstOrFail()
-            const profileUser = await profile.related('user').query().apply((scopes) => {
-                scopes.fromCountry(1)
-            }).first()
-            const profileUserWithoutScopes = await profile.related('user').query().first()
-
-            expect(profileUser).toBeNull()
-            expect(profileUserWithoutScopes).toBeInstanceOf(User)
+            UserModel = User;
+            ProfileModel = Profile;
         })
-    })
+
+        it('apply scopes during eagerload', async () => {
+            db.enableQueryLog();
+            const profile = await ProfileModel.query().preload('user').first();
+
+            const {sql} = db.getQueryLog()[1];
+            const {sql: knexSql} = db.from('users').whereIn('id', [1]).where('country_id', 1).toSQL();
+            expect(sql).toEqual(knexSql);
+        });
+
+        it('apply scopes on related query', async () => {
+            db.enableQueryLog();
+            const profile = await ProfileModel.query().firstOrFail()
+            const profileUser = await profile.related('user').query().first()
+
+            const {sql} = db.getQueryLog()[1];
+            const {sql: knexSql} = db.from('users').where('country_id', 1).where('id', 1).limit(1).toSQL();
+            expect(sql).toEqual(knexSql);
+        });
+    });
 
     describe('Model | BelongsTo | onQuery', () => {
         beforeAll(async () => {

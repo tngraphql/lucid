@@ -1752,6 +1752,102 @@ describe('Model | HasOne', () => {
         })
     })
 
+    describe('Model | HasOne | global scopes', () => {
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+            await setup()
+
+            const [userId] = await db.table('users').insert({ username: 'virk' }).returning('id')
+            await db.table('profiles').multiInsert([
+                { user_id: userId, display_name: 'virk', type: 'github' }
+            ])
+        })
+
+        afterAll(async () => {
+            await cleanup()
+            await db.manager.closeAll()
+        })
+
+        it('apply scopes during eagerload', async () => {
+            class Profile extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public userId: number
+
+                @column()
+                public displayName: string
+
+                public static boot(){
+                    super.boot();
+
+                    this.addGlobalScope(query => {
+                        query.where('type', 'twitter')
+                    });
+                }
+            }
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public username: string
+
+                @hasOne(() => Profile)
+                public profile: HasOne<typeof Profile>
+            }
+
+            db.enableQueryLog();
+            const user = await User.query().preload('profile').firstOrFail();
+            const {sql} = db.getQueryLog()[1];
+            const {sql: knenSql} = db.from('profiles').whereIn('user_id', [1]).where('type', 'twitter').toSQL();
+            expect(sql).toEqual(knenSql);
+        });
+
+        it('apply scopes on related query', async () => {
+            class Profile extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public userId: number
+
+                @column()
+                public displayName: string
+
+                public static boot(){
+                    super.boot();
+
+                    this.addGlobalScope(query => {
+                        query.where('type', 'twitter')
+                    });
+                }
+            }
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public username: string
+
+                @hasOne(() => Profile)
+                public profile: HasOne<typeof Profile>
+            }
+
+            const user = await User.findOrFail(1)
+
+            db.enableQueryLog();
+            const profile = await user.related('profile').query().first()
+            const {sql} = db.getQueryLog()[0];
+            const {sql: knenSql} = db.from('profiles').where('type', 'twitter').where('user_id', 1).limit(1).toSQL();
+            expect(sql).toEqual(knenSql);
+        });
+    });
+
     describe('Model | HasOne | onQuery', () => {
         beforeAll(async () => {
             db = getDb()

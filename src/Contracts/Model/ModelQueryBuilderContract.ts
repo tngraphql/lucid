@@ -39,7 +39,7 @@ export interface ModelQueryBuilderContract<Model extends LucidModel,
         callback: (scopes: Scopes) => void
     ): this;
 
-    applyScopes(): this;
+    applyScopes<ClonedResult = Result>(): ModelQueryBuilderContract<Model, ClonedResult>;
 
     removedScopes(): any[];
 
@@ -63,6 +63,11 @@ export interface ModelQueryBuilderContract<Model extends LucidModel,
      * Clone query builder instance
      */
     clone<ClonedResult = Result>(): ModelQueryBuilderContract<Model, ClonedResult>
+
+    /**
+     * new query builder instance
+     */
+    newQuery<ClonedResult = Result>(): ModelQueryBuilderContract<Model, ClonedResult>
 
     /**
      * A custom set of sideloaded properties defined on the query

@@ -1513,8 +1513,6 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-
-
             class Post extends BaseModel {
                 @column()
                 public userId: number
@@ -1818,6 +1816,87 @@ describe('Model | Has Many Through', () => {
             expect(country.posts[0].title).toBe('Adonis 101')
         })
 
+        test('apply scopes2 during eagerload', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public countryId: number
+            }
+
+
+
+            class Post extends BaseModel {
+                @column()
+                public userId: number
+
+                @column()
+                public title: string
+
+                public static scopeAdonisOnly(query) {
+                    query.where('title', 'Adonis 101')
+                }
+            }
+
+
+
+            class Country extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasManyThrough([() => Post, () => User])
+                public posts: HasManyThrough<typeof Post>
+            }
+
+
+
+            await db.table('countries').multiInsert([{ name: 'India' }, { name: 'Switzerland' }])
+            await db.table('users').multiInsert([
+                {
+                    username: 'virk',
+                    country_id: 1
+                },
+                {
+                    username: 'nikk',
+                    country_id: 1
+                },
+                {
+                    username: 'romain',
+                    country_id: 2
+                }
+            ])
+
+            await db.table('posts').multiInsert([
+                {
+                    title: 'Adonis 101',
+                    user_id: 1
+                },
+                {
+                    title: 'Lucid 101',
+                    user_id: 1
+                },
+                {
+                    title: 'Design 101',
+                    user_id: 2
+                },
+                {
+                    title: 'Dev 101',
+                    user_id: 3
+                }
+            ])
+
+            const country = await Country.query().where('id', 1).preload('posts', (query) => {
+                query.adonisOnly()
+            }).firstOrFail()
+
+            const countryWithoutScope = await Country.query().where('id', 1).preload('posts').firstOrFail()
+
+            expect(country.posts).toHaveLength(1)
+            expect(countryWithoutScope.posts).toHaveLength(3)
+            expect(country.posts[0].title).toBe('Adonis 101')
+        })
+
         test('apply scopes on related query', async () => {
             class User extends BaseModel {
                 @column({ isPrimary: true })
@@ -1897,6 +1976,206 @@ describe('Model | Has Many Through', () => {
             expect(posts[0].title).toBe('Adonis 101')
         })
     })
+
+    describe('Model | Has Many Through | global scope', () => {
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+            await setup()
+
+            await db.table('countries').multiInsert([{ name: 'India' }, { name: 'Switzerland' }])
+            await db.table('users').multiInsert([
+                {
+                    username: 'virk',
+                    country_id: 1
+                },
+                {
+                    username: 'nikk',
+                    country_id: 1
+                },
+                {
+                    username: 'romain',
+                    country_id: 2
+                }
+            ])
+
+            await db.table('posts').multiInsert([
+                {
+                    title: 'Adonis 101',
+                    user_id: 1
+                },
+                {
+                    title: 'Lucid 101',
+                    user_id: 1
+                },
+                {
+                    title: 'Design 101',
+                    user_id: 2
+                },
+                {
+                    title: 'Dev 101',
+                    user_id: 3
+                }
+            ])
+        })
+
+        afterAll(async () => {
+            await cleanup()
+            await resetTables()
+            await db.manager.closeAll()
+        })
+
+        it('apply scopes during eagerload', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public countryId: number;
+            }
+
+            class Post extends BaseModel {
+                @column()
+                public userId: number
+
+                static boot() {
+                    super.boot();
+
+                    this.addGlobalScope('test',builder => builder.where('posts.id', 1))
+                }
+            }
+
+
+            class Country extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasManyThrough([() => Post, () => User])
+                public posts: HasManyThrough<typeof Post>
+            }
+
+            db.enableQueryLog();
+            const countryWithoutScope = await Country.query().where('id', 1).preload('posts').firstOrFail()
+
+            const stack = db.getQueryLog();
+
+            const {sql} = stack[1];
+
+            const {sql: knexSql} = db.from('posts')
+                .select(['posts.*', 'users.country_id as through_country_id'])
+                .join('users', 'users.id', '=', 'posts.user_id')
+                .whereIn('users.country_id', [1])
+                .where('posts.id', 1)
+                .toSQL();
+
+            expect(sql).toEqual(knexSql);
+        });
+
+        it('apply scopes on related query', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public countryId: number;
+            }
+
+            class Post extends BaseModel {
+                @column()
+                public userId: number
+
+                static boot() {
+                    super.boot();
+
+                    this.addGlobalScope('test',builder => builder.where('posts.id', 1))
+                }
+            }
+
+
+            class Country extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasManyThrough([() => Post, () => User])
+                public posts: HasManyThrough<typeof Post>
+            }
+
+            const country = await Country.findOrFail(1)
+            db.enableQueryLog();
+
+            const postsWithoutScope = await country.related('posts').query();
+
+            const {sql} = db.getQueryLog()[0];
+
+            const {sql: knexSql} = db.from('posts')
+                .select(['posts.*', 'users.country_id as through_country_id'])
+                .join('users', 'users.id', '=', 'posts.user_id')
+                .where('users.country_id', 1)
+                .where('posts.id', 1)
+                .toSQL();
+
+            expect(sql).toEqual(knexSql);
+        });
+
+        it('apply scopes on related paginate', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public countryId: number;
+            }
+
+            class Post extends BaseModel {
+                @column()
+                public userId: number
+
+                static boot() {
+                    super.boot();
+
+                    this.addGlobalScope('test',builder => builder.where('posts.id', 1))
+                }
+            }
+
+
+            class Country extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasManyThrough([() => Post, () => User])
+                public posts: HasManyThrough<typeof Post>
+            }
+
+            const country = await Country.find(1)
+            db.enableQueryLog();
+            const posts = await country!.related('posts').query().paginate(1, 2);
+
+            const stack = db.getQueryLog();
+
+            {
+                const {sql} = stack[0];
+                const {sql: knexSql} = db.from('posts')
+                    .join('users', 'users.id', '=', 'posts.user_id')
+                    .where('users.country_id', 1)
+                    .where('posts.id', 1)
+                    .count('* as total')
+                    .toSQL();
+                expect(sql).toEqual(knexSql);
+            }
+
+            {
+                const {sql} = stack[1];
+                const {sql: knexSql} = db.from('posts')
+                    .select(['posts.*', 'users.country_id as through_country_id'])
+                    .join('users', 'users.id', '=', 'posts.user_id')
+                    .where('users.country_id', 1)
+                    .where('posts.id', 1)
+                    .limit(20)
+                    .toSQL();
+                expect(sql).toEqual(knexSql);
+            }
+        });
+    });
 
     describe('Model | Has Many Through | onQuery', () => {
         beforeAll(async () => {

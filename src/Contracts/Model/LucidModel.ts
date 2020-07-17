@@ -453,5 +453,12 @@ export interface LucidModel {
 
     prepareForAdapter(attributes: ModelObject);
 
+    /**
+     * Register the global scopes for this builder instance.
+     *
+     * @param builder
+     */
+    registerGlobalScopes(builder);
+
     new(): LucidRow
 }

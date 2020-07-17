@@ -233,6 +233,46 @@ describe('Model query builder', () => {
 
             expect((await User.first()).toJSON()).toEqual({"id": 1, "is_active": 1, "username": "nguyen"});
         });
+
+        it('apply global scope panginate', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public username: string;
+
+                @column()
+                public is_active: number;
+
+                static boot() {
+                    super.boot();
+
+                    this.addGlobalScope(query => {
+                        query.where('is_active', 1);
+                    });
+                }
+            }
+
+            await User.create({
+                username: 'nguyen',
+                is_active: 1
+            });
+            await User.create({
+                username: 'nguyen2',
+                is_active: 2
+            });
+
+            db.enableQueryLog();
+            await User.query().paginate(1, 20);
+            const stack = db.getQueryLog();
+            expect(stack[0].sql).toEqual(
+                db.from('users').where('is_active', 1).count('* as total').toSQL().sql
+            )
+            expect(stack[1].sql).toEqual(
+                db.from('users').where('is_active', 1).limit(20).toSQL().sql
+            )
+        });
     });
 
     describe('local scope', () => {
