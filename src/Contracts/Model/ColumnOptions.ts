@@ -18,6 +18,7 @@ export type ColumnOptions = {
     serializeAs: string | null, // null means do not serialize column
     isPrimary: boolean,
     meta?: any,
+    defaultValue?: any,
 
     /**
      * Invoked before serializing process happens
