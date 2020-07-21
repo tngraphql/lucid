@@ -18,11 +18,13 @@ import { ensureRelationIsBooted } from '../../../utils'
 
 import { KeysExtractor } from '../KeysExtractor'
 import { HasOneQueryClient } from './QueryClient'
+import {ModelQueryBuilderContract} from "../../../Contracts/Model/ModelQueryBuilderContract";
+import {Relation} from "../Base/Relation";
 
 /**
  * Manages loading and persisting has one relationship
  */
-export class HasOne implements HasOneRelationContract<LucidModel, LucidModel> {
+export class HasOne extends Relation implements HasOneRelationContract<LucidModel, LucidModel>{
     public readonly type = 'hasOne'
 
     public booted: boolean = false
@@ -48,6 +50,7 @@ export class HasOne implements HasOneRelationContract<LucidModel, LucidModel> {
         private options: RelationOptions<ModelHasOne<LucidModel>>,
         public model: LucidModel
     ) {
+        super();
     }
 
     /**

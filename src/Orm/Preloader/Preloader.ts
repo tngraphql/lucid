@@ -89,12 +89,10 @@ export class Preloader implements PreloaderContract<LucidRow> {
             callback(query)
         }
 
-        const result = await query.selectRelationKeys().exec()
-
         /**
          * Set array of related instances
          */
-        relation.setRelatedForMany(parent, result)
+        relation.setRelatedForMany(parent, await relation.getEager(query))
     }
 
     /**

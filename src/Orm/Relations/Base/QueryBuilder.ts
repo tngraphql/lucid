@@ -127,4 +127,9 @@ export abstract class BaseQueryBuilder extends ModelQueryBuilder implements Rela
         this.applyConstraints()
         return super.exec()
     }
+
+    public mergeConstraintsFrom(query) {
+        const cloneQuery = query.knexQuery['_statements'];
+        this.knexQuery['_statements'].push.apply(this.knexQuery['_statements'], cloneQuery);
+    }
 }
