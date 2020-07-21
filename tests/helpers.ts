@@ -200,6 +200,8 @@ export async function setup(destroyDb: boolean = true) {
         await db.schema.createTable('comments', (table) => {
             table.increments()
             table.integer('post_id')
+            table.integer('commentable_id')
+            table.string('commentable_type')
             table.string('body')
             table.timestamps()
         })

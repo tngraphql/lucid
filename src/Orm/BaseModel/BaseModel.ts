@@ -39,7 +39,7 @@ import {
 import {AdapterContract} from '../../Contracts/Orm/AdapterContract';
 import {
     ManyToManyRelationOptions,
-    ModelRelations,
+    ModelRelations, MorphToOptions,
     RelationOptions,
     RelationshipsContract,
     ThroughRelationOptions
@@ -58,6 +58,7 @@ import {ManyToMany} from '../Relations/ManyToMany'
 import {ModelEventEmitter} from './ModelEventEmitter';
 import {proxyHandler} from './proxyHandler'
 import {DATE_TIME_TYPES} from '../Decorators/date';
+import {MorphTo} from "../Relations/MorphTo";
 
 const MANY_RELATIONS = ['hasMany', 'manyToMany', 'hasManyThrough']
 
@@ -397,6 +398,24 @@ export class BaseModel implements LucidRow {
     }
 
     /**
+     * Register morph to relationship
+     */
+    protected static $addMorphTo(
+        name: string,
+        relatedModel: () => LucidModel,
+        options: MorphToOptions<ModelRelations>
+    ) {
+        const type = options.type ? options.type : name + 'Type';
+        const id = options.id ? options.id : name + 'Id';
+
+        this.$relationsDefinitions.set(name, new MorphTo(name, relatedModel, {
+            ...options,
+            type,
+            id
+        }, this))
+    }
+
+    /**
      * Adds a relationship
      */
     public static $addRelation(
@@ -421,6 +440,10 @@ export class BaseModel implements LucidRow {
             case 'hasManyThrough':
                 this.$addHasManyThrough(name, relatedModel, options as ThroughRelationOptions<ModelRelations>)
                 break
+
+            case "morphTo":
+                this.$addMorphTo(name, relatedModel, options);
+                break;
             default:
                 throw new Error(`${type} is not a supported relation type`)
         }

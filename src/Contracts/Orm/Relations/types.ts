@@ -11,8 +11,8 @@
 import { ChainableContract } from '../../Database/ChainableContract';
 import { QueryClientContract } from '../../Database/QueryClientContract';
 import { QueryCallback } from '../../Database/types';
-import { HasManyClientContract } from '../../Model/HasManyClientContract';
-import { HasOneClientContract } from '../../Model/HasOneClientContract';
+import { HasManyClientContract } from './HasManyClientContract';
+import { HasOneClientContract } from './HasOneClientContract';
 import { LucidModel } from '../../Model/LucidModel';
 import { LucidRow, ModelObject } from '../../Model/LucidRow';
 import { TypedDecorator } from '../../Model/types';
@@ -27,6 +27,8 @@ import { ManyToManyClientContract } from './ManyToManyClientContract';
 import { ManyToManyQueryBuilderContract } from './ManyToManyQueryBuilderContract';
 import { ManyToManyRelationContract } from './ManyToManyRelationContract';
 import { RelationQueryBuilderContract } from './RelationQueryBuilderContract';
+import {MorphToRelationContract} from "./MorphToRelationContract";
+import {MorphToClientContract} from "./MorphToClientContract";
 
 /**
  * ------------------------------------------------------
@@ -58,7 +60,8 @@ export type ModelRelations =
     HasMany<LucidModel, LucidModel> |
     BelongsTo<LucidModel, LucidModel> |
     ManyToMany<LucidModel, LucidModel> |
-    HasManyThrough<LucidModel, LucidModel>
+    HasManyThrough<LucidModel, LucidModel> |
+    MorphTo<LucidModel, LucidModel>
 
 /**
  * ------------------------------------------------------
@@ -99,7 +102,8 @@ export type RelationshipsContract =
     HasManyRelationContract<LucidModel, LucidModel> |
     BelongsToRelationContract<LucidModel, LucidModel> |
     ManyToManyRelationContract<LucidModel, LucidModel> |
-    HasManyThroughRelationContract<LucidModel, LucidModel>
+    HasManyThroughRelationContract<LucidModel, LucidModel> |
+    MorphToRelationContract<LucidModel, LucidModel>
 
 
 /**
@@ -141,6 +145,18 @@ export type HasManyThroughDecorator = <RelatedModel extends LucidModel> (
     model: [(() => RelatedModel), (() => LucidModel)],
     column?: Omit<ThroughRelationOptions<HasManyThrough<RelatedModel>>, 'throughModel'>
 ) => TypedDecorator<HasManyThrough<RelatedModel>>
+
+
+export type MorphToDecorator = <RelatedModel extends LucidModel>(
+    options?: MorphToOptions<MorphTo<RelatedModel>>
+) => TypedDecorator<MorphTo<RelatedModel>>
+
+export type MorphToOptions<Related extends ModelRelations> = {
+    type?: string,
+    id?: string,
+    ownerKey?: string,
+    onQuery?(query: Related['builder']): void,
+}
 
 /**
  * Options accepted when defining a new relationship. Certain
@@ -214,6 +230,16 @@ export type HasManyThrough<RelatedModel extends LucidModel,
     model: RelatedModel,
     instance: InstanceType<RelatedModel>,
     client: HasManyThroughClientContract<HasManyThroughRelationContract<ParentModel, RelatedModel>,
+        RelatedModel>,
+    builder: RelationQueryBuilderContract<RelatedModel, any>,
+}
+
+export type MorphTo<RelatedModel extends LucidModel,
+    ParentModel extends LucidModel = LucidModel> = InstanceType<RelatedModel> & {
+    readonly type: 'morphTo',
+    model: RelatedModel,
+    instance: InstanceType<RelatedModel>,
+    client: MorphToClientContract<MorphToRelationContract<ParentModel, RelatedModel>,
         RelatedModel>,
     builder: RelationQueryBuilderContract<RelatedModel, any>,
 }

@@ -54,7 +54,7 @@ export class Preloader implements PreloaderContract<LucidRow> {
             callback(query)
         }
 
-        const result = await query.selectRelationKeys().exec()
+        const result: any = await query.selectRelationKeys().exec()
 
         /**
          * hasOne and belongsTo will always return an array of a single row (if done right)

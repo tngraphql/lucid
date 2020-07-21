@@ -22,7 +22,7 @@ import {
     HasManyDecorator,
     HasManyThroughDecorator,
     HasOneDecorator,
-    ManyToManyDecorator
+    ManyToManyDecorator, MorphToDecorator
 } from '../../Contracts/Orm/Relations/types';
 
 import { dateColumn, dateTimeColumn } from './date'
@@ -114,6 +114,15 @@ export const hasManyThrough: HasManyThroughDecorator = ([relatedModel, throughMo
             'hasManyThrough',
             relatedModel, Object.assign({ relatedModel, throughModel }, relation)
         )
+    }
+}
+
+export const morphTo: MorphToDecorator = (relation?) => {
+    return function decorateAsRelation(target, property: string) {
+        const Model = target.constructor as LucidModel
+        const relatedModel = () => Model;
+        Model.bootIfNotBooted()
+        Model.$addRelation(property, 'morphTo', relatedModel, Object.assign({ relatedModel }, relation))
     }
 }
 
