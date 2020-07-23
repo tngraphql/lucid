@@ -1,18 +1,20 @@
 /**
  * Created by Phan Trung Nguyên.
  * User: nguyenpl117
- * Date: 7/21/2020
- * Time: 4:16 PM
+ * Date: 7/23/2020
+ * Time: 3:31 PM
  */
+
 import {cleanup, getBaseModel, getDb, getProfiler, ormAdapter, resetTables, setup} from "../helpers";
-import {column, hasOne, morphTo} from "../../src/Orm/Decorators";
-import {HasOne, MorphTo} from "../../src/Contracts/Orm/Relations/types";
-import {MorphToQueryBuilder} from "../../src/Orm/Relations/MorphTo/QueryBuilder";
+import {column, hasOne, morphOne, morphTo} from "../../src/Orm/Decorators";
+import {HasOne, MorphOne, MorphTo} from "../../src/Contracts/Orm/Relations/types";
+import {MorphOneQueryBuilder} from "../../src/Orm/Relations/MorphOne/QueryBuilder";
+
 
 let db: ReturnType<typeof getDb>
 let BaseModel: ReturnType<typeof getBaseModel>
-describe('Model | MorphTo', () => {
-    describe('Model | MorphTo | Options', () => {
+describe('Model | MorphOne', () => {
+    describe('Model | MorphOne | Options', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -22,17 +24,18 @@ describe('Model | MorphTo', () => {
 
             try {
                 class Post extends BaseModel {
+                    @morphOne(() => Comment, {name: 'commentable'})
+                    public comment: MorphOne<typeof Comment>
                 }
 
                 class Comment extends BaseModel {
-                    @morphTo({})
-                    public commentable: MorphTo<any>
+
                 }
 
-                Comment.$getRelation('commentable').bootTo();
+                Post.$getRelation('comment').boot();
             } catch (e) {
                 expect(e.message).toBe(
-                    'E_MISSING_MODEL_ATTRIBUTE: "Comment.commentable" expects "id" to exist on "Comment" model, but is missing'
+                    'E_MISSING_MODEL_ATTRIBUTE: "Post.comment" expects "id" to exist on "Post" model, but is missing'
                 )
             }
         });
@@ -42,20 +45,21 @@ describe('Model | MorphTo', () => {
 
             try {
                 class Post extends BaseModel {
-                }
-
-                class Comment extends BaseModel {
                     @column({ isPrimary: true })
                     public id: number
 
-                    @morphTo({})
-                    public commentable
+                    @morphOne(() => Comment, {name: 'commentable'})
+                    public comment: MorphOne<typeof Comment>
                 }
 
-                Comment.$getRelation('commentable').boot();
+                class Comment extends BaseModel {
+                }
+                Comment.bootIfNotBooted()
+
+                Post.$getRelation('comment').boot();
             } catch (e) {
                 expect(e.message).toBe(
-                    'E_MISSING_MODEL_ATTRIBUTE: "Comment.commentable" expects "commentableId" to exist on "Comment" model, but is missing'
+                    'E_MISSING_MODEL_ATTRIBUTE: "Post.comment" expects "commentableId" to exist on "Comment" model, but is missing'
                 )
             }
         });
@@ -65,23 +69,22 @@ describe('Model | MorphTo', () => {
 
             try {
                 class Post extends BaseModel {
-                }
-
-                class Comment extends BaseModel {
                     @column({ isPrimary: true })
                     public id: number
 
-                    @column()
-                    public commentableId: number
-
-                    @morphTo({})
-                    public commentable
+                    @morphOne(() => Comment, {name: 'commentable'})
+                    public comment: MorphOne<typeof Comment>
                 }
 
-                Comment.$getRelation('commentable').boot();
+                class Comment extends BaseModel {
+                    @column()
+                    public commentableId: number
+                }
+
+                Post.$getRelation('comment').boot();
             } catch (e) {
                 expect(e.message).toBe(
-                    'E_MISSING_MODEL_ATTRIBUTE: "Comment.commentable" expects "commentableType" to exist on "Comment" model, but is missing'
+                    'E_MISSING_MODEL_ATTRIBUTE: "Post.comment" expects "commentableType" to exist on "Comment" model, but is missing'
                 )
             }
         });
@@ -90,6 +93,9 @@ describe('Model | MorphTo', () => {
             class Post extends BaseModel {
                 @column({ isPrimary: true })
                 public id: number
+
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -101,14 +107,11 @@ describe('Model | MorphTo', () => {
 
                 @column()
                 public commentableType: number
-
-                @morphTo({})
-                public commentable
             }
 
-            Comment.$getRelation('commentable').bootTo();
+            Post.$getRelation('comment').boot();
 
-            expect(Comment.$getRelation('commentable')['localKey']).toBe('id');
+            expect(Post.$getRelation('comment')['localKey']).toBe('id');
         });
 
         it('compute foreign key from model name and primary key', async () => {
@@ -116,8 +119,8 @@ describe('Model | MorphTo', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @column()
-                public uid: number
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -129,14 +132,11 @@ describe('Model | MorphTo', () => {
 
                 @column()
                 public commentableType: number
-
-                @morphTo({localKey: 'uid'})
-                public commentable
             }
 
-            Comment.$getRelation('commentable').boot();
+            Post.$getRelation('comment').boot();
 
-            expect(Comment.$getRelation('commentable')['foreignKey']).toBe('commentableId');
+            expect(Post.$getRelation('comment')['foreignKey']).toBe('commentableId');
         });
 
         it('use pre defined foreign key', async () => {
@@ -144,8 +144,8 @@ describe('Model | MorphTo', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @column()
-                public uid: number
+                @morphOne(() => Comment, {name: 'commentable', id: 'commentId'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -157,14 +157,11 @@ describe('Model | MorphTo', () => {
 
                 @column()
                 public commentableType: number
-
-                @morphTo({id: 'commentId'})
-                public commentable
             }
 
-            Comment.$getRelation('commentable').bootTo();
+            Post.$getRelation('comment').boot();
 
-            expect(Comment.$getRelation('commentable')['foreignKey']).toBe('commentId');
+            expect(Post.$getRelation('comment')['foreignKey']).toBe('commentId');
         });
 
         it('compute morph type from model name and primary key', async () => {
@@ -172,8 +169,8 @@ describe('Model | MorphTo', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @column()
-                public uid: number
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -185,14 +182,11 @@ describe('Model | MorphTo', () => {
 
                 @column()
                 public commentableType: number
-
-                @morphTo({localKey: 'uid'})
-                public commentable
             }
 
-            Comment.$getRelation('commentable').boot();
+            Post.$getRelation('comment').boot();
 
-            expect(Comment.$getRelation('commentable')['morphType']).toBe('commentableType');
+            expect(Post.$getRelation('comment')['morphType']).toBe('commentableType');
         });
 
         it('use pre defined morph type', async () => {
@@ -200,8 +194,8 @@ describe('Model | MorphTo', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @column()
-                public uid: number
+                @morphOne(() => Comment, {name: 'commentable', type: 'commentType'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -213,18 +207,15 @@ describe('Model | MorphTo', () => {
 
                 @column()
                 public commentType: number
-
-                @morphTo({type: 'commentType'})
-                public commentable
             }
 
-            Comment.$getRelation('commentable').boot();
+            Post.$getRelation('comment').boot();
 
-            expect(Comment.$getRelation('commentable')['morphType']).toBe('commentType');
+            expect(Post.$getRelation('comment')['morphType']).toBe('commentType');
         });
     });
 
-    describe('Model | MorphTo | Set Relations', () => {
+    describe('Model | MorphOne | Set Relations', () => {
         let Post;
         let Comment;
 
@@ -236,8 +227,8 @@ describe('Model | MorphTo', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @column()
-                public uid: number
+                @morphOne(() => CommentModel, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class CommentModel extends BaseModel {
@@ -249,12 +240,9 @@ describe('Model | MorphTo', () => {
 
                 @column()
                 public commentableType: number
-
-                @morphTo({localKey: 'uid'})
-                public commentable: MorphTo<any>
             }
 
-            CommentModel.$getRelation('commentable').boot();
+            PostModel.$getRelation('comment').boot();
 
             Post = PostModel;
             Comment = CommentModel;
@@ -263,19 +251,19 @@ describe('Model | MorphTo', () => {
         it('set related model instance', async () => {
             const post = new Post();
             const comment = new Comment();
-            Comment.$getRelation('commentable').setRelated(comment, post);
-            expect(comment.commentable).toEqual(post)
+            Post.$getRelation('comment').setRelated(post, comment);
+            expect(post.comment).toEqual(comment)
         });
 
         it('push related model instance', async () => {
             const post = new Post();
             const comment = new Comment();
-            Comment.$getRelation('commentable').pushRelated(comment, post);
-            expect(comment.commentable).toEqual(post)
+            Post.$getRelation('comment').pushRelated(post, comment);
+            expect(post.comment).toEqual(comment)
         });
     });
 
-    describe('Model | MorphTo | bulk operations', () => {
+    describe('Model | MorphOne | bulk operations', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -295,6 +283,9 @@ describe('Model | MorphTo', () => {
             class Post extends BaseModel {
                 @column({ isPrimary: true })
                 public id: number
+
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -307,9 +298,6 @@ describe('Model | MorphTo', () => {
                 @column()
                 public commentableType: number
 
-                @morphTo()
-                public commentable: MorphTo<any>
-
                 static boot() {
                     this.morphMap({
                         'post': () => Post
@@ -317,19 +305,21 @@ describe('Model | MorphTo', () => {
                 }
             }
 
-            await db.insertQuery().table('comments').insert([
-                {body: 'virk', commentable_id: '1', commentable_type: 'post'},
-                // { body: 'nikk', commentable_id: '2', commentable_type: 'post' }
-            ]);
+            await db.insertQuery().table('posts').insert([
+                {
+                    title: 'virk'
+                }
+            ])
 
-            const comment = await Comment.find(1);
+            const post = await Post.find(1);
 
-            const { sql, bindings } = comment!.related('commentable').query().toSQL();
+            const { sql, bindings } = post!.related('comment').query().toSQL();
 
             const { sql: knexSql, bindings: knexBindings } = db.connection()
                 .getWriteClient()
-                .from('posts')
-                .where('id', 1)
+                .from('comments')
+                .where('commentable_type', 'post')
+                .where('commentable_id', 1)
                 .limit(1)
                 .toSQL()
 
@@ -341,6 +331,9 @@ describe('Model | MorphTo', () => {
             class Post extends BaseModel {
                 @column({ isPrimary: true })
                 public id: number
+
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -353,9 +346,6 @@ describe('Model | MorphTo', () => {
                 @column()
                 public commentableType: number
 
-                @morphTo()
-                public commentable: MorphTo<any>
-
                 static boot() {
                     this.morphMap({
                         'post': () => Post
@@ -363,15 +353,19 @@ describe('Model | MorphTo', () => {
                 }
             }
 
-            await db.insertQuery().table('comments').insert([
-                {body: 'virk', commentable_id: '1', commentable_type: 'post'},
-                { body: 'nikk', commentable_id: '2', commentable_type: 'post' }
-            ]);
+            await db.insertQuery().table('posts').insert([
+                {
+                    title: 'virk'
+                },
+                {
+                    title: 'nikk'
+                }
+            ])
 
-            const comments = await Comment.all();
-            Comment.$getRelation('commentable').boot();
+            const comments = await Post.all();
+            Post.$getRelation('comment').boot();
 
-            const relation = Comment.$getRelation('commentable');
+            const relation = Post.$getRelation('comment');
 
             const related = relation.eagerQuery(comments, db.connection());
             db.enableQueryLog();
@@ -381,8 +375,9 @@ describe('Model | MorphTo', () => {
 
             const { sql: knexSql, bindings: knexBindings } = db.connection()
                 .getWriteClient()
-                .from('posts')
-                .whereIn('posts.id', [2,1])
+                .from('comments')
+                .where('commentable_type', 'post')
+                .whereIn('commentable_id', [2,1])
                 .toSQL()
 
             expect(sql).toBe(knexSql)
@@ -396,6 +391,9 @@ describe('Model | MorphTo', () => {
 
                 @column()
                 public title: string
+
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -408,9 +406,6 @@ describe('Model | MorphTo', () => {
                 @column()
                 public commentableType: number
 
-                @morphTo()
-                public commentable: MorphTo<any>
-
                 static boot() {
                     this.morphMap({
                         'post': () => Post
@@ -418,20 +413,22 @@ describe('Model | MorphTo', () => {
                 }
             }
 
-            await db.insertQuery().table('comments').insert([
-                {body: 'virk', commentable_id: '1', commentable_type: 'post'},
-                // { body: 'nikk', commentable_id: '2', commentable_type: 'post' }
-            ]);
+            await db.insertQuery().table('posts').insert([
+                {
+                    title: 'virk'
+                }
+            ])
 
-            const comment = await Comment.find(1);
+            const post = await Post.find(1);
 
-            const { sql, bindings } = comment!.related('commentable').query().update({title: 'job'}).toSQL();
+            const { sql, bindings } = post!.related('comment').query().update({body: 'job'}).toSQL();
 
             const { sql: knexSql, bindings: knexBindings } = db.connection()
                 .getWriteClient()
-                .from('posts')
-                .where('id', 1)
-                .update({title: 'job'})
+                .from('comments')
+                .where('commentable_type', 'post')
+                .where('commentable_id', 1)
+                .update({body: 'job'})
                 .toSQL()
 
             expect(sql).toBe(knexSql)
@@ -445,6 +442,9 @@ describe('Model | MorphTo', () => {
 
                 @column()
                 public title: string
+
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -457,9 +457,6 @@ describe('Model | MorphTo', () => {
                 @column()
                 public commentableType: number
 
-                @morphTo()
-                public commentable: MorphTo<any>
-
                 static boot() {
                     this.morphMap({
                         'post': () => Post
@@ -467,19 +464,21 @@ describe('Model | MorphTo', () => {
                 }
             }
 
-            await db.insertQuery().table('comments').insert([
-                {body: 'virk', commentable_id: '1', commentable_type: 'post'},
-                // { body: 'nikk', commentable_id: '2', commentable_type: 'post' }
-            ]);
+            await db.insertQuery().table('posts').insert([
+                {
+                    title: 'virk'
+                }
+            ])
 
-            const comment = await Comment.find(1);
+            const post = await Post.find(1);
 
-            const { sql, bindings } = comment!.related('commentable').query().del().toSQL();
+            const { sql, bindings } = post!.related('comment').query().del().toSQL();
 
             const { sql: knexSql, bindings: knexBindings } = db.connection()
                 .getWriteClient()
-                .from('posts')
-                .where('id', 1)
+                .from('comments')
+                .where('commentable_type', 'post')
+                .where('commentable_id', 1)
                 .del()
                 .toSQL()
 
@@ -488,7 +487,7 @@ describe('Model | MorphTo', () => {
         });
     });
 
-    describe('Model | MorphTo | preload', () => {
+    describe('Model | MorphOne | preload', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -511,14 +510,9 @@ describe('Model | MorphTo', () => {
 
                 @column()
                 public title: string
-            }
 
-            class Friend extends BaseModel {
-                @column({ isPrimary: true })
-                public id: number
-
-                @column()
-                public username: string
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -531,47 +525,35 @@ describe('Model | MorphTo', () => {
                 @column()
                 public commentableType: string
 
-                @morphTo({})
-                public commentable
-
                 static boot() {
                     this.morphMap({
                         'post': () => Post,
-                        'friend': () => Friend
                     });
                 }
             }
 
             await db.insertQuery().table('comments').insert([
                 { body: 'virk', commentable_id: '1', commentable_type: 'post' },
-                { body: 'nikk', commentable_id: '2', commentable_type: 'friend' }
-            ])
-
-            await db.insertQuery().table('friends').insert([
-                { username: 'virk' },
-                { username: 'nikk' }
+                { body: 'nikk', commentable_id: '2', commentable_type: 'post' }
             ])
 
             await db.insertQuery().table('posts').insert([
                 {
                     title: 'virk'
+                },
+                {
+                    title: 'nikk'
                 }
             ])
 
             db.enableQueryLog();
-            const comments = await Comment.query().preload('commentable');
-            expect(comments).toHaveLength(2);
-            expect(Array.from(new Set(comments.map(x => x.commentableType)))).toHaveLength(2);
+            const posts = await Post.query().preload('comment');
+            expect(posts).toHaveLength(2);
 
-            const morphMap = {
-                'post': Post,
-                'friend': Friend
-            }
-
-            expect(comments[0].commentable.id).toBe(comments[0].commentableId)
-            expect(comments[0].commentable.constructor.name).toBe(morphMap[comments[0].commentableType].name)
-            expect(comments[1].commentable.constructor.name).toBe(morphMap[comments[1].commentableType].name)
-            expect(comments[1].commentable.id).toBe(comments[1].commentableId)
+            expect(posts[0].comment.commentableId).toBe(posts[0].id);
+            expect(posts[0].comment.commentableType).toBe('post');
+            expect(posts[1].comment.commentableId).toBe(posts[1].id);
+            expect(posts[1].comment.commentableType).toBe('post');
         });
 
         it('preload nested relations', async () => {
@@ -580,7 +562,13 @@ describe('Model | MorphTo', () => {
                 public id: number
 
                 @column()
+                public userId: number
+
+                @column()
                 public title: string
+
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -588,16 +576,10 @@ describe('Model | MorphTo', () => {
                 public id: number
 
                 @column()
-                public userId: number
-
-                @column()
                 public commentableId: number
 
                 @column()
                 public commentableType: number
-
-                @morphTo()
-                public commentable: MorphTo<any>
 
                 static boot() {
                     this.morphMap({
@@ -610,14 +592,15 @@ describe('Model | MorphTo', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @hasOne(() => Comment)
-                public comment: HasOne<typeof Comment>
+                @hasOne(() => Post)
+                public post: HasOne<typeof Post>
             }
 
             await db.insertQuery().table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
             await db.insertQuery().table('posts').insert([
                 {
-                    title: 'virk'
+                    title: 'virk',
+                    user_id: '1'
                 }
             ])
             await db.insertQuery().table('comments').insert([
@@ -625,12 +608,12 @@ describe('Model | MorphTo', () => {
             ])
 
             const user = await User.query()
-                .preload('comment', (builder) => builder.preload('commentable'))
+                .preload('post', (builder) => builder.preload('comment'))
                 .where('username', 'virk')
                 .first()
 
-            expect(user!.comment).toBeInstanceOf(Comment)
-            expect(user!.comment!.commentable).toBeInstanceOf(Post)
+            expect(user!.post).toBeInstanceOf(Post)
+            expect(user!.post!.comment).toBeInstanceOf(Comment)
         });
 
         it('preload self referenced relationship', async () => {
@@ -641,10 +624,8 @@ describe('Model | MorphTo', () => {
                 @column()
                 public title: string
 
-                @hasOne(() => Comment, {
-                    foreignKey: 'commentableId'
-                })
-                comment: HasOne<typeof Comment>
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -696,6 +677,9 @@ describe('Model | MorphTo', () => {
 
                 @column()
                 public title: string
+
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -707,9 +691,6 @@ describe('Model | MorphTo', () => {
 
                 @column()
                 public commentableType: number
-
-                @morphTo()
-                public commentable: MorphTo<any>
 
                 static boot() {
                     this.morphMap({
@@ -732,11 +713,11 @@ describe('Model | MorphTo', () => {
                 { body: 'nikk', commentable_id: '2', commentable_type: 'post' }
             ])
 
-            const comments = await Comment.query().preload('commentable', builder => builder.where('title', 'foo'));
+            const posts = await Post.query().preload('comment', builder => builder.where('body', 'foo'));
 
-            expect(comments).toHaveLength(2);
-            expect(comments[0].commentable).toBeUndefined();
-            expect(comments[1].commentable).toBeUndefined();
+            expect(posts).toHaveLength(2);
+            expect(posts[0].comment).toBeUndefined();
+            expect(posts[1].comment).toBeUndefined();
         });
 
         it('cherry pick columns during preload', async () => {
@@ -744,11 +725,11 @@ describe('Model | MorphTo', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @column({ columnName: 'id' })
-                public uid: number
-
                 @column()
                 public title: string
+
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -756,13 +737,13 @@ describe('Model | MorphTo', () => {
                 public id: number
 
                 @column()
+                public body: string
+
+                @column()
                 public commentableId: number
 
                 @column()
                 public commentableType: number
-
-                @morphTo({localKey: 'uid'})
-                public commentable: MorphTo<any>
 
                 static boot() {
                     this.morphMap({
@@ -785,10 +766,10 @@ describe('Model | MorphTo', () => {
                 { body: 'nikk', commentable_id: '2', commentable_type: 'post' }
             ])
 
-            const comments = await Comment.query().preload('commentable', builder => builder.select('title'));
-            expect(comments).toHaveLength(2);
-            expect(comments[0].commentable.$extras).toEqual({})
-            expect(comments[1].commentable.$extras).toEqual({})
+            const posts = await Post.query().preload('comment', builder => builder.select('body'));
+            expect(posts).toHaveLength(2);
+            expect(posts[0].comment.$extras).toEqual({})
+            expect(posts[1].comment.$extras).toEqual({})
         });
 
         it('do not repeat pk when already defined', async () => {
@@ -796,11 +777,11 @@ describe('Model | MorphTo', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @column({ columnName: 'id' })
-                public uid: number
-
                 @column()
                 public title: string
+
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -808,13 +789,13 @@ describe('Model | MorphTo', () => {
                 public id: number
 
                 @column()
+                public body: string
+
+                @column()
                 public commentableId: number
 
                 @column()
                 public commentableType: number
-
-                @morphTo({localKey: 'uid'})
-                public commentable: MorphTo<any>
 
                 static boot() {
                     this.morphMap({
@@ -837,10 +818,10 @@ describe('Model | MorphTo', () => {
                 { body: 'nikk', commentable_id: '2', commentable_type: 'post' }
             ])
 
-            const comments = await Comment.query().preload('commentable', builder => builder.select('title', 'id'));
-            expect(comments).toHaveLength(2);
-            expect(comments[0].commentable.$extras).toEqual({})
-            expect(comments[1].commentable.$extras).toEqual({})
+            const posts = await Post.query().preload('comment', builder => builder.select('body', 'id'));
+            expect(posts).toHaveLength(2);
+            expect(posts[0].comment.$extras).toEqual({})
+            expect(posts[1].comment.$extras).toEqual({})
         });
 
         it('pass sideloaded attributes to the relationship', async () => {
@@ -848,11 +829,11 @@ describe('Model | MorphTo', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @column({ columnName: 'id' })
-                public uid: number
-
                 @column()
                 public title: string
+
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -864,9 +845,6 @@ describe('Model | MorphTo', () => {
 
                 @column()
                 public commentableType: number
-
-                @morphTo({localKey: 'uid'})
-                public commentable: MorphTo<any>
 
                 static boot() {
                     this.morphMap({
@@ -889,12 +867,12 @@ describe('Model | MorphTo', () => {
                 { body: 'nikk', commentable_id: '2', commentable_type: 'post' }
             ])
 
-            const comments = await Comment.query().preload('commentable').sideload({ id: 1 });
-            expect(comments).toHaveLength(2);
-            expect(comments[0].$sideloaded).toEqual({id: 1})
-            expect(comments[1].$sideloaded).toEqual({id: 1})
-            expect(comments[0].commentable.$sideloaded).toEqual({id: 1})
-            expect(comments[1].commentable.$sideloaded).toEqual({id: 1})
+            const posts = await Post.query().preload('comment').sideload({ id: 1 });
+            expect(posts).toHaveLength(2);
+            expect(posts[0].$sideloaded).toEqual({id: 1})
+            expect(posts[1].$sideloaded).toEqual({id: 1})
+            expect(posts[0].comment.$sideloaded).toEqual({id: 1})
+            expect(posts[1].comment.$sideloaded).toEqual({id: 1})
         });
 
         it('preload using model instance', async () => {
@@ -904,14 +882,9 @@ describe('Model | MorphTo', () => {
 
                 @column()
                 public title: string
-            }
 
-            class Friend extends BaseModel {
-                @column({ isPrimary: true })
-                public id: number
-
-                @column()
-                public username: string
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -924,53 +897,46 @@ describe('Model | MorphTo', () => {
                 @column()
                 public commentableType: string
 
-                @morphTo({})
-                public commentable
-
                 static boot() {
                     this.morphMap({
                         'post': () => Post,
-                        'friend': () => Friend
                     });
                 }
             }
 
             await db.insertQuery().table('comments').insert([
                 { body: 'virk', commentable_id: '1', commentable_type: 'post' },
-                { body: 'nikk', commentable_id: '2', commentable_type: 'friend' }
-            ])
-
-            await db.insertQuery().table('friends').insert([
-                { username: 'virk' },
-                { username: 'nikk' }
+                { body: 'nikk', commentable_id: '2', commentable_type: 'post' }
             ])
 
             await db.insertQuery().table('posts').insert([
                 {
                     title: 'virk'
+                },
+                {
+                    title: 'nikk'
                 }
             ])
 
-            const comments = await Comment.all();
-            expect(comments).toHaveLength(2);
+            const posts = await Post.all();
+            expect(posts).toHaveLength(2);
+            await posts[0].preload('comment');
+            await posts[1].preload('comment');
 
-            await comments[0].preload('commentable');
-            await comments[1].preload('commentable');
-
-            expect(comments[0].commentable.id).toEqual(comments[0].commentableId)
-            expect(comments[1].commentable.id).toEqual(comments[1].commentableId)
+            expect(posts[0].comment.commentableId).toEqual(posts[0].id)
+            expect(posts[1].comment.commentableId).toEqual(posts[1].id)
         });
 
-        it('raise exception when foreign key is not selected', async () => {
+        it('raise exception when local key is not selected', async () => {
             class Post extends BaseModel {
                 @column({ isPrimary: true })
                 public id: number
 
-                @column({ columnName: 'id' })
-                public uid: number
-
                 @column()
                 public title: string
+
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -982,9 +948,6 @@ describe('Model | MorphTo', () => {
 
                 @column()
                 public commentableType: number
-
-                @morphTo({localKey: 'uid'})
-                public commentable: MorphTo<any>
 
                 static boot() {
                     this.morphMap({
@@ -1008,62 +971,9 @@ describe('Model | MorphTo', () => {
             ])
 
             try {
-                await Comment.query().select(['commentableType']).preload('commentable').where('body', 'virk').first()
+                await Post.query().select(['title']).preload('comment').where('title', 'virk').first()
             } catch ({ message }) {
-                expect(message).toBe('Cannot select "commentable", value of "Comment.commentableId" is undefined')
-            }
-        });
-
-        it('raise exception when morph type is not selected', async () => {
-            class Post extends BaseModel {
-                @column({ isPrimary: true })
-                public id: number
-
-                @column({ columnName: 'id' })
-                public uid: number
-
-                @column()
-                public title: string
-            }
-
-            class Comment extends BaseModel {
-                @column({ isPrimary: true })
-                public id: number
-
-                @column()
-                public commentableId: number
-
-                @column()
-                public commentableType: number
-
-                @morphTo({localKey: 'uid'})
-                public commentable: MorphTo<any>
-
-                static boot() {
-                    this.morphMap({
-                        'post': () => Post
-                    });
-                }
-            }
-
-            await db.insertQuery().table('posts').insert([
-                {
-                    title: 'virk'
-                },
-                {
-                    title: 'nikk'
-                }
-            ])
-
-            await db.insertQuery().table('comments').insert([
-                { body: 'virk', commentable_id: '1', commentable_type: 'post' },
-                { body: 'nikk', commentable_id: '2', commentable_type: 'post' }
-            ])
-
-            try {
-                await Comment.query().select(['commentableId']).preload('commentable').where('body', 'virk').first()
-            } catch ({ message }) {
-                expect(message).toBe('Cannot select "commentable", value of "Comment.commentableType" is undefined')
+                expect(message).toBe('Cannot preload "comment", value of "Post.id" is undefined')
             }
         });
 
@@ -1073,7 +983,13 @@ describe('Model | MorphTo', () => {
                 public id: number
 
                 @column()
+                public userId: number
+
+                @column()
                 public title: string
+
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1081,16 +997,10 @@ describe('Model | MorphTo', () => {
                 public id: number
 
                 @column()
-                public userId: number
-
-                @column()
                 public commentableId: number
 
                 @column()
                 public commentableType: number
-
-                @morphTo()
-                public commentable: MorphTo<any>
 
                 static boot() {
                     this.morphMap({
@@ -1103,54 +1013,62 @@ describe('Model | MorphTo', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @hasOne(() => Comment)
-                public comment: HasOne<typeof Comment>
+                @hasOne(() => Post)
+                public post: HasOne<typeof Post>
             }
 
             await db.insertQuery().table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
             await db.insertQuery().table('posts').insert([
                 {
-                    title: 'virk'
+                    title: 'virk',
+                    user_id: '1'
+                },
+                {
+                    title: 'nikk',
+                    user_id: '2'
                 }
             ])
             await db.insertQuery().table('comments').insert([
                 { body: 'virk', commentable_id: '1', commentable_type: 'post', user_id: 1 },
-                { body: 'virk', commentable_id: '1', commentable_type: 'post', user_id: 2 }
+                { body: 'virk', commentable_id: '2', commentable_type: 'post', user_id: 2 }
             ])
 
             const users = await User.all()
             expect(users).toHaveLength(2);
 
             await users[0].preload((preloader) => {
-                preloader.preload('comment', (builder) => builder.preload('commentable'))
+                preloader.preload('post', (builder) => builder.preload('comment'))
             })
 
             await users[1].preload((preloader) => {
-                preloader.preload('comment', (builder) => builder.preload('commentable'))
+                preloader.preload('post', (builder) => builder.preload('comment'))
             })
 
-            expect(users[0].comment).toBeInstanceOf(Comment)
-            expect(users[0].comment!.commentable).toBeInstanceOf(Post)
+            expect(users[0].post).toBeInstanceOf(Post)
+            expect(users[0].post!.comment).toBeInstanceOf(Comment)
 
-            expect(users[1].comment).toBeInstanceOf(Comment)
-            expect(users[1].comment!.commentable).toBeInstanceOf(Post)
+            expect(users[1].post).toBeInstanceOf(Post)
+            expect(users[1].post!.comment).toBeInstanceOf(Comment)
         });
 
         it('pass main query options down the chain', async () => {
             class Post extends BaseModel {
                 @column({ isPrimary: true })
                 public id: number
-
+                @column()
+                public userId: number
                 @column()
                 public title: string
+
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
                 @column({ isPrimary: true })
                 public id: number
 
-                @column()
-                public userId: number
+
 
                 @column()
                 public commentableId: number
@@ -1172,32 +1090,37 @@ describe('Model | MorphTo', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @hasOne(() => Comment)
-                public comment: HasOne<typeof Comment>
+                @hasOne(() => Post)
+                public post: HasOne<typeof Post>
             }
 
             await db.insertQuery().table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
             await db.insertQuery().table('posts').insert([
                 {
-                    title: 'virk'
+                    title: 'virk',
+                    user_id: '1'
+                },
+                {
+                    title: 'nikk',
+                    user_id: '2'
                 }
             ])
             await db.insertQuery().table('comments').insert([
                 { body: 'virk', commentable_id: '1', commentable_type: 'post', user_id: 1 },
-                { body: 'virk', commentable_id: '1', commentable_type: 'post', user_id: 2 }
+                { body: 'virk', commentable_id: '2', commentable_type: 'post', user_id: 2 }
             ])
 
             const query = User.query({ connection: 'secondary' })
-                .preload('comment', (builder) => builder.preload('commentable'))
+                .preload('post', (builder) => builder.preload('comment'))
                 .where('username', 'virk')
 
             const user = await query.first()
-            expect(user!.comment).toBeInstanceOf(Comment)
-            expect(user!.comment.commentable).toBeInstanceOf(Post)
+            expect(user!.post).toBeInstanceOf(Post)
+            expect(user!.post.comment).toBeInstanceOf(Comment)
 
             expect(user!.$options!.connection).toBe('secondary')
-            expect(user!.comment.$options!.connection).toBe('secondary')
-            expect(user!.comment.commentable.$options!.connection).toBe('secondary')
+            expect(user!.post.$options!.connection).toBe('secondary')
+            expect(user!.post.comment.$options!.connection).toBe('secondary')
         });
 
         it('pass relationship metadata to the profiler', async () => {
@@ -1207,11 +1130,11 @@ describe('Model | MorphTo', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @column({ columnName: 'id' })
-                public uid: number
-
                 @column()
                 public title: string
+
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1223,9 +1146,6 @@ describe('Model | MorphTo', () => {
 
                 @column()
                 public commentableType: number
-
-                @morphTo({localKey: 'uid'})
-                public commentable: MorphTo<any>
 
                 static boot() {
                     this.morphMap({
@@ -1253,12 +1173,12 @@ describe('Model | MorphTo', () => {
             let profilerPacketIndex = 0
             profiler.process((packet) => {
                 if ( profilerPacketIndex === 1 ) {
-                    expect(packet.data.relation).toEqual({ model: 'Comment', relatedModel: 'Post', type: 'morphTo' })
+                    expect(packet.data.relation).toEqual({ model: 'Post', relatedModel: 'Comment', type: 'morphOne' })
                 }
                 profilerPacketIndex++
             })
 
-            await Comment.query({ profiler }).preload('commentable')
+            await Post.query({ profiler }).preload('comment')
         });
 
         it('do not run preload query when parent rows are empty', async () => {
@@ -1266,11 +1186,11 @@ describe('Model | MorphTo', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @column({ columnName: 'id' })
-                public uid: number
-
                 @column()
                 public title: string
+
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1283,9 +1203,6 @@ describe('Model | MorphTo', () => {
                 @column()
                 public commentableType: number
 
-                @morphTo({localKey: 'uid'})
-                public commentable: MorphTo<any>
-
                 static boot() {
                     this.morphMap({
                         'post': () => Post
@@ -1293,15 +1210,15 @@ describe('Model | MorphTo', () => {
                 }
             }
 
-            const comments = await Comment.query().preload('commentable', () => {
+            const posts = await Post.query().preload('comment', () => {
                 throw new Error('not expected to be here')
             })
 
-            expect(comments).toHaveLength(0)
+            expect(posts).toHaveLength(0)
         });
     });
 
-    describe('Model | MorphTo | pagination', () => {
+    describe('Model | MorphOne | pagination', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -1324,11 +1241,11 @@ describe('Model | MorphTo', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @column({ columnName: 'id' })
-                public uid: number
-
                 @column()
                 public title: string
+
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1341,9 +1258,6 @@ describe('Model | MorphTo', () => {
                 @column()
                 public commentableType: number
 
-                @morphTo({localKey: 'uid'})
-                public commentable: MorphTo<any>
-
                 static boot() {
                     this.morphMap({
                         'post': () => Post
@@ -1351,21 +1265,22 @@ describe('Model | MorphTo', () => {
                 }
             }
 
-            await db.insertQuery().table('comments').insert([
-                {body: 'virk', commentable_id: '1', commentable_type: 'post'},
-                // { body: 'nikk', commentable_id: '2', commentable_type: 'post' }
-            ]);
+            await db.insertQuery().table('posts').insert([
+                {
+                    title: 'virk'
+                }
+            ])
 
-            const comment = await Comment.find(1)
+            const post = await Post.find(1)
             try {
-                await comment!.related('commentable').query().paginate(1)
+                await post!.related('comment').query().paginate(1)
             } catch ({ message }) {
-                expect(message).toBe('Cannot paginate a hasOne relationship "(commentable)"')
+                expect(message).toBe('Cannot paginate a morphOne relationship "(comment)"')
             }
         })
     })
 
-    describe('Model | MorphTo | clone', () => {
+    describe('Model | MorphOne | clone', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -1388,11 +1303,11 @@ describe('Model | MorphTo', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @column({ columnName: 'id' })
-                public uid: number
-
                 @column()
                 public title: string
+
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1405,9 +1320,6 @@ describe('Model | MorphTo', () => {
                 @column()
                 public commentableType: number
 
-                @morphTo({localKey: 'uid'})
-                public commentable: MorphTo<any>
-
                 static boot() {
                     this.morphMap({
                         'post': () => Post
@@ -1415,18 +1327,19 @@ describe('Model | MorphTo', () => {
                 }
             }
 
-            await db.insertQuery().table('comments').insert([
-                {body: 'virk', commentable_id: '1', commentable_type: 'post'},
-                // { body: 'nikk', commentable_id: '2', commentable_type: 'post' }
-            ]);
+            await db.insertQuery().table('posts').insert([
+                {
+                    title: 'virk'
+                }
+            ])
 
-            const comment = await Comment.find(1)
-            const clonedQuery = comment!.related('commentable').query().clone()
-            expect(clonedQuery).toBeInstanceOf(MorphToQueryBuilder)
+            const post = await Post.find(1)
+            const clonedQuery = post!.related('comment').query().clone()
+            expect(clonedQuery).toBeInstanceOf(MorphOneQueryBuilder)
         })
     })
 
-    describe('Model | MorphTo | global scopes', () => {
+    describe('Model | MorphOne | global scopes', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -1448,17 +1361,11 @@ describe('Model | MorphTo', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @column({ columnName: 'id' })
-                public uid: number
-
                 @column()
                 public title: string
 
-                static boot() {
-                    this.addGlobalScope(query => {
-                        query.where('title', 'twitter')
-                    });
-                }
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1466,17 +1373,21 @@ describe('Model | MorphTo', () => {
                 public id: number
 
                 @column()
+                public body: string
+
+                @column()
                 public commentableId: number
 
                 @column()
                 public commentableType: number
 
-                @morphTo()
-                public commentable: MorphTo<any>
-
                 static boot() {
                     this.morphMap({
                         'post': () => Post
+                    });
+
+                    this.addGlobalScope(query => {
+                        query.where('body', 'twitter')
                     });
                 }
             }
@@ -1492,9 +1403,12 @@ describe('Model | MorphTo', () => {
             ])
 
             db.enableQueryLog();
-            const comment = await Comment.query().preload('commentable').firstOrFail();
+            const comment = await Post.query().preload('comment').firstOrFail();
             const {sql} = db.getQueryLog()[1];
-            const {sql: knenSql} = db.from('posts').whereIn('posts.id', [1]).where('title', 'twitter').toSQL();
+            const {sql: knenSql} = db.from('comments')
+                .where('commentable_type', 'post')
+                .whereIn('commentable_id', [1])
+                .where('body', 'twitter').toSQL();
             expect(sql).toEqual(knenSql);
         });
 
@@ -1502,36 +1416,30 @@ describe('Model | MorphTo', () => {
             class Post extends BaseModel {
                 @column({ isPrimary: true })
                 public id: number
-
-                @column({ columnName: 'id' })
-                public uid: number
-
                 @column()
                 public title: string
 
-                static boot() {
-                    this.addGlobalScope(query => {
-                        query.where('title', 'twitter')
-                    });
-                }
+                @morphOne(() => Comment, {name: 'commentable'})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
                 @column({ isPrimary: true })
                 public id: number
-
+                @column()
+                public body: string
                 @column()
                 public commentableId: number
 
                 @column()
                 public commentableType: number
 
-                @morphTo()
-                public commentable: MorphTo<any>
-
                 static boot() {
                     this.morphMap({
                         'post': () => Post
+                    });
+                    this.addGlobalScope(query => {
+                        query.where('body', 'twitter')
                     });
                 }
             }
@@ -1546,17 +1454,21 @@ describe('Model | MorphTo', () => {
                 }
             ])
 
-            const comment = await Comment.findOrFail(1)
+            const post = await Post.findOrFail(1)
 
             db.enableQueryLog();
-            const profile = await comment.related('commentable').query().first()
+            const profile = await post.related('comment').query().first()
             const {sql} = db.getQueryLog()[0];
-            const {sql: knenSql} = db.from('posts').where('title', 'twitter').where('id', 1).limit(1).toSQL();
+            const {sql: knenSql} = db.from('comments')
+                .where('body', 'twitter')
+                .where('commentable_type', 'post')
+                .where('commentable_id', 1)
+                .limit(1).toSQL();
             expect(sql).toEqual(knenSql);
         });
     });
 
-    describe('Model | MorphTo | onQuery', () => {
+    describe('Model | MorphOne | onQuery', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -1577,11 +1489,15 @@ describe('Model | MorphTo', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @column({ columnName: 'id' })
-                public uid: number
-
                 @column()
                 public title: string
+
+
+                @morphOne(() => Comment, {
+                    name: 'commentable',
+                    onQuery: query => query.where('body', 'twitter')
+                })
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1593,11 +1509,6 @@ describe('Model | MorphTo', () => {
 
                 @column()
                 public commentableType: number
-
-                @morphTo({localKey: 'uid', onQuery: (query) =>{
-                        query.where('title', 'twitter')
-                    }})
-                public commentable: MorphTo<any>
 
                 static boot() {
                     this.morphMap({
@@ -1616,8 +1527,8 @@ describe('Model | MorphTo', () => {
                 }
             ])
 
-            const comment = await Comment.query().preload('commentable').firstOrFail()
-            expect(comment.commentable).toBeUndefined()
+            const post = await Post.query().preload('comment').firstOrFail()
+            expect(post.comment).toBeUndefined()
         })
 
         test('do not invoke onQuery method on preloading subqueries', async () => {
@@ -1627,11 +1538,18 @@ describe('Model | MorphTo', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @column({ columnName: 'id' })
-                public uid: number
-
                 @column()
                 public title: string
+
+
+                @morphOne(() => Comment, {
+                    name: 'commentable',
+                    onQuery: query => {
+                        expect(true).toBeTruthy()
+                        query.where('body', 'twitter')
+                    }
+                })
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1643,12 +1561,6 @@ describe('Model | MorphTo', () => {
 
                 @column()
                 public commentableType: number
-
-                @morphTo({localKey: 'uid', onQuery: (query) =>{
-                        expect(true).toBeTruthy()
-                        query.where('title', 'twitter')
-                    }})
-                public commentable: MorphTo<any>
 
                 static boot() {
                     this.morphMap({
@@ -1667,9 +1579,9 @@ describe('Model | MorphTo', () => {
                 }
             ])
 
-            const comment = await Comment.query().preload('commentable', (query) => query.where(() => {
+            const post = await Post.query().preload('comment', (query) => query.where(() => {
             })).firstOrFail()
-            expect(comment.commentable).toBeUndefined()
+            expect(post.comment).toBeUndefined()
         })
 
         test('invoke onQuery method on related query builder', async () => {
@@ -1677,11 +1589,13 @@ describe('Model | MorphTo', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @column({ columnName: 'id' })
-                public uid: number
-
                 @column()
                 public title: string
+
+                @morphOne(() => Comment, {name: 'commentable', onQuery(query) {
+                    query.where('body', 'twitter')
+                    }})
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1693,9 +1607,6 @@ describe('Model | MorphTo', () => {
 
                 @column()
                 public commentableType: number
-
-                @morphTo({localKey: 'uid', onQuery: (query) => query.where('title', 'twitter')})
-                public commentable: MorphTo<any>
 
                 static boot() {
                     this.morphMap({
@@ -1714,8 +1625,8 @@ describe('Model | MorphTo', () => {
                 }
             ])
 
-            const comment = await Comment.findOrFail(1)
-            const profile = await comment.related('commentable').query().first()
+            const post = await Post.findOrFail(1)
+            const profile = await post.related('comment').query().first()
             expect(profile).toBeNull()
         })
 
@@ -1724,11 +1635,16 @@ describe('Model | MorphTo', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @column({ columnName: 'id' })
-                public uid: number
-
                 @column()
                 public title: string
+
+                @morphOne(() => Comment, {
+                    name: 'commentable',
+                    onQuery(query) {
+                        query.where('body', 'twitter')
+                    }
+                })
+                public comment: MorphOne<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1740,9 +1656,6 @@ describe('Model | MorphTo', () => {
 
                 @column()
                 public commentableType: number
-
-                @morphTo({localKey: 'uid', onQuery: (query) => query.where('type', 'twitter')})
-                public commentable: MorphTo<any>
 
                 static boot() {
                     this.morphMap({
@@ -1761,16 +1674,17 @@ describe('Model | MorphTo', () => {
                 }
             ])
 
-            const comment = await Comment.findOrFail(1)
-            const { sql, bindings } = comment.related('commentable').query().where((query) => {
+            const post = await Post.findOrFail(1)
+            const { sql, bindings } = post.related('comment').query().where((query) => {
                 query.whereNotNull('created_at')
             }).toSQL()
 
             const { sql: knexSql, bindings: knexBindings } = db.connection()
-                .from('posts')
-                .where('type', 'twitter')
+                .from('comments')
+                .where('body', 'twitter')
                 .where((query) => query.whereNotNull('created_at'))
-                .where('id', 1)
+                .where('commentable_type', 'post')
+                .where('commentable_id', 1)
                 .limit(1)
                 .toSQL()
 

@@ -22,7 +22,7 @@ import {
     HasManyDecorator,
     HasManyThroughDecorator,
     HasOneDecorator,
-    ManyToManyDecorator, MorphToDecorator
+    ManyToManyDecorator, MorphOneDecorator, MorphToDecorator
 } from '../../Contracts/Orm/Relations/types';
 
 import { dateColumn, dateTimeColumn } from './date'
@@ -131,6 +131,26 @@ export const morphTo: MorphToDecorator = (relation = {}) => {
         relation.localKey = relation.localKey || 'id';
 
         Model.$addRelation(property, 'morphTo', relatedModel, Object.assign({ relatedModel }, relation, {
+            type,
+            id
+        }))
+    }
+}
+
+/**
+ * Define morphOne relationship
+ */
+export const morphOne: MorphOneDecorator = (relatedModel, relation = {}) => {
+    return function decorateAsRelation(target, property: string) {
+        const Model = target.constructor as LucidModel
+        Model.bootIfNotBooted();
+
+        const name = relation.name;
+        const type = relation.type ? relation.type : name + "Type";
+        const id = relation.id ? relation.id : name + "Id";
+        relation.localKey = relation.localKey || 'id';
+
+        Model.$addRelation(property, 'morphOne', relatedModel, Object.assign({ relatedModel }, relation, {
             type,
             id
         }))

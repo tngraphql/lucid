@@ -460,7 +460,7 @@ export interface LucidModel {
      */
     registerGlobalScopes(builder);
 
-    morphMap(map);
+    morphMap(map: {[key: string]: () => LucidModel});
 
     new(): LucidRow
 }

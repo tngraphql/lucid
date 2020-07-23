@@ -5,6 +5,7 @@
  * Time: 3:10 PM
  */
 import {RelationQueryBuilderContract} from "../../../Contracts/Orm/Relations/RelationQueryBuilderContract";
+import {LucidModel} from "../../../Contracts/Model/LucidModel";
 export const MORPH_METADATA_KEY = Symbol('morph:map');
 
 export class Relation {
@@ -19,6 +20,18 @@ export class Relation {
     }
 
     public getActualClassNameForMorph(type) {
-        return this.morphMap()[type];
+        return this.morphMap()[type]();
+    }
+
+    public getMorphClass(model: LucidModel): string {
+        const morphMap: any = Object.entries(this.morphMap());
+
+        for (const [type, morphClass] of morphMap) {
+            if (morphClass() === model) {
+                return type;
+            }
+        }
+
+        return model.name;
     }
 }

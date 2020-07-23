@@ -29,6 +29,8 @@ import { ManyToManyRelationContract } from './ManyToManyRelationContract';
 import { RelationQueryBuilderContract } from './RelationQueryBuilderContract';
 import {MorphToClientContract} from "./MorphToClientContract";
 import {MorphToRelationContract} from "./MorphToRelationContract";
+import { MorphOneClientContract } from './MorphOneClientContract';
+import { MorphOneRelationContract } from './MorphOneRelationContract';
 
 /**
  * ------------------------------------------------------
@@ -61,7 +63,8 @@ export type ModelRelations =
     BelongsTo<LucidModel, LucidModel> |
     ManyToMany<LucidModel, LucidModel> |
     HasManyThrough<LucidModel, LucidModel> |
-    MorphTo<LucidModel, LucidModel>
+    MorphTo<LucidModel, LucidModel> |
+    MorphOne<LucidModel, LucidModel>
 
 /**
  * ------------------------------------------------------
@@ -103,7 +106,8 @@ export type RelationshipsContract =
     BelongsToRelationContract<LucidModel, LucidModel> |
     ManyToManyRelationContract<LucidModel, LucidModel> |
     HasManyThroughRelationContract<LucidModel, LucidModel> |
-    MorphToRelationContract<LucidModel, LucidModel>
+    MorphToRelationContract<LucidModel, LucidModel> |
+    MorphOneRelationContract<LucidModel, LucidModel>
 
 
 /**
@@ -151,7 +155,23 @@ export type HasManyThroughDecorator = <RelatedModel extends LucidModel> (
  */
 export type MorphToDecorator = <RelatedModel extends LucidModel>(
     options?: MorphToRelationOptions<MorphTo<RelatedModel>>
-) => TypedDecorator<HasOne<RelatedModel>>
+) => TypedDecorator<MorphTo<RelatedModel>>
+
+/**
+ * Decorator signature to define morph to relationship
+ */
+export type MorphOneDecorator = <RelatedModel extends LucidModel>(
+    model: (() => RelatedModel),
+    options?: MorphOneRelationOptions<MorphTo<RelatedModel>>
+) => TypedDecorator<MorphOne<RelatedModel>>
+
+export type MorphOneRelationOptions<Related extends ModelRelations> = {
+    name?: string
+    type?: string
+    id?: string,
+    localKey?: string
+    onQuery?(query: Related['builder']): void,
+}
 
 export type MorphToRelationOptions<Related extends ModelRelations> = {
     localKey?: string
@@ -245,6 +265,16 @@ export type MorphTo<RelatedModel extends LucidModel,
     model: RelatedModel,
     instance: InstanceType<RelatedModel>,
     client: MorphToClientContract<MorphToRelationContract<ParentModel, RelatedModel>,
+        RelatedModel>,
+    builder: RelationQueryBuilderContract<RelatedModel, any>,
+}
+
+export type MorphOne<RelatedModel extends LucidModel,
+    ParentModel extends LucidModel = LucidModel> = InstanceType<RelatedModel> & {
+    readonly type: 'morphOne',
+    model: RelatedModel,
+    instance: InstanceType<RelatedModel>,
+    client: MorphOneClientContract<MorphOneRelationContract<ParentModel, RelatedModel>,
         RelatedModel>,
     builder: RelationQueryBuilderContract<RelatedModel, any>,
 }
