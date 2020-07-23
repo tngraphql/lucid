@@ -460,5 +460,7 @@ export interface LucidModel {
      */
     registerGlobalScopes(builder);
 
+    morphMap(map);
+
     new(): LucidRow
 }

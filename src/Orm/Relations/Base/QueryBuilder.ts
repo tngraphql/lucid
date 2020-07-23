@@ -104,7 +104,7 @@ export abstract class BaseQueryBuilder extends ModelQueryBuilder implements Rela
          */
         this.getRelationKeys().forEach((key) => {
             key = this.resolveKey(key)
-            if ( ! columns.value.includes(key) ) {
+            if (key && ! columns.value.includes(key) ) {
                 columns.value.push(key)
             }
         })
@@ -131,5 +131,7 @@ export abstract class BaseQueryBuilder extends ModelQueryBuilder implements Rela
     public mergeConstraintsFrom(query) {
         const cloneQuery = query.knexQuery['_statements'];
         this.knexQuery['_statements'].push.apply(this.knexQuery['_statements'], cloneQuery);
+        this.sideload(Object.assign({}, query.sideloaded));
+        return this;
     }
 }

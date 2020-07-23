@@ -58,6 +58,8 @@ import {ManyToMany} from '../Relations/ManyToMany'
 import {ModelEventEmitter} from './ModelEventEmitter';
 import {proxyHandler} from './proxyHandler'
 import {DATE_TIME_TYPES} from '../Decorators/date';
+import {MorphTo} from "../Relations/MorphTo";
+import {MORPH_METADATA_KEY} from "../Relations/Base/Relation";
 
 const MANY_RELATIONS = ['hasMany', 'manyToMany', 'hasManyThrough']
 
@@ -396,6 +398,13 @@ export class BaseModel implements LucidRow {
         this.$relationsDefinitions.set(name, new HasManyThrough(name, relatedModel, options, this))
     }
 
+    protected static $addMorphTo(name: string,
+                                 relatedModel: () => LucidModel,
+                                 options: RelationOptions<ModelRelations>
+    ) {
+        this.$relationsDefinitions.set(name, new MorphTo(name, relatedModel, options, this))
+    }
+
     /**
      * Adds a relationship
      */
@@ -421,6 +430,9 @@ export class BaseModel implements LucidRow {
             case 'hasManyThrough':
                 this.$addHasManyThrough(name, relatedModel, options as ThroughRelationOptions<ModelRelations>)
                 break
+            case "morphTo":
+                this.$addMorphTo(name, relatedModel, options);
+                break;
             default:
                 throw new Error(`${type} is not a supported relation type`)
         }
@@ -2004,5 +2016,9 @@ export class BaseModel implements LucidRow {
         const model = this.constructor as typeof BaseModel;
 
         return model.qualifyColumn(column);
+    }
+
+    static morphMap(map) {
+        Reflect.defineMetadata(MORPH_METADATA_KEY, map, this);
     }
 }

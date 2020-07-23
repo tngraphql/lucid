@@ -8,10 +8,10 @@
  * file that was distributed with this source code.
  */
 
-import { RelationshipsContract } from '../Orm/Relations/types';
+import { RelationshipsContract } from './types';
 import { HasOneClientContract } from './HasOneClientContract';
-import { LucidModel } from './LucidModel';
-import { ModelAttributes } from './LucidRow';
+import { LucidModel } from '../../Model/LucidModel';
+import { ModelAttributes } from '../../Model/LucidRow';
 
 /**
  * Query client for has many relationship. Extends hasOne and

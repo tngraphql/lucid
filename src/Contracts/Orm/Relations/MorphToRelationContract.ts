@@ -9,17 +9,17 @@
  */
 
 import { QueryClientContract } from '../../Database/QueryClientContract';
-import { HasOneClientContract } from './HasOneClientContract';
+import { MorphToClientContract } from './MorphToClientContract';
 import { LucidModel } from '../../Model/LucidModel';
 import { BaseRelationContract } from './BaseRelationContract';
 
 /**
  * Has one relationship interface
  */
-export interface HasOneRelationContract<ParentModel extends LucidModel,
+export interface MorphToRelationContract<ParentModel extends LucidModel,
     RelatedModel extends LucidModel,
     > extends BaseRelationContract<ParentModel, RelatedModel> {
-    readonly type: 'hasOne'
+    readonly type: 'morphTo'
 
     /**
      * Set related model as a relationship on the parent model.
@@ -56,5 +56,5 @@ export interface HasOneRelationContract<ParentModel extends LucidModel,
     client(
         parent: InstanceType<ParentModel>,
         client: QueryClientContract
-    ): HasOneClientContract<this, RelatedModel>
+    ): MorphToClientContract<this, RelatedModel>
 }

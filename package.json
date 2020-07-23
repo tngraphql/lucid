@@ -43,6 +43,7 @@
     "events": "^3.1.0",
     "knex": "^0.20.13",
     "knex-dynamic-connection": "^1.0.4",
+    "lodash.set": "^4.3.2",
     "luxon": "^1.24.1",
     "macroable": "^4.0.3",
     "pluralize": "^8.0.0"
