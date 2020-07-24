@@ -11,7 +11,7 @@
 import { DateTime } from 'luxon'
 import {
     ManyToManyRelationOptions,
-    ModelRelations,
+    ModelRelations, MorphOneRelationOptions, MorphToManyRelationOptions, MorphToRelationOptions,
     RelationOptions,
     ThroughRelationOptions
 } from '../Orm/Relations/types';
@@ -120,6 +120,9 @@ export type HooksHandler<Data extends any,
 export type ModelRelationOptions = RelationOptions<ModelRelations>
     | ManyToManyRelationOptions<ModelRelations>
     | ThroughRelationOptions<ModelRelations>
+    | MorphOneRelationOptions<ModelRelations>
+    | MorphToRelationOptions<ModelRelations>
+    | MorphToManyRelationOptions<ModelRelations>
 
 export type GlobalScope = ({
     scope: (() => void) | object | string,

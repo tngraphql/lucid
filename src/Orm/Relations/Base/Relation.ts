@@ -15,16 +15,20 @@ export class Relation {
         return await query.selectRelationKeys().exec();
     }
 
-    public morphMap() {
-        return Reflect.getMetadata(MORPH_METADATA_KEY, this.relatedModel());
+    public static morphMap(map: {[key: string]: () => LucidModel}): void {
+        Reflect.defineMetadata(MORPH_METADATA_KEY, map, this);
+    }
+
+    public getMorphMap() {
+        return Reflect.getMetadata(MORPH_METADATA_KEY, Relation) || {};
     }
 
     public getActualClassNameForMorph(type) {
-        return this.morphMap()[type]();
+        return this.getMorphMap()[type]();
     }
 
     public getMorphClass(model: LucidModel): string {
-        const morphMap: any = Object.entries(this.morphMap());
+        const morphMap: any = Object.entries(this.getMorphMap());
 
         for (const [type, morphClass] of morphMap) {
             if (morphClass() === model) {

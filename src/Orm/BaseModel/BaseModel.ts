@@ -39,7 +39,7 @@ import {
 import {AdapterContract} from '../../Contracts/Orm/AdapterContract';
 import {
     ManyToManyRelationOptions,
-    ModelRelations,
+    ModelRelations, MorphOneRelationOptions, MorphToManyRelationOptions,
     RelationOptions,
     RelationshipsContract,
     ThroughRelationOptions
@@ -59,9 +59,10 @@ import {ModelEventEmitter} from './ModelEventEmitter';
 import {proxyHandler} from './proxyHandler'
 import {DATE_TIME_TYPES} from '../Decorators/date';
 import {MorphTo} from "../Relations/MorphTo";
-import {MORPH_METADATA_KEY} from "../Relations/Base/Relation";
+import {MORPH_METADATA_KEY, Relation} from "../Relations/Base/Relation";
 import {MorphOne} from "../Relations/MorphOne";
 import {MorphMany} from "../Relations/MorphMany";
+import {MorphToMany} from "../Relations/MorphToMany";
 
 const MANY_RELATIONS = ['hasMany', 'manyToMany', 'hasManyThrough', 'morphMany', 'morphToMany']
 
@@ -410,7 +411,7 @@ export class BaseModel implements LucidRow {
     protected static $addMorphOne(
         name: string,
         relatedModel: () => LucidModel,
-        options: RelationOptions<ModelRelations>
+        options: MorphOneRelationOptions<ModelRelations>
     ) {
         this.$relationsDefinitions.set(name, new MorphOne(name, relatedModel, options, this))
     }
@@ -418,9 +419,17 @@ export class BaseModel implements LucidRow {
     protected static $addMorphMany(
         name: string,
         relatedModel: () => LucidModel,
-        options: RelationOptions<ModelRelations>
+        options: MorphOneRelationOptions<ModelRelations>
     ) {
         this.$relationsDefinitions.set(name, new MorphMany(name, relatedModel, options, this))
+    }
+
+    protected static $addMorphToMany(
+        name: string,
+        relatedModel: () => LucidModel,
+        options: MorphToManyRelationOptions<ModelRelations>
+    ) {
+        this.$relationsDefinitions.set(name, new MorphToMany(name, relatedModel, options, this))
     }
 
     /**
@@ -452,10 +461,13 @@ export class BaseModel implements LucidRow {
                 this.$addMorphTo(name, relatedModel, options);
                 break;
             case "morphOne":
-                this.$addMorphOne(name, relatedModel, options);
+                this.$addMorphOne(name, relatedModel, options as MorphOneRelationOptions<ModelRelations>);
                 break;
             case "morphMany":
-                this.$addMorphMany(name, relatedModel, options);
+                this.$addMorphMany(name, relatedModel, options as MorphOneRelationOptions<ModelRelations>);
+                break;
+            case "morphToMany":
+                this.$addMorphToMany(name, relatedModel, options as MorphToManyRelationOptions<ModelRelations>);
                 break;
             default:
                 throw new Error(`${type} is not a supported relation type`)
@@ -2043,6 +2055,7 @@ export class BaseModel implements LucidRow {
     }
 
     static morphMap(map: {[key: string]: () => LucidModel}) {
-        Reflect.defineMetadata(MORPH_METADATA_KEY, map, this);
+        Relation.morphMap(map);
+        // Reflect.defineMetadata(MORPH_METADATA_KEY, map, this);
     }
 }

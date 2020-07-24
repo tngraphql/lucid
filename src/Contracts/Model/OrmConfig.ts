@@ -54,7 +54,7 @@ export type OrmConfig = {
      * Return the pivot table name for many to many relationship
      */
     getPivotTableName(
-        relation: 'manyToMany',
+        relation: 'manyToMany' | 'morphToMany',
         model: LucidModel,
         relatedModel: LucidModel,
         relationName: string
@@ -64,7 +64,7 @@ export type OrmConfig = {
      * Return the pivot foreign key for many to many relationship
      */
     getPivotForeignKey(
-        relation: 'manyToMany',
+        relation: 'manyToMany' | 'morphToMany',
         model: LucidModel,
         relatedModel: LucidModel,
         relationName: string
