@@ -646,7 +646,7 @@ describe('Model | Has Many Through', () => {
             await db.table('posts').multiInsert([
                 {
                     user_id: 1,
-                    title: 'Adonis 101'
+                    title: 'tngraphql 101'
                 },
                 {
                     user_id: 1,
@@ -699,7 +699,7 @@ describe('Model | Has Many Through', () => {
             await db.table('posts').multiInsert([
                 {
                     user_id: 1,
-                    title: 'Adonis 101'
+                    title: 'tngraphql 101'
                 },
                 {
                     user_id: 1,
@@ -721,7 +721,7 @@ describe('Model | Has Many Through', () => {
 
             expect(total).toHaveLength(2)
             expect(Number(total[0].total)).toEqual(1)
-            expect(total[0].title).toBe('Adonis 101')
+            expect(total[0].title).toBe('tngraphql 101')
             expect(Number(total[0].total)).toEqual(1)
             expect(total[1].title).toBe('Lucid 101')
         })
@@ -785,21 +785,21 @@ describe('Model | Has Many Through', () => {
             ])
 
             await db.insertQuery().table('posts').insert([
-                { title: 'Adonis 101', user_id: 1 },
+                { title: 'tngraphql 101', user_id: 1 },
                 { title: 'Lucid 101', user_id: 1 },
-                { title: 'Adonis5', user_id: 2 }
+                { title: 'tngraphql5', user_id: 2 }
             ])
 
             const countries = await Country.query().preload('posts')
             expect(countries).toHaveLength(1)
             expect(countries[0].posts).toHaveLength(3)
-            expect(countries[0].posts[0].title).toBe('Adonis 101')
+            expect(countries[0].posts[0].title).toBe('tngraphql 101')
             expect(countries[0].posts[0].$extras.through_country_id).toBe(1)
 
             expect(countries[0].posts[1].title).toBe('Lucid 101')
             expect(countries[0].posts[1].$extras.through_country_id).toBe(1)
 
-            expect(countries[0].posts[2].title).toBe('Adonis5')
+            expect(countries[0].posts[2].title).toBe('tngraphql5')
             expect(countries[0].posts[2].$extras.through_country_id).toBe(1)
         })
 
@@ -845,9 +845,9 @@ describe('Model | Has Many Through', () => {
             ])
 
             await db.insertQuery().table('posts').insert([
-                { title: 'Adonis 101', user_id: 1 },
+                { title: 'tngraphql 101', user_id: 1 },
                 { title: 'Lucid 101', user_id: 1 },
-                { title: 'Adonis5', user_id: 2 }
+                { title: 'tngraphql5', user_id: 2 }
             ])
 
             const countries = await Country.query().preload('posts')
@@ -855,13 +855,13 @@ describe('Model | Has Many Through', () => {
             expect(countries[0].posts).toHaveLength(2)
             expect(countries[1].posts).toHaveLength(1)
 
-            expect(countries[0].posts[0].title).toBe('Adonis 101')
+            expect(countries[0].posts[0].title).toBe('tngraphql 101')
             expect(countries[0].posts[0].$extras.through_country_id).toBe(1)
 
             expect(countries[0].posts[1].title).toBe('Lucid 101')
             expect(countries[0].posts[1].$extras.through_country_id).toBe(1)
 
-            expect(countries[1].posts[0].title).toBe('Adonis5')
+            expect(countries[1].posts[0].title).toBe('tngraphql5')
             expect(countries[1].posts[0].$extras.through_country_id).toBe(2)
         })
 
@@ -907,9 +907,9 @@ describe('Model | Has Many Through', () => {
             ])
 
             await db.insertQuery().table('posts').insert([
-                { title: 'Adonis 101', user_id: 1 },
+                { title: 'tngraphql 101', user_id: 1 },
                 { title: 'Lucid 101', user_id: 1 },
-                { title: 'Adonis5', user_id: 2 }
+                { title: 'tngraphql5', user_id: 2 }
             ])
 
             const countries = await Country.query().orderBy('id', 'asc')
@@ -921,13 +921,13 @@ describe('Model | Has Many Through', () => {
             expect(countries[0].posts).toHaveLength(2)
             expect(countries[1].posts).toHaveLength(1)
 
-            expect(countries[0].posts[0].title).toBe('Adonis 101')
+            expect(countries[0].posts[0].title).toBe('tngraphql 101')
             expect(countries[0].posts[0].$extras.through_country_id).toBe(1)
 
             expect(countries[0].posts[1].title).toBe('Lucid 101')
             expect(countries[0].posts[1].$extras.through_country_id).toBe(1)
 
-            expect(countries[1].posts[0].title).toBe('Adonis5')
+            expect(countries[1].posts[0].title).toBe('tngraphql5')
             expect(countries[1].posts[0].$extras.through_country_id).toBe(2)
         })
 
@@ -973,9 +973,9 @@ describe('Model | Has Many Through', () => {
             ])
 
             await db.insertQuery().table('posts').insert([
-                { title: 'Adonis 101', user_id: 1 },
+                { title: 'tngraphql 101', user_id: 1 },
                 { title: 'Lucid 101', user_id: 1 },
-                { title: 'Adonis5', user_id: 2 }
+                { title: 'tngraphql5', user_id: 2 }
             ])
 
             const countries = await Country.query().preload('posts', (builder) => {
@@ -986,13 +986,13 @@ describe('Model | Has Many Through', () => {
             expect(countries[0].posts).toHaveLength(2)
             expect(countries[1].posts).toHaveLength(1)
 
-            expect(countries[0].posts[0].title).toBe('Adonis 101')
+            expect(countries[0].posts[0].title).toBe('tngraphql 101')
             expect(countries[0].posts[0].$extras).toEqual({ through_country_id: 1 })
 
             expect(countries[0].posts[1].title).toBe('Lucid 101')
             expect(countries[0].posts[1].$extras).toEqual({ through_country_id: 1 })
 
-            expect(countries[1].posts[0].title).toBe('Adonis5')
+            expect(countries[1].posts[0].title).toBe('tngraphql5')
             expect(countries[1].posts[0].$extras).toEqual({ through_country_id: 2 })
         })
 
@@ -1038,9 +1038,9 @@ describe('Model | Has Many Through', () => {
             ])
 
             await db.insertQuery().table('posts').insert([
-                { title: 'Adonis 101', user_id: 1 },
+                { title: 'tngraphql 101', user_id: 1 },
                 { title: 'Lucid 101', user_id: 1 },
-                { title: 'Adonis5', user_id: 2 }
+                { title: 'tngraphql5', user_id: 2 }
             ])
 
             try {
@@ -1094,9 +1094,9 @@ describe('Model | Has Many Through', () => {
             ])
 
             await db.insertQuery().table('posts').insert([
-                { title: 'Adonis 101', user_id: 1 },
+                { title: 'tngraphql 101', user_id: 1 },
                 { title: 'Lucid 101', user_id: 1 },
-                { title: 'Adonis5', user_id: 2 }
+                { title: 'tngraphql5', user_id: 2 }
             ])
 
             const profiler = getProfiler(true)
@@ -1548,7 +1548,7 @@ describe('Model | Has Many Through', () => {
 
             await db.table('posts').multiInsert([
                 {
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                     user_id: 1
                 },
                 {
@@ -1696,7 +1696,7 @@ describe('Model | Has Many Through', () => {
 
             await db.table('posts').multiInsert([
                 {
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                     user_id: 1
                 },
                 {
@@ -1754,7 +1754,7 @@ describe('Model | Has Many Through', () => {
                 public title: string
 
                 public static adonisOnly = scope((query) => {
-                    query.where('title', 'Adonis 101')
+                    query.where('title', 'tngraphql 101')
                 })
             }
 
@@ -1788,7 +1788,7 @@ describe('Model | Has Many Through', () => {
 
             await db.table('posts').multiInsert([
                 {
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                     user_id: 1
                 },
                 {
@@ -1813,7 +1813,7 @@ describe('Model | Has Many Through', () => {
 
             expect(country.posts).toHaveLength(1)
             expect(countryWithoutScope.posts).toHaveLength(3)
-            expect(country.posts[0].title).toBe('Adonis 101')
+            expect(country.posts[0].title).toBe('tngraphql 101')
         })
 
         test('apply scopes2 during eagerload', async () => {
@@ -1834,8 +1834,8 @@ describe('Model | Has Many Through', () => {
                 @column()
                 public title: string
 
-                public static scopeAdonisOnly(query) {
-                    query.where('title', 'Adonis 101')
+                public static scopetngraphqlOnly(query) {
+                    query.where('title', 'tngraphql 101')
                 }
             }
 
@@ -1869,7 +1869,7 @@ describe('Model | Has Many Through', () => {
 
             await db.table('posts').multiInsert([
                 {
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                     user_id: 1
                 },
                 {
@@ -1894,7 +1894,7 @@ describe('Model | Has Many Through', () => {
 
             expect(country.posts).toHaveLength(1)
             expect(countryWithoutScope.posts).toHaveLength(3)
-            expect(country.posts[0].title).toBe('Adonis 101')
+            expect(country.posts[0].title).toBe('tngraphql 101')
         })
 
         test('apply scopes on related query', async () => {
@@ -1916,7 +1916,7 @@ describe('Model | Has Many Through', () => {
                 public title: string
 
                 public static adonisOnly = scope((query) => {
-                    query.where('title', 'Adonis 101')
+                    query.where('title', 'tngraphql 101')
                 })
             }
 
@@ -1950,7 +1950,7 @@ describe('Model | Has Many Through', () => {
 
             await db.table('posts').multiInsert([
                 {
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                     user_id: 1
                 },
                 {
@@ -1973,7 +1973,7 @@ describe('Model | Has Many Through', () => {
 
             expect(posts).toHaveLength(1)
             expect(postsWithoutScope).toHaveLength(3)
-            expect(posts[0].title).toBe('Adonis 101')
+            expect(posts[0].title).toBe('tngraphql 101')
         })
     })
 
@@ -2001,7 +2001,7 @@ describe('Model | Has Many Through', () => {
 
             await db.table('posts').multiInsert([
                 {
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                     user_id: 1
                 },
                 {
@@ -2219,7 +2219,7 @@ describe('Model | Has Many Through', () => {
                 public id: number
 
                 @hasManyThrough([() => Post, () => User], {
-                    onQuery: (query) => query.where('title', 'Adonis 101')
+                    onQuery: (query) => query.where('title', 'tngraphql 101')
                 })
                 public posts: HasManyThrough<typeof Post>
             }
@@ -2244,7 +2244,7 @@ describe('Model | Has Many Through', () => {
 
             await db.table('posts').multiInsert([
                 {
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                     user_id: 1
                 },
                 {
@@ -2263,7 +2263,7 @@ describe('Model | Has Many Through', () => {
 
             const country = await Country.query().where('id', 1).preload('posts').firstOrFail()
             expect(country.posts).toHaveLength(1)
-            expect(country.posts[0].title).toBe('Adonis 101')
+            expect(country.posts[0].title).toBe('tngraphql 101')
         })
 
         test('do not invoke onQuery method on preloading subqueries', async () => {
@@ -2296,7 +2296,7 @@ describe('Model | Has Many Through', () => {
                 @hasManyThrough([() => Post, () => User], {
                     onQuery: (query) => {
                         expect(true).toBeTruthy()
-                        query.where('title', 'Adonis 101')
+                        query.where('title', 'tngraphql 101')
                     }
                 })
                 public posts: HasManyThrough<typeof Post>
@@ -2322,7 +2322,7 @@ describe('Model | Has Many Through', () => {
 
             await db.table('posts').multiInsert([
                 {
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                     user_id: 1
                 },
                 {
@@ -2346,7 +2346,7 @@ describe('Model | Has Many Through', () => {
                 .firstOrFail()
 
             expect(country.posts).toHaveLength(1)
-            expect(country.posts[0].title).toBe('Adonis 101')
+            expect(country.posts[0].title).toBe('tngraphql 101')
         })
 
         test('invoke onQuery method on related query builder', async () => {
@@ -2375,7 +2375,7 @@ describe('Model | Has Many Through', () => {
                 public id: number
 
                 @hasManyThrough([() => Post, () => User], {
-                    onQuery: (query) => query.where('title', 'Adonis 101')
+                    onQuery: (query) => query.where('title', 'tngraphql 101')
                 })
                 public posts: HasManyThrough<typeof Post>
             }
@@ -2400,7 +2400,7 @@ describe('Model | Has Many Through', () => {
 
             await db.table('posts').multiInsert([
                 {
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                     user_id: 1
                 },
                 {
@@ -2421,7 +2421,7 @@ describe('Model | Has Many Through', () => {
             const posts = await country.related('posts').query()
 
             expect(posts).toHaveLength(1)
-            expect(posts[0].title).toBe('Adonis 101')
+            expect(posts[0].title).toBe('tngraphql 101')
         })
 
         test('do not invoke onQuery method on related query builder subqueries', async () => {
@@ -2450,7 +2450,7 @@ describe('Model | Has Many Through', () => {
                 public id: number
 
                 @hasManyThrough([() => Post, () => User], {
-                    onQuery: (query) => query.where('title', 'Adonis 101')
+                    onQuery: (query) => query.where('title', 'tngraphql 101')
                 })
                 public posts: HasManyThrough<typeof Post>
             }
@@ -2475,7 +2475,7 @@ describe('Model | Has Many Through', () => {
 
             await db.table('posts').multiInsert([
                 {
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                     user_id: 1
                 },
                 {
@@ -2503,7 +2503,7 @@ describe('Model | Has Many Through', () => {
                                                                .from('posts')
                                                                .select('posts.*', 'users.country_id as through_country_id')
                                                                .innerJoin('users', 'users.id', 'posts.user_id')
-                                                               .where('title', 'Adonis 101')
+                                                               .where('title', 'tngraphql 101')
                                                                .where((query) => query.whereNotNull('created_at'))
                                                                .where('users.country_id', 1)
                                                                .toSQL()

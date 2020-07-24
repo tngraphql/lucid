@@ -202,7 +202,7 @@ export async function setup(destroyDb: boolean = true) {
             table.integer('post_id')
             table.integer('user_id')
             table.integer('commentable_id')
-            table.integer('commentable_type')
+            table.string('commentable_type')
             table.string('body')
             table.timestamps()
         })
@@ -433,6 +433,17 @@ export function getPosts(count: number, userId: number) {
         return {
             user_id: userId,
             title: chance.sentence({ words: 5 })
+        }
+    })
+}
+
+export function getComments(count: number, userId: number, type: 'post') {
+    const chance = new Chance()
+    return [...new Array(count)].map(() => {
+        return {
+            commentable_id: userId,
+            commentable_type: type,
+            body: chance.sentence({ words: 5 })
         }
     })
 }

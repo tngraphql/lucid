@@ -2,19 +2,29 @@
  * Created by Phan Trung Nguyên.
  * User: nguyenpl117
  * Date: 7/23/2020
- * Time: 3:31 PM
+ * Time: 10:01 PM
  */
-
-import {cleanup, getBaseModel, getDb, getProfiler, ormAdapter, resetTables, setup} from "../helpers";
+import {
+    cleanup,
+    getBaseModel,
+    getComments,
+    getDb,
+    getPosts,
+    getProfiler,
+    ormAdapter,
+    resetTables,
+    setup
+} from "../helpers";
 import {column, hasOne, morphMany, morphOne, morphTo} from "../../src/Orm/Decorators";
 import {HasOne, MorphMany, MorphOne, MorphTo} from "../../src/Contracts/Orm/Relations/types";
 import {MorphOneQueryBuilder} from "../../src/Orm/Relations/MorphOne/QueryBuilder";
+import {MorphManyQueryBuilder} from "../../src/Orm/Relations/MorphMany/QueryBuilder";
 
 
 let db: ReturnType<typeof getDb>
 let BaseModel: ReturnType<typeof getBaseModel>
-describe('Model | MorphOne', () => {
-    describe('Model | MorphOne | Options', () => {
+describe('Model | MorphMany', () => {
+    describe('Model | MorphMany | Options', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -24,8 +34,8 @@ describe('Model | MorphOne', () => {
 
             try {
                 class Post extends BaseModel {
-                    @morphOne(() => Comment, {name: 'commentable'})
-                    public comment: MorphOne<typeof Comment>
+                    @morphMany(() => Comment, {name: 'commentable'})
+                    public comment: MorphMany<typeof Comment>
                 }
 
                 class Comment extends BaseModel {
@@ -48,8 +58,8 @@ describe('Model | MorphOne', () => {
                     @column({ isPrimary: true })
                     public id: number
 
-                    @morphOne(() => Comment, {name: 'commentable'})
-                    public comment: MorphOne<typeof Comment>
+                    @morphMany(() => Comment, {name: 'commentable'})
+                    public comment: MorphMany<typeof Comment>
                 }
 
                 class Comment extends BaseModel {
@@ -72,8 +82,8 @@ describe('Model | MorphOne', () => {
                     @column({ isPrimary: true })
                     public id: number
 
-                    @morphOne(() => Comment, {name: 'commentable'})
-                    public comment: MorphOne<typeof Comment>
+                    @morphMany(() => Comment, {name: 'commentable'})
+                    public comment: MorphMany<typeof Comment>
                 }
 
                 class Comment extends BaseModel {
@@ -94,8 +104,8 @@ describe('Model | MorphOne', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comment: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -119,8 +129,8 @@ describe('Model | MorphOne', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comment: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -144,8 +154,8 @@ describe('Model | MorphOne', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @morphOne(() => Comment, {name: 'commentable', id: 'commentId'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable', id: 'commentId'})
+                public comment: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -169,8 +179,8 @@ describe('Model | MorphOne', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comment: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -194,8 +204,8 @@ describe('Model | MorphOne', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @morphOne(() => Comment, {name: 'commentable', type: 'commentType'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable', type: 'commentType'})
+                public comment: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -215,7 +225,7 @@ describe('Model | MorphOne', () => {
         });
     });
 
-    describe('Model | MorphOne | Set Relations', () => {
+    describe('Model | MorphMany | Set Relations', () => {
         let Post;
         let Comment;
 
@@ -227,8 +237,8 @@ describe('Model | MorphOne', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @morphOne(() => CommentModel, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => CommentModel, {name: 'commentable'})
+                public comment: MorphMany<typeof CommentModel>
             }
 
             class CommentModel extends BaseModel {
@@ -250,20 +260,47 @@ describe('Model | MorphOne', () => {
 
         it('set related model instance', async () => {
             const post = new Post();
-            const comment = new Comment();
-            Post.$getRelation('comment').setRelated(post, comment);
-            expect(post.comment).toEqual(comment)
+            post.fill({id: 1})
+            const comments = new Array(1).fill(new Comment())
+            comments.forEach(comment => comment.fill({commentableId: post.id}));
+
+            Post.$getRelation('comment').setRelated(post, comments);
+            expect(post.comment).toEqual(comments)
         });
 
         it('push related model instance', async () => {
             const post = new Post();
+            post.fill({id: 1})
+            const comments = new Array(1).fill(new Comment())
+            comments.forEach(comment => comment.fill({commentableId: post.id}));
+
+            Post.$getRelation('comment').pushRelated(post, comments);
+            expect(post.comment).toEqual(comments)
+        });
+
+        it('set many of related instances', async () => {
+            const post = new Post()
+            post.fill({id: 1});
+            const post1 = new Post()
+            post1.fill({id: 2});
+            const post2 = new Post()
+            post2.fill({id: 3});
+
             const comment = new Comment();
-            Post.$getRelation('comment').pushRelated(post, comment);
-            expect(post.comment).toEqual(comment)
+            comment.fill({commentableId: 1})
+            const comment1 = new Comment();
+            comment1.fill({commentableId: 2})
+            const comment2 = new Comment();
+            comment2.fill({commentableId: 1})
+
+            Post.$getRelation('comment').setRelatedForMany([post, post1, post2], [comment, comment1, comment2]);
+            expect(post.comment).toEqual([comment, comment2])
+            expect(post1.comment).toEqual([comment1])
+            expect(post2.comment).toEqual([] as any)
         });
     });
 
-    describe('Model | MorphOne | bulk operations', () => {
+    describe('Model | MorphMany | bulk operations', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -284,8 +321,8 @@ describe('Model | MorphOne', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -313,14 +350,13 @@ describe('Model | MorphOne', () => {
 
             const post = await Post.find(1);
 
-            const { sql, bindings } = post!.related('comment').query().toSQL();
+            const { sql, bindings } = post!.related('comments').query().toSQL();
 
             const { sql: knexSql, bindings: knexBindings } = db.connection()
                 .getWriteClient()
                 .from('comments')
                 .where('commentable_type', 'post')
                 .where('commentable_id', 1)
-                .limit(1)
                 .toSQL()
 
             expect(sql).toBe(knexSql)
@@ -332,8 +368,8 @@ describe('Model | MorphOne', () => {
                 @column({ isPrimary: true })
                 public id: number
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -363,9 +399,9 @@ describe('Model | MorphOne', () => {
             ])
 
             const comments = await Post.all();
-            Post.$getRelation('comment').boot();
+            Post.$getRelation('comments').boot();
 
-            const relation = Post.$getRelation('comment');
+            const relation = Post.$getRelation('comments');
 
             const related = relation.eagerQuery(comments, db.connection());
             db.enableQueryLog();
@@ -392,8 +428,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -421,7 +457,7 @@ describe('Model | MorphOne', () => {
 
             const post = await Post.find(1);
 
-            const { sql, bindings } = post!.related('comment').query().update({body: 'job'}).toSQL();
+            const { sql, bindings } = post!.related('comments').query().update({body: 'job'}).toSQL();
 
             const { sql: knexSql, bindings: knexBindings } = db.connection()
                 .getWriteClient()
@@ -443,8 +479,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -472,7 +508,7 @@ describe('Model | MorphOne', () => {
 
             const post = await Post.find(1);
 
-            const { sql, bindings } = post!.related('comment').query().del().toSQL();
+            const { sql, bindings } = post!.related('comments').query().del().toSQL();
 
             const { sql: knexSql, bindings: knexBindings } = db.connection()
                 .getWriteClient()
@@ -487,7 +523,74 @@ describe('Model | MorphOne', () => {
         });
     });
 
-    describe('Model | MorphOne | preload', () => {
+    describe('Model | MorphMany | aggregates', () => {
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+            await setup()
+        })
+
+        afterAll(async () => {
+            await cleanup()
+            await db.manager.closeAll()
+        })
+
+        afterEach(async () => {
+            await resetTables()
+        })
+
+        it('get total of all related rows', async () => {
+            class Post extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public title: string
+
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
+            }
+
+            class Comment extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public commentableId: number
+
+                @column()
+                public commentableType: number
+
+                static boot() {
+                    this.morphMap({
+                        'post': () => Post
+                    });
+                }
+            }
+
+            await db.insertQuery().table('comments').insert([
+                { body: 'virk', commentable_id: '1', commentable_type: 'post' },
+                { body: 'nikk', commentable_id: '1', commentable_type: 'post' }
+            ])
+
+            await db.insertQuery().table('posts').insert([
+                {
+                    title: 'virk'
+                },
+                {
+                    title: 'nikk'
+                }
+            ])
+
+            Post.$getRelation('comments')!.boot()
+
+            const post = await Post.find(1)
+            const total = await post!.related('comments').query().count('* as total')
+            expect(Number(total[0].total)).toBe(2)
+        });
+    });
+
+    describe('Model | MorphMany | preload', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -511,8 +614,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -547,13 +650,68 @@ describe('Model | MorphOne', () => {
             ])
 
             db.enableQueryLog();
-            const posts = await Post.query().preload('comment');
+            const posts = await Post.query().preload('comments');
             expect(posts).toHaveLength(2);
 
-            expect(posts[0].comment.commentableId).toBe(posts[0].id);
-            expect(posts[0].comment.commentableType).toBe('post');
-            expect(posts[1].comment.commentableId).toBe(posts[1].id);
-            expect(posts[1].comment.commentableType).toBe('post');
+            expect(posts[0].comments[0].commentableId).toBe(posts[0].id)
+            expect(posts[1].comments[0].commentableId).toBe(posts[1].id)
+        });
+
+        it('preload relationship for many rows', async () => {
+            class Post extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public title: string
+
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
+            }
+
+            class Comment extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public commentableId: number
+
+                @column()
+                public commentableType: string
+
+                static boot() {
+                    this.morphMap({
+                        'post': () => Post,
+                    });
+                }
+            }
+
+            await db.insertQuery().table('comments').insert([
+                { body: 'virk', commentable_id: '1', commentable_type: 'post' },
+                { body: 'nikk', commentable_id: '1', commentable_type: 'post' },
+                { body: 'nikk', commentable_id: '2', commentable_type: 'post' },
+            ])
+
+            await db.insertQuery().table('posts').insert([
+                {
+                    title: 'virk'
+                },
+                {
+                    title: 'nikk'
+                }
+            ])
+
+            const posts = await Post.query().preload('comments')
+
+            expect(posts[0]!.comments).toHaveLength(2)
+            expect(posts[0].comments[0]).toBeInstanceOf(Comment)
+            expect(posts[0].comments[0].commentableId).toBe(posts[0].id)
+            expect(posts[0].comments[1]).toBeInstanceOf(Comment)
+            expect(posts[0].comments[1].commentableId).toBe(posts[0].id)
+
+            expect(posts[1]!.comments).toHaveLength(1)
+            expect(posts[1].comments[0]).toBeInstanceOf(Comment)
+            expect(posts[1].comments[0].commentableId).toBe(posts[1].id)
         });
 
         it('preload nested relations', async () => {
@@ -567,8 +725,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -604,70 +762,18 @@ describe('Model | MorphOne', () => {
                 }
             ])
             await db.insertQuery().table('comments').insert([
-                { body: 'virk', commentable_id: '1', commentable_type: 'post', user_id: 1 }
+                { body: 'virk', commentable_id: '1', commentable_type: 'post', user_id: 1 },
+                { body: 'virk2', commentable_id: '1', commentable_type: 'post', user_id: 1 },
             ])
 
             const user = await User.query()
-                .preload('post', (builder) => builder.preload('comment'))
+                .preload('post', (builder) => builder.preload('comments'))
                 .where('username', 'virk')
                 .first()
 
             expect(user!.post).toBeInstanceOf(Post)
-            expect(user!.post!.comment).toBeInstanceOf(Comment)
-        });
-
-        it('preload self referenced relationship', async () => {
-            class Post extends BaseModel {
-                @column({ isPrimary: true })
-                public id: number
-
-                @column()
-                public title: string
-
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
-            }
-
-            class Comment extends BaseModel {
-                @column({ isPrimary: true })
-                public id: number
-
-                @column()
-                public commentableId: number
-
-                @column()
-                public commentableType: number
-
-                @morphTo()
-                public commentable: MorphTo<any>
-
-                static boot() {
-                    this.morphMap({
-                        'post': () => Post
-                    });
-                }
-            }
-
-            await db.insertQuery().table('posts').insert([
-                {
-                    title: 'virk'
-                },
-                {
-                    title: 'nikk'
-                }
-            ])
-
-            await db.insertQuery().table('comments').insert([
-                { body: 'virk', commentable_id: '1', commentable_type: 'post' },
-                { body: 'nikk', commentable_id: '2', commentable_type: 'post' }
-            ])
-
-            const posts = await Post.query().preload('comment', builder => builder.preload('commentable'));
-
-            expect(posts).toHaveLength(2)
-
-            expect(posts[0].comment.commentable.id).toEqual(posts[0].id)
-            expect(posts[1].comment.commentable.id).toEqual(posts[1].id)
+            expect(user!.post!.comments).toHaveLength(2)
+            expect(user!.post!.comments[0]).toBeInstanceOf(Comment)
         });
 
         it('add constraints during preload', async () => {
@@ -678,8 +784,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -713,11 +819,11 @@ describe('Model | MorphOne', () => {
                 { body: 'nikk', commentable_id: '2', commentable_type: 'post' }
             ])
 
-            const posts = await Post.query().preload('comment', builder => builder.where('body', 'foo'));
+            const posts = await Post.query().preload('comments', builder => builder.where('body', 'foo'));
 
             expect(posts).toHaveLength(2);
-            expect(posts[0].comment).toBeUndefined();
-            expect(posts[1].comment).toBeUndefined();
+            expect(posts[0].comments).toHaveLength(0);
+            expect(posts[1].comments).toHaveLength(0);
         });
 
         it('cherry pick columns during preload', async () => {
@@ -728,8 +834,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -766,10 +872,10 @@ describe('Model | MorphOne', () => {
                 { body: 'nikk', commentable_id: '2', commentable_type: 'post' }
             ])
 
-            const posts = await Post.query().preload('comment', builder => builder.select('body'));
+            const posts = await Post.query().preload('comments', builder => builder.select('body'));
             expect(posts).toHaveLength(2);
-            expect(posts[0].comment.$extras).toEqual({})
-            expect(posts[1].comment.$extras).toEqual({})
+            expect(posts[0].comments[0].$extras).toEqual({})
+            expect(posts[1].comments[0].$extras).toEqual({})
         });
 
         it('do not repeat pk when already defined', async () => {
@@ -780,8 +886,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -818,10 +924,10 @@ describe('Model | MorphOne', () => {
                 { body: 'nikk', commentable_id: '2', commentable_type: 'post' }
             ])
 
-            const posts = await Post.query().preload('comment', builder => builder.select('body', 'id'));
+            const posts = await Post.query().preload('comments', builder => builder.select('body', 'id'));
             expect(posts).toHaveLength(2);
-            expect(posts[0].comment.$extras).toEqual({})
-            expect(posts[1].comment.$extras).toEqual({})
+            expect(posts[0].comments[0].$extras).toEqual({})
+            expect(posts[1].comments[0].$extras).toEqual({})
         });
 
         it('pass sideloaded attributes to the relationship', async () => {
@@ -832,8 +938,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -867,12 +973,12 @@ describe('Model | MorphOne', () => {
                 { body: 'nikk', commentable_id: '2', commentable_type: 'post' }
             ])
 
-            const posts = await Post.query().preload('comment').sideload({ id: 1 });
+            const posts = await Post.query().preload('comments').sideload({ id: 1 });
             expect(posts).toHaveLength(2);
             expect(posts[0].$sideloaded).toEqual({id: 1})
             expect(posts[1].$sideloaded).toEqual({id: 1})
-            expect(posts[0].comment.$sideloaded).toEqual({id: 1})
-            expect(posts[1].comment.$sideloaded).toEqual({id: 1})
+            expect(posts[0].comments[0].$sideloaded).toEqual({id: 1})
+            expect(posts[1].comments[0].$sideloaded).toEqual({id: 1})
         });
 
         it('preload using model instance', async () => {
@@ -883,8 +989,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -920,11 +1026,11 @@ describe('Model | MorphOne', () => {
 
             const posts = await Post.all();
             expect(posts).toHaveLength(2);
-            await posts[0].preload('comment');
-            await posts[1].preload('comment');
+            await posts[0].preload('comments');
+            await posts[1].preload('comments');
 
-            expect(posts[0].comment.commentableId).toEqual(posts[0].id)
-            expect(posts[1].comment.commentableId).toEqual(posts[1].id)
+            expect(posts[0].comments[0].commentableId).toEqual(posts[0].id)
+            expect(posts[1].comments[0].commentableId).toEqual(posts[1].id)
         });
 
         it('raise exception when local key is not selected', async () => {
@@ -935,8 +1041,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -971,9 +1077,9 @@ describe('Model | MorphOne', () => {
             ])
 
             try {
-                await Post.query().select(['title']).preload('comment').where('title', 'virk').first()
+                await Post.query().select(['title']).preload('comments').where('title', 'virk').first()
             } catch ({ message }) {
-                expect(message).toBe('Cannot preload "comment", value of "Post.id" is undefined')
+                expect(message).toBe('Cannot preload "comments", value of "Post.id" is undefined')
             }
         });
 
@@ -988,8 +1094,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1037,18 +1143,18 @@ describe('Model | MorphOne', () => {
             expect(users).toHaveLength(2);
 
             await users[0].preload((preloader) => {
-                preloader.preload('post', (builder) => builder.preload('comment'))
+                preloader.preload('post', (builder) => builder.preload('comments'))
             })
 
             await users[1].preload((preloader) => {
-                preloader.preload('post', (builder) => builder.preload('comment'))
+                preloader.preload('post', (builder) => builder.preload('comments'))
             })
 
             expect(users[0].post).toBeInstanceOf(Post)
-            expect(users[0].post!.comment).toBeInstanceOf(Comment)
+            expect(users[0].post!.comments[0]).toBeInstanceOf(Comment)
 
             expect(users[1].post).toBeInstanceOf(Post)
-            expect(users[1].post!.comment).toBeInstanceOf(Comment)
+            expect(users[1].post!.comments[0]).toBeInstanceOf(Comment)
         });
 
         it('pass main query options down the chain', async () => {
@@ -1060,8 +1166,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1111,16 +1217,16 @@ describe('Model | MorphOne', () => {
             ])
 
             const query = User.query({ connection: 'secondary' })
-                .preload('post', (builder) => builder.preload('comment'))
+                .preload('post', (builder) => builder.preload('comments'))
                 .where('username', 'virk')
 
             const user = await query.first()
             expect(user!.post).toBeInstanceOf(Post)
-            expect(user!.post.comment).toBeInstanceOf(Comment)
+            expect(user!.post.comments[0]).toBeInstanceOf(Comment)
 
             expect(user!.$options!.connection).toBe('secondary')
             expect(user!.post.$options!.connection).toBe('secondary')
-            expect(user!.post.comment.$options!.connection).toBe('secondary')
+            expect(user!.post.comments[0].$options!.connection).toBe('secondary')
         });
 
         it('pass relationship metadata to the profiler', async () => {
@@ -1133,8 +1239,9 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
+
             }
 
             class Comment extends BaseModel {
@@ -1173,12 +1280,12 @@ describe('Model | MorphOne', () => {
             let profilerPacketIndex = 0
             profiler.process((packet) => {
                 if ( profilerPacketIndex === 1 ) {
-                    expect(packet.data.relation).toEqual({ model: 'Post', relatedModel: 'Comment', type: 'morphOne' })
+                    expect(packet.data.relation).toEqual({ model: 'Post', relatedModel: 'Comment', type: 'morphMany' })
                 }
                 profilerPacketIndex++
             })
 
-            await Post.query({ profiler }).preload('comment')
+            await Post.query({ profiler }).preload('comments')
         });
 
         it('do not run preload query when parent rows are empty', async () => {
@@ -1189,8 +1296,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1210,7 +1317,7 @@ describe('Model | MorphOne', () => {
                 }
             }
 
-            const posts = await Post.query().preload('comment', () => {
+            const posts = await Post.query().preload('comments', () => {
                 throw new Error('not expected to be here')
             })
 
@@ -1218,7 +1325,7 @@ describe('Model | MorphOne', () => {
         });
     });
 
-    describe('Model | MorphOne | save', () => {
+    describe('Model | MorphMany | save', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -1242,8 +1349,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1273,16 +1380,37 @@ describe('Model | MorphOne', () => {
             const comment = new Comment()
             comment.body = 'simple text'
 
-            await post.related('comment').save(comment)
+            await post.related('comments').save(comment)
 
             expect(post.$isPersisted).toBeTruthy()
             expect(post.id).toBe(comment.commentableId)
             expect(comment.commentableType).toBe('post')
+
+            const totalPosts = await db.query().from('posts').count('*', 'total')
+            const totalComments = await db.query().from('comments').count('*', 'total')
+
+            expect(Number(totalPosts[0].total)).toBe(1)
+            expect(Number(totalComments[0].total)).toBe(1)
         });
+    });
 
-        it('wrap save calls inside a managed transaction', async () => {
-            expect.assertions(3)
+    describe('Model | MorphMany | saveMany', () => {
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+            await setup()
+        })
 
+        afterAll(async () => {
+            await cleanup()
+            await db.manager.closeAll()
+        })
+
+        afterEach(async () => {
+            await resetTables()
+        })
+
+        it('save many related instances', async () => {
             class Post extends BaseModel {
                 @column({ isPrimary: true })
                 public id: number
@@ -1290,8 +1418,68 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
+            }
+
+            class Comment extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public commentableId: number
+
+                @column()
+                public commentableType: string
+
+                @column()
+                public body: string
+
+                static boot() {
+                    this.morphMap({
+                        'post': () => Post
+                    });
+                }
+            }
+
+            const post = new Post()
+            post.title = 'virk'
+            await post.save()
+
+            const comment = new Comment()
+            comment.body = 'Tngraphql 101'
+
+            const comment1 = new Comment()
+            comment1.body = 'Lucid 101'
+
+            await post.related('comments').saveMany([comment, comment1])
+
+            expect(comment.$isPersisted).toBeTruthy()
+            expect(post.id).toBe(comment.commentableId)
+            expect(comment.commentableType).toBe('post')
+
+            expect(comment1.$isPersisted).toBeTruthy()
+            expect(post.id).toBe(comment1.commentableId)
+            expect(comment1.commentableType).toBe('post')
+
+            const totalPosts = await db.query().from('posts').count('*', 'total')
+            const totalComments = await db.query().from('comments').count('*', 'total')
+
+            expect(Number(totalPosts[0].total)).toBe(1)
+            expect(Number(totalComments[0].total)).toBe(2)
+        });
+
+        it('wrap save many calls inside transaction', async () => {
+            expect.assertions(6)
+            class Post extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public title: string
+
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1317,25 +1505,30 @@ describe('Model | MorphOne', () => {
             const post = new Post()
             post.title = 'virk'
 
+            const comment = new Comment()
+            comment.body = 'tngraphql 101'
+
+            const comment1 = new Comment()
+            // @ts-ignore
+            comment1['id'] = 'asdgasdg';
+
             try {
-                const comment = new Comment()
-                // @ts-ignore
-                comment.id = 'asd';
-                await post.related('comment').save(comment)
+                await post.related('comments').saveMany([comment, comment1])
             } catch (error) {
                 expect(error).toBeDefined()
             }
 
-            const posts = await db.query().from('posts')
-            const comments = await db.query().from('comments')
+            const totalPosts = await db.query().from('posts').count('*', 'total')
+            const totalComments = await db.query().from('comments').count('*', 'total')
 
-            expect(posts).toHaveLength(0)
-            expect(comments).toHaveLength(0)
+            expect(Number(totalPosts[0].total)).toBe(0)
+            expect(Number(totalComments[0].total)).toBe(0)
+            expect(post.$trx).toBeUndefined()
+            expect(comment.$trx).toBeUndefined()
+            expect(comment1.$trx).toBeUndefined()
         });
 
-        it('use parent model transaction when its defined', async () => {
-            expect.assertions(4)
-
+        it('use parent model transaction when exists', async () => {
             class Post extends BaseModel {
                 @column({ isPrimary: true })
                 public id: number
@@ -1343,8 +1536,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1369,30 +1562,32 @@ describe('Model | MorphOne', () => {
 
             const trx = await db.transaction()
             const post = new Post()
-            post.title = 'virk'
             post.$trx = trx
+            post.title = 'virk'
+
+            const comment = new Comment()
+            comment.body = 'tngraphql 101'
 
             try {
-                const comment = new Comment()
-                // @ts-ignore
-                comment.id = 'asd';
-                await post.related('comment').save(comment)
+                await post.related('comments').saveMany([comment])
             } catch (error) {
-                expect(error).toBeDefined()
+                console.log(error)
             }
 
             expect(post.$trx.isCompleted).toBeFalsy()
             await trx.rollback()
 
-            const posts = await db.query().from('posts')
-            const comments = await db.query().from('comments')
+            const totalPosts = await db.query().from('posts').count('*', 'total')
+            const totalComments = await db.query().from('comments').count('*', 'total')
 
-            expect(posts).toHaveLength(0)
-            expect(comments).toHaveLength(0)
+            expect(Number(totalPosts[0].total)).toBe(0)
+            expect(Number(totalComments[0].total)).toBe(0)
+            expect(post.$trx).toBeUndefined()
+            expect(comment.$trx).toBeUndefined()
         });
     });
 
-    describe('Model | MorphOne | create', () => {
+    describe('Model | MorphMany | create', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -1416,8 +1611,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1444,7 +1639,7 @@ describe('Model | MorphOne', () => {
             post.title = 'virk'
             await post.save()
 
-            const comment = await post.related('comment').create({ body: 'graphql 101' })
+            const comment = await post.related('comments').create({ body: 'graphql 101' })
 
             expect(post.$isPersisted).toBeTruthy()
             expect(post.id).toBe(comment.commentableId)
@@ -1458,7 +1653,190 @@ describe('Model | MorphOne', () => {
         });
     });
 
-    describe('Model | MorphOne | firstOrCreate', () => {
+    describe('Model | MorphMany | createMany', () => {
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+            await setup()
+        })
+
+        afterAll(async () => {
+            await cleanup()
+            await db.manager.closeAll()
+        })
+
+        afterEach(async () => {
+            await resetTables()
+        })
+
+        it('create many related instances', async () => {
+            class Post extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public title: string
+
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
+            }
+
+            class Comment extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public commentableId: number
+
+                @column()
+                public commentableType: string
+
+                @column()
+                public body: string
+
+                static boot() {
+                    this.morphMap({
+                        'post': () => Post,
+                    });
+                }
+            }
+
+            const post = new Post()
+            post.title = 'virk'
+            await post.save()
+
+            const [comment, comment1] = await post.related('comments').createMany([
+                {
+                    body: 'Graphql 101',
+                },
+                {
+                    body: 'Lucid 101',
+                },
+            ])
+
+            expect(comment.$isPersisted).toBeTruthy()
+            expect(post.id).toBe(comment.commentableId)
+            expect(comment.commentableType).toBe('post')
+
+            expect(comment1.$isPersisted).toBeTruthy()
+            expect(post.id).toBe(comment1.commentableId)
+            expect(comment1.commentableType).toBe('post')
+
+            const totalComments = await db.query().from('comments').count('*', 'total')
+            const totalPosts = await db.query().from('posts').count('*', 'total')
+
+            expect(Number(totalPosts[0].total)).toBe(1)
+            expect(Number(totalComments[0].total)).toBe(2)
+        });
+
+        it('wrap create many calls inside transaction', async () => {
+            expect.assertions(4)
+
+            class Post extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public title: string
+
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
+            }
+
+            class Comment extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public commentableId: number
+
+                @column()
+                public commentableType: string
+
+                @column()
+                public body: string
+
+
+
+                static boot() {
+                    this.morphMap({
+                        'post': () => Post,
+                    });
+                }
+            }
+
+            const post = new Post()
+            post.title = 'virk'
+
+            try {
+                // @ts-ignore
+                await post.related('comments').createMany([{ body: 'graphql 101' }, {id: 'fsas'}])
+            } catch (error) {
+                expect(error).toBeDefined()
+            }
+
+            const totalComments = await db.query().from('comments').count('*', 'total')
+            const totalPosts = await db.query().from('posts').count('*', 'total')
+
+            expect(Number(totalPosts[0].total)).toBe(0)
+            expect(Number(totalComments[0].total)).toBe(0)
+            expect(post.$trx).toBeUndefined()
+        });
+
+        it('use parent model transaction when already exists', async () => {
+            class Post extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public title: string
+
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
+            }
+
+            class Comment extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public commentableId: number
+
+                @column()
+                public commentableType: string
+
+                @column()
+                public body: string
+
+
+
+                static boot() {
+                    this.morphMap({
+                        'post': () => Post,
+                    });
+                }
+            }
+
+            const trx = await db.transaction()
+            const post = new Post()
+            post.$trx = trx
+            post.title = 'virk'
+
+            const [comment] = await post.related('comments').createMany([{ body: 'graphql 101' }])
+            expect(post.$trx.isCompleted).toBeFalsy()
+            await trx.rollback()
+
+            const totalComments = await db.query().from('comments').count('*', 'total')
+            const totalPosts = await db.query().from('posts').count('*', 'total')
+
+            expect(Number(totalComments[0].total)).toBe(0)
+            expect(Number(totalPosts[0].total)).toBe(0)
+            expect(post.$trx).toBeUndefined()
+            expect(comment.$trx).toBeUndefined()
+        });
+    });
+
+    describe('Model | MorphMany | firstOrCreate', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -1482,8 +1860,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1513,7 +1891,7 @@ describe('Model | MorphOne', () => {
             await post.save()
 
             await db.insertQuery().table('comments').insert({ body: 'Lucid 101' })
-            const comment = await post.related('comment').firstOrCreate({}, {
+            const comment = await post.related('comments').firstOrCreate({}, {
                 body: 'graphql 101',
             })
 
@@ -1537,8 +1915,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1572,7 +1950,7 @@ describe('Model | MorphOne', () => {
                 commentable_id: post.id,
                 commentable_type: 'post'
             })
-            const comment = await post.related('comment').firstOrCreate({}, {
+            const comment = await post.related('comments').firstOrCreate({}, {
                 body: 'graphql 101'
             });
 
@@ -1587,7 +1965,7 @@ describe('Model | MorphOne', () => {
         });
     });
 
-    describe('Model | MorphOne | updateOrCreate', () => {
+    describe('Model | MorphMany | updateOrCreate', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -1611,8 +1989,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1644,7 +2022,7 @@ describe('Model | MorphOne', () => {
             await db.insertQuery().table('comments').insert({
                 body: 'Lucid 101'
             })
-            const comment = await post.related('comment').updateOrCreate({}, {
+            const comment = await post.related('comments').updateOrCreate({}, {
                 body: 'graphql 101',
             })
 
@@ -1666,8 +2044,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1701,7 +2079,7 @@ describe('Model | MorphOne', () => {
                 commentable_id: post.id,
                 commentable_type: 'post'
             })
-            const comment = await post.related('comment').updateOrCreate({}, {
+            const comment = await post.related('comments').updateOrCreate({}, {
                 body: 'tngraphql 101',
             })
 
@@ -1718,7 +2096,7 @@ describe('Model | MorphOne', () => {
         });
     });
 
-    describe('Model | MorphOne | pagination', () => {
+    describe('Model | MorphMany | pagination', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -1734,9 +2112,7 @@ describe('Model | MorphOne', () => {
             await resetTables()
         })
 
-        test('dis-allow pagination', async () => {
-            expect.assertions(1)
-
+        test('paginate using related model query builder instance', async () => {
             class Post extends BaseModel {
                 @column({ isPrimary: true })
                 public id: number
@@ -1744,8 +2120,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1765,22 +2141,89 @@ describe('Model | MorphOne', () => {
                 }
             }
 
-            await db.insertQuery().table('posts').insert([
-                {
-                    title: 'virk'
-                }
-            ])
+            Post.$getRelation('comments')!.boot()
+
+            const [ commentableId ] = await db.table('posts').insert({ title: 'virk' }).returning('id')
+            await db.table('comments').multiInsert(getComments(18, commentableId, 'post'))
 
             const post = await Post.find(1)
-            try {
-                await post!.related('comment').query().paginate(1)
-            } catch ({ message }) {
-                expect(message).toBe('Cannot paginate a morphOne relationship "(comment)"')
-            }
+            const comments = await post!.related('comments').query().paginate(1, 5)
+            comments.baseUrl('/comments')
+
+            expect(comments.all()).toHaveLength(5)
+            expect(comments.all()[0]).toBeInstanceOf(Comment)
+            expect(comments.perPage).toBe(5)
+            expect(comments.currentPage).toBe(1)
+            expect(comments.lastPage).toBe(4)
+            expect(comments.hasPages).toBeTruthy()
+            expect(comments.hasMorePages).toBeTruthy()
+            expect(comments.isEmpty).toBeFalsy()
+            expect(Number(comments.total)).toBe(18)
+            expect(comments.hasTotal).toBeTruthy()
+            expect(comments.getMeta()).toEqual({
+                total: 18,
+                per_page: 5,
+                current_page: 1,
+                last_page: 4,
+                first_page: 1,
+                first_page_url: '/comments?page=1',
+                last_page_url: '/comments?page=4',
+                next_page_url: '/comments?page=2',
+                previous_page_url: null,
+            })
         })
+
+        it('disallow paginate during preload', async () => {
+            expect.assertions(1)
+
+            class Post extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public title: string
+
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
+            }
+
+            class Comment extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public commentableId: number
+
+                @column()
+                public commentableType: string
+
+                @column()
+                public body: string
+
+
+
+                static boot() {
+                    this.morphMap({
+                        'post': () => Post,
+                    });
+                }
+            }
+
+            Post.$getRelation('comments')!.boot()
+
+            await db.table('posts').insert({ title: 'virk' })
+
+            try {
+                await Post.query().preload('comments', (query) => {
+                    query.paginate(1, 5)
+                })
+            } catch ({ message }) {
+                expect(message).toBe('Cannot paginate relationship "comments" during preload')
+            }
+        });
     })
 
-    describe('Model | MorphOne | clone', () => {
+    describe('Model | MorphMany | clone', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -1806,8 +2249,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1834,12 +2277,12 @@ describe('Model | MorphOne', () => {
             ])
 
             const post = await Post.find(1)
-            const clonedQuery = post!.related('comment').query().clone()
-            expect(clonedQuery).toBeInstanceOf(MorphOneQueryBuilder)
+            const clonedQuery = post!.related('comments').query().clone()
+            expect(clonedQuery).toBeInstanceOf(MorphManyQueryBuilder)
         })
     })
 
-    describe('Model | MorphOne | global scopes', () => {
+    describe('Model | MorphMany | global scopes', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -1864,8 +2307,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1903,7 +2346,7 @@ describe('Model | MorphOne', () => {
             ])
 
             db.enableQueryLog();
-            const comment = await Post.query().preload('comment').firstOrFail();
+            const comment = await Post.query().preload('comments').firstOrFail();
             const {sql} = db.getQueryLog()[1];
             const {sql: knenSql} = db.from('comments')
                 .where('commentable_type', 'post')
@@ -1919,8 +2362,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable'})
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable'})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -1957,7 +2400,7 @@ describe('Model | MorphOne', () => {
             const post = await Post.findOrFail(1)
 
             db.enableQueryLog();
-            const profile = await post.related('comment').query().first()
+            const profile = await post.related('comments').query().first()
             const {sql} = db.getQueryLog()[0];
             const {sql: knenSql} = db.from('comments')
                 .where('body', 'twitter')
@@ -1968,7 +2411,7 @@ describe('Model | MorphOne', () => {
         });
     });
 
-    describe('Model | MorphOne | onQuery', () => {
+    describe('Model | MorphMany | onQuery', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -1992,12 +2435,8 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-
-                @morphOne(() => Comment, {
-                    name: 'commentable',
-                    onQuery: query => query.where('body', 'twitter')
-                })
-                public comment: MorphOne<typeof Comment>
+                @morphMany(() => Comment, {name: 'commentable', onQuery: query => query.where('body', 'twitter')})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -2027,8 +2466,8 @@ describe('Model | MorphOne', () => {
                 }
             ])
 
-            const post = await Post.query().preload('comment').firstOrFail()
-            expect(post.comment).toBeUndefined()
+            const post = await Post.query().preload('comments').firstOrFail()
+            expect(post.comments).toHaveLength(0)
         })
 
         test('do not invoke onQuery method on preloading subqueries', async () => {
@@ -2042,14 +2481,11 @@ describe('Model | MorphOne', () => {
                 public title: string
 
 
-                @morphOne(() => Comment, {
-                    name: 'commentable',
-                    onQuery: query => {
+                @morphMany(() => Comment, {name: 'commentable', onQuery: query => {
                         expect(true).toBeTruthy()
                         query.where('body', 'twitter')
-                    }
-                })
-                public comment: MorphOne<typeof Comment>
+                    }})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -2079,9 +2515,9 @@ describe('Model | MorphOne', () => {
                 }
             ])
 
-            const post = await Post.query().preload('comment', (query) => query.where(() => {
+            const post = await Post.query().preload('comments', (query) => query.where(() => {
             })).firstOrFail()
-            expect(post.comment).toBeUndefined()
+            expect(post.comments).toHaveLength(0)
         })
 
         test('invoke onQuery method on related query builder', async () => {
@@ -2092,10 +2528,10 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {name: 'commentable', onQuery(query) {
-                    query.where('body', 'twitter')
+                @morphMany(() => Comment, {name: 'commentable', onQuery: query => {
+                        query.where('body', 'twitter')
                     }})
-                public comment: MorphOne<typeof Comment>
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -2126,7 +2562,7 @@ describe('Model | MorphOne', () => {
             ])
 
             const post = await Post.findOrFail(1)
-            const profile = await post.related('comment').query().first()
+            const profile = await post.related('comments').query().first()
             expect(profile).toBeNull()
         })
 
@@ -2138,13 +2574,10 @@ describe('Model | MorphOne', () => {
                 @column()
                 public title: string
 
-                @morphOne(() => Comment, {
-                    name: 'commentable',
-                    onQuery(query) {
+                @morphMany(() => Comment, {name: 'commentable', onQuery: query => {
                         query.where('body', 'twitter')
-                    }
-                })
-                public comment: MorphOne<typeof Comment>
+                    }})
+                public comments: MorphMany<typeof Comment>
             }
 
             class Comment extends BaseModel {
@@ -2175,7 +2608,7 @@ describe('Model | MorphOne', () => {
             ])
 
             const post = await Post.findOrFail(1)
-            const { sql, bindings } = post.related('comment').query().where((query) => {
+            const { sql, bindings } = post.related('comments').query().where((query) => {
                 query.whereNotNull('created_at')
             }).toSQL()
 
@@ -2185,7 +2618,6 @@ describe('Model | MorphOne', () => {
                 .where((query) => query.whereNotNull('created_at'))
                 .where('commentable_type', 'post')
                 .where('commentable_id', 1)
-                .limit(1)
                 .toSQL()
 
             expect(sql).toBe(knexSql)

@@ -61,6 +61,7 @@ import {DATE_TIME_TYPES} from '../Decorators/date';
 import {MorphTo} from "../Relations/MorphTo";
 import {MORPH_METADATA_KEY} from "../Relations/Base/Relation";
 import {MorphOne} from "../Relations/MorphOne";
+import {MorphMany} from "../Relations/MorphMany";
 
 const MANY_RELATIONS = ['hasMany', 'manyToMany', 'hasManyThrough', 'morphMany', 'morphToMany']
 
@@ -414,6 +415,14 @@ export class BaseModel implements LucidRow {
         this.$relationsDefinitions.set(name, new MorphOne(name, relatedModel, options, this))
     }
 
+    protected static $addMorphMany(
+        name: string,
+        relatedModel: () => LucidModel,
+        options: RelationOptions<ModelRelations>
+    ) {
+        this.$relationsDefinitions.set(name, new MorphMany(name, relatedModel, options, this))
+    }
+
     /**
      * Adds a relationship
      */
@@ -444,6 +453,9 @@ export class BaseModel implements LucidRow {
                 break;
             case "morphOne":
                 this.$addMorphOne(name, relatedModel, options);
+                break;
+            case "morphMany":
+                this.$addMorphMany(name, relatedModel, options);
                 break;
             default:
                 throw new Error(`${type} is not a supported relation type`)

@@ -368,14 +368,14 @@ describe('Model | HasMany', () => {
 
             const user = await User.find(1)
             const { sql, bindings } = user!.related('posts').query().update({
-                title: 'Adonis 101',
+                title: 'tngraphql 101',
             }).toSQL()
 
             const { sql: knexSql, bindings: knexBindings } = db.connection()
                                                                .getWriteClient()
                                                                .from('posts')
                                                                .where('user_id', 1)
-                                                               .update({ title: 'Adonis 101' })
+                                                               .update({ title: 'tngraphql 101' })
                                                                .toSQL()
 
             expect(sql).toBe(knexSql)
@@ -448,7 +448,7 @@ describe('Model | HasMany', () => {
 
             await db.table('users').insert({ username: 'virk' })
             await db.table('posts').multiInsert([
-                { title: 'Adonis 101', user_id: 1 },
+                { title: 'tngraphql 101', user_id: 1 },
                 { title: 'Lucid 101', user_id: 1 },
                 { title: 'Profiler 101', user_id: 2 },
             ])
@@ -495,7 +495,7 @@ describe('Model | HasMany', () => {
             await db.insertQuery().table('posts').insert([
                 {
                     user_id: user0.id,
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                 },
                 {
                     user_id: user1.id,
@@ -536,7 +536,7 @@ describe('Model | HasMany', () => {
             await db.insertQuery().table('posts').insert([
                 {
                     user_id: 1,
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                 },
                 {
                     user_id: 1,
@@ -586,7 +586,7 @@ describe('Model | HasMany', () => {
             await db.insertQuery().table('posts').insert([
                 {
                     user_id: 1,
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                 },
                 {
                     user_id: 1,
@@ -632,7 +632,7 @@ describe('Model | HasMany', () => {
             await db.insertQuery().table('posts').insert([
                 {
                     user_id: 1,
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                 },
                 {
                     user_id: 1,
@@ -679,7 +679,7 @@ describe('Model | HasMany', () => {
             await db.insertQuery().table('posts').insert([
                 {
                     user_id: 1,
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                 },
                 {
                     user_id: 1,
@@ -728,7 +728,7 @@ describe('Model | HasMany', () => {
             await db.insertQuery().table('posts').insert([
                 {
                     user_id: 1,
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                 },
                 {
                     user_id: 1,
@@ -785,7 +785,7 @@ describe('Model | HasMany', () => {
             await db.insertQuery().table('posts').insert([
                 {
                     user_id: 1,
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                 },
                 {
                     user_id: 2,
@@ -852,7 +852,7 @@ describe('Model | HasMany', () => {
             await db.insertQuery().table('posts').insert([
                 {
                     user_id: 1,
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                 },
                 {
                     user_id: 2,
@@ -928,7 +928,7 @@ describe('Model | HasMany', () => {
             await db.insertQuery().table('posts').insert([
                 {
                     user_id: 1,
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                 },
                 {
                     user_id: 2,
@@ -983,7 +983,7 @@ describe('Model | HasMany', () => {
             await db.insertQuery().table('posts').insert([
                 {
                     user_id: user0.id,
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                 },
                 {
                     user_id: user1.id,
@@ -1073,7 +1073,7 @@ describe('Model | HasMany', () => {
             await user.save()
 
             const post = new Post()
-            post.title = 'Adonis 101'
+            post.title = 'tngraphql 101'
 
             await user.related('posts').save(post)
 
@@ -1132,7 +1132,7 @@ describe('Model | HasMany', () => {
             await user.save()
 
             const post = new Post()
-            post.title = 'Adonis 101'
+            post.title = 'tngraphql 101'
 
             const post1 = new Post()
             post1.title = 'Lucid 101'
@@ -1181,7 +1181,7 @@ describe('Model | HasMany', () => {
             user.username = 'virk'
 
             const post = new Post()
-            post.title = 'Adonis 101'
+            post.title = 'tngraphql 101'
 
             const post1 = new Post()
 
@@ -1230,7 +1230,7 @@ describe('Model | HasMany', () => {
             user.username = 'virk'
 
             const post = new Post()
-            post.title = 'Adonis 101'
+            post.title = 'tngraphql 101'
 
             try {
                 await user.related('posts').saveMany([post])
@@ -1294,7 +1294,7 @@ describe('Model | HasMany', () => {
             user.username = 'virk'
             await user.save()
 
-            const post = await user.related('posts').create({ title: 'Adonis 101' })
+            const post = await user.related('posts').create({ title: 'tngraphql 101' })
 
             expect(post.$isPersisted).toBeTruthy()
             expect(user.id).toBe(post.userId)
@@ -1352,7 +1352,7 @@ describe('Model | HasMany', () => {
 
             const [post, post1] = await user.related('posts').createMany([
                 {
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                 },
                 {
                     title: 'Lucid 101',
@@ -1401,7 +1401,7 @@ describe('Model | HasMany', () => {
             user.username = 'virk'
 
             try {
-                await user.related('posts').createMany([{ title: 'Adonis 101' }, {}])
+                await user.related('posts').createMany([{ title: 'tngraphql 101' }, {}])
             } catch (error) {
                 expect(error).toBeDefined()
             }
@@ -1442,7 +1442,7 @@ describe('Model | HasMany', () => {
             user.$trx = trx
             user.username = 'virk'
 
-            const [post] = await user.related('posts').createMany([{ title: 'Adonis 101' }])
+            const [post] = await user.related('posts').createMany([{ title: 'tngraphql 101' }])
             expect(user.$trx.isCompleted).toBeFalsy()
             await trx.rollback()
 
@@ -1501,13 +1501,13 @@ describe('Model | HasMany', () => {
 
             await db.insertQuery().table('posts').insert({ title: 'Lucid 101' })
             const post = await user.related('posts').firstOrCreate({}, {
-                title: 'Adonis 101',
+                title: 'tngraphql 101',
             })
 
             expect(post.$isPersisted).toBeTruthy()
             expect(post.$isLocal).toBeTruthy()
             expect(user.id).toBe(post.userId)
-            expect(post.title).toBe('Adonis 101')
+            expect(post.title).toBe('tngraphql 101')
 
             const posts = await db.query().from('posts').orderBy('id', 'asc')
             expect(posts).toHaveLength(2)
@@ -1543,7 +1543,7 @@ describe('Model | HasMany', () => {
 
             await db.insertQuery().table('posts').insert({ title: 'Lucid 101', user_id: user.id })
             const post = await user.related('posts').firstOrCreate({}, {
-                title: 'Adonis 101',
+                title: 'tngraphql 101',
             })
 
             expect(post.$isPersisted).toBeTruthy()
@@ -1602,13 +1602,13 @@ describe('Model | HasMany', () => {
 
             await db.insertQuery().table('posts').insert({ title: 'Lucid 101' })
             const post = await user.related('posts').updateOrCreate({}, {
-                title: 'Adonis 101',
+                title: 'tngraphql 101',
             })
 
             expect(post.$isPersisted).toBeTruthy()
             expect(post.$isLocal).toBeTruthy()
             expect(user.id).toBe(post.userId)
-            expect(post.title).toBe('Adonis 101')
+            expect(post.title).toBe('tngraphql 101')
 
             const posts = await db.query().from('posts').orderBy('id', 'asc')
             expect(posts).toHaveLength(2)
@@ -1644,18 +1644,18 @@ describe('Model | HasMany', () => {
 
             await db.insertQuery().table('posts').insert({ title: 'Lucid 101', user_id: user.id })
             const post = await user.related('posts').updateOrCreate({}, {
-                title: 'Adonis 101',
+                title: 'tngraphql 101',
             })
 
             expect(post.$isPersisted).toBeTruthy()
             expect(post.$isLocal).toBeFalsy()
             expect(user.id).toBe(post.userId)
-            expect(post.title).toBe('Adonis 101')
+            expect(post.title).toBe('tngraphql 101')
 
             const posts = await db.query().from('posts').orderBy('id', 'asc')
             expect(posts).toHaveLength(1)
             expect(posts[0].user_id).toBe(user.id)
-            expect(posts[0].title).toBe('Adonis 101')
+            expect(posts[0].title).toBe('tngraphql 101')
         })
     })
 
@@ -1819,7 +1819,7 @@ describe('Model | HasMany', () => {
                 public title: string
 
                 public static adonisOnly = scope((query) => {
-                    query.where('title', 'Adonis 101')
+                    query.where('title', 'tngraphql 101')
                 })
             }
 
@@ -1836,7 +1836,7 @@ describe('Model | HasMany', () => {
 
             const [ userId ] = await db.table('users').insert({ username: 'virk' }).returning('id')
             await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Lucid 101' })
-            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Adonis 101' })
+            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'tngraphql 101' })
 
             const user = await User.query().preload('posts', (query) => {
                 query.apply((scopes) => scopes.adonisOnly())
@@ -1846,7 +1846,7 @@ describe('Model | HasMany', () => {
 
             expect(user.posts).toHaveLength(1)
             expect(userWithoutScope.posts).toHaveLength(2)
-            expect(user.posts[0].title).toBe('Adonis 101')
+            expect(user.posts[0].title).toBe('tngraphql 101')
         })
 
         test('apply scopes on related query', async () => {
@@ -1858,7 +1858,7 @@ describe('Model | HasMany', () => {
                 public title: string
 
                 public static adonisOnly = scope((query) => {
-                    query.where('title', 'Adonis 101')
+                    query.where('title', 'tngraphql 101')
                 })
             }
 
@@ -1875,7 +1875,7 @@ describe('Model | HasMany', () => {
 
             const [ userId ] = await db.table('users').insert({ username: 'virk' }).returning('id')
             await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Lucid 101' })
-            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Adonis 101' })
+            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'tngraphql 101' })
 
             const user = await User.findOrFail(1)
 
@@ -1884,7 +1884,7 @@ describe('Model | HasMany', () => {
 
             expect(posts).toHaveLength(1)
             expect(postsWithoutScope).toHaveLength(2)
-            expect(posts[0].title).toBe('Adonis 101')
+            expect(posts[0].title).toBe('tngraphql 101')
         })
     })
 
@@ -2043,7 +2043,7 @@ describe('Model | HasMany', () => {
                 public id: number
 
                 @hasMany(() => Post, {
-                    onQuery: (query) => query.where('title', 'Adonis 101'),
+                    onQuery: (query) => query.where('title', 'tngraphql 101'),
                 })
                 public posts: HasMany<typeof Post>
             }
@@ -2053,11 +2053,11 @@ describe('Model | HasMany', () => {
 
             const [ userId ] = await db.table('users').insert({ username: 'virk' }).returning('id')
             await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Lucid 101' })
-            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Adonis 101' })
+            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'tngraphql 101' })
 
             const user = await User.query().preload('posts').firstOrFail()
             expect(user.posts).toHaveLength(1)
-            expect(user.posts[0].title).toBe('Adonis 101')
+            expect(user.posts[0].title).toBe('tngraphql 101')
         })
 
         test('do not invoke onQuery method on preloading subqueries', async () => {
@@ -2078,7 +2078,7 @@ describe('Model | HasMany', () => {
                 @hasMany(() => Post, {
                     onQuery: (query) => {
                         expect(true).toBeTruthy()
-                        query.where('title', 'Adonis 101')
+                        query.where('title', 'tngraphql 101')
                     },
                 })
                 public posts: HasMany<typeof Post>
@@ -2089,11 +2089,11 @@ describe('Model | HasMany', () => {
 
             const [ userId ] = await db.table('users').insert({ username: 'virk' }).returning('id')
             await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Lucid 101' })
-            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Adonis 101' })
+            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'tngraphql 101' })
 
             const user = await User.query().preload('posts', (query) => query.where(() => {})).firstOrFail()
             expect(user.posts).toHaveLength(1)
-            expect(user.posts[0].title).toBe('Adonis 101')
+            expect(user.posts[0].title).toBe('tngraphql 101')
         })
 
         test('invoke onQuery method on related query', async () => {
@@ -2110,7 +2110,7 @@ describe('Model | HasMany', () => {
                 public id: number
 
                 @hasMany(() => Post, {
-                    onQuery: (query) => query.where('title', 'Adonis 101'),
+                    onQuery: (query) => query.where('title', 'tngraphql 101'),
                 })
                 public posts: HasMany<typeof Post>
             }
@@ -2120,13 +2120,13 @@ describe('Model | HasMany', () => {
 
             const [ userId ] = await db.table('users').insert({ username: 'virk' }).returning('id')
             await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Lucid 101' })
-            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Adonis 101' })
+            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'tngraphql 101' })
 
             const user = await User.findOrFail(1)
 
             const posts = await user.related('posts').query()
             expect(posts).toHaveLength(1)
-            expect(posts[0].title).toBe('Adonis 101')
+            expect(posts[0].title).toBe('tngraphql 101')
         })
 
         test('do not invoke onQuery method on related query subqueries', async () => {
@@ -2143,7 +2143,7 @@ describe('Model | HasMany', () => {
                 public id: number
 
                 @hasMany(() => Post, {
-                    onQuery: (query) => query.where('title', 'Adonis 101'),
+                    onQuery: (query) => query.where('title', 'tngraphql 101'),
                 })
                 public posts: HasMany<typeof Post>
             }
@@ -2153,7 +2153,7 @@ describe('Model | HasMany', () => {
 
             const [ userId ] = await db.table('users').insert({ username: 'virk' }).returning('id')
             await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Lucid 101' })
-            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Adonis 101' })
+            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'tngraphql 101' })
 
             const user = await User.findOrFail(1)
 
@@ -2163,7 +2163,7 @@ describe('Model | HasMany', () => {
 
             const { sql: knexSql, bindings: knexBindings } = db.connection()
                                                                .from('posts')
-                                                               .where('title', 'Adonis 101')
+                                                               .where('title', 'tngraphql 101')
                                                                .where((query) => query.whereNotNull('created_at'))
                                                                .where('user_id', 1)
                                                                .toSQL()

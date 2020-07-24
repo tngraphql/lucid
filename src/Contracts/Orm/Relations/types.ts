@@ -31,6 +31,8 @@ import {MorphToClientContract} from "./MorphToClientContract";
 import {MorphToRelationContract} from "./MorphToRelationContract";
 import { MorphOneClientContract } from './MorphOneClientContract';
 import { MorphOneRelationContract } from './MorphOneRelationContract';
+import {MorphManyClientContract} from "./MorphManyClientContract";
+import {MorphManyRelationContract} from "./MorphManyRelationContract";
 
 /**
  * ------------------------------------------------------
@@ -64,7 +66,8 @@ export type ModelRelations =
     ManyToMany<LucidModel, LucidModel> |
     HasManyThrough<LucidModel, LucidModel> |
     MorphTo<LucidModel, LucidModel> |
-    MorphOne<LucidModel, LucidModel>
+    MorphOne<LucidModel, LucidModel> |
+    MorphMany<LucidModel, LucidModel>
 
 /**
  * ------------------------------------------------------
@@ -107,7 +110,8 @@ export type RelationshipsContract =
     ManyToManyRelationContract<LucidModel, LucidModel> |
     HasManyThroughRelationContract<LucidModel, LucidModel> |
     MorphToRelationContract<LucidModel, LucidModel> |
-    MorphOneRelationContract<LucidModel, LucidModel>
+    MorphOneRelationContract<LucidModel, LucidModel> |
+    MorphManyRelationContract<LucidModel, LucidModel>
 
 
 /**
@@ -164,6 +168,14 @@ export type MorphOneDecorator = <RelatedModel extends LucidModel>(
     model: (() => RelatedModel),
     options?: MorphOneRelationOptions<MorphTo<RelatedModel>>
 ) => TypedDecorator<MorphOne<RelatedModel>>
+
+/**
+ * Decorator signature to define morph to relationship
+ */
+export type MorphManyDecorator = <RelatedModel extends LucidModel>(
+    model: (() => RelatedModel),
+    options?: MorphOneRelationOptions<MorphTo<RelatedModel>>
+) => TypedDecorator<MorphMany<RelatedModel>>
 
 export type MorphOneRelationOptions<Related extends ModelRelations> = {
     name?: string
@@ -275,6 +287,16 @@ export type MorphOne<RelatedModel extends LucidModel,
     model: RelatedModel,
     instance: InstanceType<RelatedModel>,
     client: MorphOneClientContract<MorphOneRelationContract<ParentModel, RelatedModel>,
+        RelatedModel>,
+    builder: RelationQueryBuilderContract<RelatedModel, any>,
+}
+
+export type MorphMany<RelatedModel extends LucidModel,
+    ParentModel extends LucidModel = LucidModel> = InstanceType<RelatedModel> & {
+    readonly type: 'morphMany',
+    model: RelatedModel,
+    instance: InstanceType<RelatedModel>,
+    client: MorphManyClientContract<MorphManyRelationContract<ParentModel, RelatedModel>,
         RelatedModel>,
     builder: RelationQueryBuilderContract<RelatedModel, any>,
 }
