@@ -20,8 +20,6 @@ import { MorphToQueryClient } from './QueryClient'
 import {Relation} from "../Base/Relation";
 import {RelationQueryBuilderContract} from "../../../Contracts/Orm/Relations/RelationQueryBuilderContract";
 import {Exception} from "@poppinss/utils/build";
-import {unwatchFile} from "fs";
-const set = require('lodash.set');
 
 /**
  * Manages loading and persisting has one relationship

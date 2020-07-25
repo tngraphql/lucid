@@ -1991,7 +1991,6 @@ describe('Model | HasMany', () => {
             const user = await User.findOrFail(1)
             db.enableQueryLog();
             const posts = await user.related('posts').query().paginate(1, 20);
-            console.log(db.getQueryLog())
             {
                 const {sql} = db.getQueryLog()[0];
                 const {sql: knexSql} = db.from('posts')

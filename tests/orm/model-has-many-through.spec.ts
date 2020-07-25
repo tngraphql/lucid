@@ -672,14 +672,10 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-
-
             class Post extends BaseModel {
                 @column()
                 public userId: number
             }
-
-
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -688,7 +684,6 @@ describe('Model | Has Many Through', () => {
                 @hasManyThrough([() => Post, () => User])
                 public posts: HasManyThrough<typeof Post>
             }
-
 
             await db.table('countries').insert({ name: 'India' })
             await db.table('users').insert({
@@ -721,9 +716,9 @@ describe('Model | Has Many Through', () => {
 
             expect(total).toHaveLength(2)
             expect(Number(total[0].total)).toEqual(1)
-            expect(total[0].title).toBe('tngraphql 101')
+            expect(total[0].title).toBe('Lucid 101')
             expect(Number(total[0].total)).toEqual(1)
-            expect(total[1].title).toBe('Lucid 101')
+            expect(total[1].title).toBe('tngraphql 101')
         })
     })
 
@@ -1825,8 +1820,6 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-
-
             class Post extends BaseModel {
                 @column()
                 public userId: number
@@ -1834,12 +1827,10 @@ describe('Model | Has Many Through', () => {
                 @column()
                 public title: string
 
-                public static scopetngraphqlOnly(query) {
+                public static scopeTngraphqlOnly(query) {
                     query.where('title', 'tngraphql 101')
                 }
             }
-
-
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -1848,8 +1839,6 @@ describe('Model | Has Many Through', () => {
                 @hasManyThrough([() => Post, () => User])
                 public posts: HasManyThrough<typeof Post>
             }
-
-
 
             await db.table('countries').multiInsert([{ name: 'India' }, { name: 'Switzerland' }])
             await db.table('users').multiInsert([
@@ -1887,7 +1876,7 @@ describe('Model | Has Many Through', () => {
             ])
 
             const country = await Country.query().where('id', 1).preload('posts', (query) => {
-                query.adonisOnly()
+                query.tngraphqlOnly()
             }).firstOrFail()
 
             const countryWithoutScope = await Country.query().where('id', 1).preload('posts').firstOrFail()
