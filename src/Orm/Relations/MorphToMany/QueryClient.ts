@@ -231,7 +231,7 @@ export class MorphToManyQueryClient implements MorphToManyClientContract<MorphTo
          */
         const pivotRows = (! hasAttributes ? ids as (string | number)[] : Object.keys(ids)).map((id) => {
             return Object.assign({}, hasAttributes ? ids[id] : {}, {
-                [this.relation.morphType]: this.relation.getMorphClass(this.relation.model),
+                [this.relation.morphType]: this.relation.morphClass,
                 [this.relation.pivotForeignKey]: foreignKeyValue,
                 [this.relation.pivotRelatedForeignKey]: id
             })
@@ -314,8 +314,8 @@ export class MorphToManyQueryClient implements MorphToManyClientContract<MorphTo
              */
             const existingPivotRows = await query
                 .whereIn(this.relation.pivotRelatedForeignKey, pivotRelatedForeignKeys)
-                .where(this.relation.morphType, this.relation.getMorphClass(this.relation.model))
                 .exec()
+
 
             /**
              * Find a diff of rows being removed, added or updated in comparison

@@ -22,7 +22,12 @@ import {
     HasManyDecorator,
     HasManyThroughDecorator,
     HasOneDecorator,
-    ManyToManyDecorator, MorphManyDecorator, MorphOneDecorator, MorphToDecorator, MorphToManyDecorator
+    ManyToManyDecorator,
+    MorphedByManyDecorator,
+    MorphManyDecorator,
+    MorphOneDecorator,
+    MorphToDecorator,
+    MorphToManyDecorator
 } from '../../Contracts/Orm/Relations/types';
 
 import { dateColumn, dateTimeColumn } from './date'
@@ -140,7 +145,7 @@ export const morphTo: MorphToDecorator = (relation = {}) => {
 /**
  * Define morphOne relationship
  */
-export const morphOne: MorphOneDecorator = (relatedModel, relation = {}) => {
+export const morphOne: MorphOneDecorator = (relatedModel, relation ) => {
     return function decorateAsRelation(target, property: string) {
         const Model = target.constructor as LucidModel
         Model.bootIfNotBooted();
@@ -160,7 +165,7 @@ export const morphOne: MorphOneDecorator = (relatedModel, relation = {}) => {
 /**
  * Define morphMany relationship
  */
-export const morphMany: MorphManyDecorator = (relatedModel, relation = {}) => {
+export const morphMany: MorphManyDecorator = (relatedModel, relation ) => {
     return function decorateAsRelation(target, property: string) {
         const Model = target.constructor as LucidModel
         Model.bootIfNotBooted();
@@ -180,7 +185,7 @@ export const morphMany: MorphManyDecorator = (relatedModel, relation = {}) => {
 /**
  * Define morphToMany relationship
  */
-export const morphToMany: MorphToManyDecorator = (relatedModel, relation = {}) => {
+export const morphToMany: MorphToManyDecorator = (relatedModel, relation) => {
     return function decorateAsRelation(target, property: string) {
         const Model = target.constructor as LucidModel
         Model.bootIfNotBooted();
@@ -196,6 +201,29 @@ export const morphToMany: MorphToManyDecorator = (relatedModel, relation = {}) =
         }))
     }
 }
+
+/**
+ * Define morphToMany relationship
+ */
+export const morphedByMany: MorphedByManyDecorator = (relatedModel, relation) => {
+    return function decorateAsRelation(target, property: string) {
+        const Model = target.constructor as LucidModel
+        Model.bootIfNotBooted();
+
+        const name = relation.name;
+        const type = relation.type ? relation.type : name + "_type";
+        const pivotRelatedForeignKey = relation.pivotRelatedForeignKey ? relation.pivotRelatedForeignKey : name + "_id";
+        relation.localKey = relation.localKey || 'id';
+
+        Model.$addRelation(property, 'morphToMany', relatedModel, Object.assign({ relatedModel }, relation, {
+            type,
+            pivotRelatedForeignKey,
+            inverse: true
+        }))
+    }
+}
+
+
 
 /**
  * Before/After save hook

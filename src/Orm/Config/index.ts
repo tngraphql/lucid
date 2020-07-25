@@ -9,7 +9,7 @@
  */
 
 import * as lodash from 'lodash';
-import { plural } from 'pluralize'
+import { plural, singular } from 'pluralize'
 import { LucidModel } from '../../Contracts/Model/LucidModel';
 import { OrmConfig } from '../../Contracts/Model/OrmConfig';
 import { ModelRelations } from '../../Contracts/Orm/Relations/types';
@@ -63,10 +63,10 @@ export const Config: OrmConfig = {
         related: LucidModel
     ): string {
         if ( relation === 'belongsTo' ) {
-            return lodash.camelCase(`${ related.name }_${ related.primaryKey }`)
+            return lodash.camelCase(`${ singular(related.getTable()) }_${ related.primaryKey }`)
         }
 
-        return lodash.camelCase(`${ model.name }_${ model.primaryKey }`)
+        return lodash.camelCase(`${ singular(model.getTable()) }_${ model.primaryKey }`)
     },
 
     /**
@@ -77,7 +77,7 @@ export const Config: OrmConfig = {
         model: LucidModel,
         relatedModel: LucidModel
     ): string {
-        return lodash.snakeCase([relatedModel.name, model.name].sort().join('_'))
+        return lodash.snakeCase([singular(relatedModel.getTable()), singular(model.getTable())].sort().join('_'))
     },
 
     /**
@@ -87,6 +87,6 @@ export const Config: OrmConfig = {
         _: 'manyToMany',
         model: LucidModel
     ): string {
-        return lodash.snakeCase(`${ model.name }_${ model.primaryKey }`)
+        return lodash.snakeCase(`${ singular(model.getTable()) }_${ model.primaryKey }`)
     }
 }

@@ -190,6 +190,14 @@ export type MorphToManyDecorator = <RelatedModel extends LucidModel>(
     options?: MorphToManyRelationOptions<MorphToMany<RelatedModel>>
 ) => TypedDecorator<MorphToMany<RelatedModel>>
 
+/**
+ * Decorator signature to define morph to relationship
+ */
+export type MorphedByManyDecorator = <RelatedModel extends LucidModel>(
+    model: (() => RelatedModel),
+    options?: MorphedByManyRelationOptions<MorphToMany<RelatedModel>>
+) => TypedDecorator<MorphToMany<RelatedModel>>
+
 export type MorphOneRelationOptions<Related extends ModelRelations> = {
     name: string
     type?: string
@@ -206,6 +214,20 @@ export type MorphToRelationOptions<Related extends ModelRelations> = {
 }
 
 export type MorphToManyRelationOptions<Related extends ModelRelations> = {
+    name: string
+    type?: string
+    pivotForeignKey?: string,
+    pivotColumns?: string[],
+    pivotTable?: string,
+    pivotRelatedForeignKey?: string
+    parentKey?: string
+    relatedKey?: string
+    localKey?: string
+    inverse?: boolean;
+    onQuery?(query: Related['builder']): void,
+}
+
+export type MorphedByManyRelationOptions<Related extends ModelRelations> = {
     name: string
     type?: string
     pivotForeignKey?: string,
@@ -340,6 +362,12 @@ export type MorphToMany<RelatedModel extends LucidModel,
         RelatedModel>,
     builder: MorphToManyQueryBuilderContract<RelatedModel, any>,
 }
+
+/**
+ * Opaque type for morph to many relationship
+ */
+export type MorphedByMany<RelatedModel extends LucidModel,
+    ParentModel extends LucidModel = LucidModel> = MorphToMany<RelatedModel, ParentModel>;
 
 /**
  * Options accepted by through relationships

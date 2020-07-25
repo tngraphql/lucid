@@ -93,7 +93,7 @@ export class MorphToManyQueryBuilder extends BaseQueryBuilder implements MorphTo
     private addWhereConstraints() {
         const queryAction = this.queryAction()
 
-        const type = this.relation.getMorphClass(this.relation.model);
+        const type = this.relation.morphClass;
         this.wherePivot(this.relation.morphType, type);
 
         /**

@@ -51,6 +51,10 @@ export class MorphToMany extends Relation implements MorphToManyRelationContract
      */
     public onQueryHook = this.options.onQuery
 
+    public inverse = this.options.inverse || false;
+
+    public morphClass: string;
+
     constructor(
         public relationName: string,
         public relatedModel: () => LucidModel,
@@ -122,23 +126,30 @@ export class MorphToMany extends Relation implements MorphToManyRelationContract
         /**
          * Parent model foreign key in the pivot table
          */
-        this.pivotForeignKey =
-            this.options.pivotForeignKey ||
-            this.model.$configurator.getPivotForeignKey(this.type, this.model, relatedModel, this.relationName)
+        this.pivotForeignKey = this.options.pivotForeignKey || this.getForeignKey();
 
         /**
          * Related model foreign key in the pivot table
          */
         this.pivotRelatedForeignKey =
             this.options.pivotRelatedForeignKey ||
-            this.model.$configurator.getPivotForeignKey(this.type, relatedModel, this.model, this.relationName)
+            this.getForeignKey();
 
         this.morphType = this.options.type;
+        this.morphClass = this.inverse ? this.getMorphClass(this.relatedModel()) : this.getMorphClass(this.model);
 
         /**
          * Booted successfully
          */
         this.booted = true
+    }
+
+    getForeignKey() {
+        const relatedModel = this.relatedModel()
+        if (!this.inverse) {
+            return this.model.$configurator.getPivotForeignKey(this.type, relatedModel, this.model, this.relationName);
+        }
+        return this.model.$configurator.getPivotForeignKey(this.type, this.model, relatedModel, this.relationName);
     }
 
     /**

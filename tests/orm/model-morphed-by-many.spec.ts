@@ -8,19 +8,19 @@
  * file that was distributed with this source code.
  */
 
-import {MorphToMany} from '../../src/Contracts/Orm/Relations/types';
+import {MorphedByMany} from '../../src/Contracts/Orm/Relations/types';
 import {scope} from '../../src/Helpers/scope';
-import {column, manyToMany, morphToMany} from '../../src/Orm/Decorators';
-import {MorphToManyQueryBuilder} from '../../src/Orm/Relations/MorphToMany/QueryBuilder';
+import {column, morphedByMany} from '../../src/Orm/Decorators';
 import {cleanup, getBaseModel, getDb, getProfiler, ormAdapter, resetTables, setup} from '../helpers';
 import {Relation} from "../../src/Orm/Relations/Base/Relation";
+import {MorphToManyQueryBuilder} from "../../src/Orm/Relations/MorphToMany/QueryBuilder";
 
 let db: ReturnType<typeof getDb>
 let BaseModel: ReturnType<typeof getBaseModel>
 
-describe('Model | MorphToMany', () => {
+describe('Model | MorphedByMany', () => {
 
-    describe('Model | MorphToMany | Options', () => {
+    describe('Model | MorphedByMany | Options', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -31,21 +31,21 @@ describe('Model | MorphToMany', () => {
 
             try {
                 class Tag extends BaseModel {
-                }
-
-                class User extends BaseModel {
-                    @morphToMany(() => Tag, {
+                    @morphedByMany(() => User, {
                         name: 'taggable',
                         pivotTable: 'taggables'
                     })
-                    public tags: MorphToMany<typeof Tag>
+                    public users: MorphedByMany<typeof User>
+                }
+
+                class User extends BaseModel {
                 }
 
 
-                User.$getRelation('tags')!.boot()
+                Tag.$getRelation('users')!.boot()
             } catch ({message}) {
                 expect(
-                    message).toBe('E_MISSING_MODEL_ATTRIBUTE: "User.tags" expects "id" to exist on "User" model, but is missing',
+                    message).toBe('E_MISSING_MODEL_ATTRIBUTE: "Tag.users" expects "id" to exist on "Tag" model, but is missing',
                 )
             }
         })
@@ -54,51 +54,51 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            User.$getRelation('tags')!.boot()
+            Tag.$getRelation('users')!.boot()
 
-            expect(User.$getRelation('tags')!['localKey']).toBe('id')
-            expect(User.$getRelation('tags')!['localKeyColumnName']).toBe('id')
+            expect(Tag.$getRelation('users')!['localKey']).toBe('id')
+            expect(Tag.$getRelation('users')!['localKeyColumnName']).toBe('id')
         })
 
         test('use custom defined local key', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @column()
+                public uid: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables',
+                    localKey: 'uid'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @column()
-                public uid: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables',
-                    localKey: 'uid'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
 
-            User.$getRelation('tags')!.boot()
+            Tag.$getRelation('users')!.boot()
 
-            expect(User.$getRelation('tags')!['localKey']).toBe('uid')
-            expect(User.$getRelation('tags')!['localKeyColumnName']).toBe('uid')
+            expect(Tag.$getRelation('users')!['localKey']).toBe('uid')
+            expect(Tag.$getRelation('users')!['localKeyColumnName']).toBe('uid')
         })
 
         test('raise error when relatedKey is missing', () => {
@@ -106,26 +106,25 @@ describe('Model | MorphToMany', () => {
 
             try {
                 class Tag extends BaseModel {
-                }
-
-                Tag.bootIfNotBooted();
-
-                class User extends BaseModel {
                     @column({isPrimary: true})
                     public id: number
 
-                    @morphToMany(() => Tag, {
+                    @morphedByMany(() => User, {
                         name: 'taggable',
                         pivotTable: 'taggables'
                     })
-                    public tags: MorphToMany<typeof Tag>
+                    public users: MorphedByMany<typeof User>
                 }
 
+                class User extends BaseModel {
+                }
 
-                User.$getRelation('tags')!.boot()
+                User.bootIfNotBooted();
+
+                Tag.$getRelation('users')!.boot()
             } catch ({message}) {
                 expect(
-                    message).toBe('E_MISSING_MODEL_ATTRIBUTE: "User.tags" expects "id" to exist on "Tag" model, but is missing',
+                    message).toBe('E_MISSING_MODEL_ATTRIBUTE: "Tag.users" expects "id" to exist on "User" model, but is missing',
                 )
             }
         })
@@ -134,23 +133,23 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            User.$getRelation('tags')!.boot()
+            Tag.$getRelation('users')!.boot()
 
-            expect(User.$getRelation('tags')!['relatedKey']).toBe('id')
-            expect(User.$getRelation('tags')!['relatedKeyColumnName']).toBe('id')
+            expect(Tag.$getRelation('users')!['relatedKey']).toBe('id')
+            expect(Tag.$getRelation('users')!['relatedKeyColumnName']).toBe('id')
         })
 
         test('use custom defined related key', () => {
@@ -158,122 +157,122 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public uid: number
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables',
+                    relatedKey: 'uid'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables',
-                    relatedKey: 'uid'
-                })
-                public tags: MorphToMany<typeof Tag>
+                @column()
+                public uid: number
             }
 
-            User.$getRelation('tags')!.boot()
+            Tag.$getRelation('users')!.boot()
 
-            expect(User.$getRelation('tags')!['relatedKey']).toBe('uid')
-            expect(User.$getRelation('tags')!['relatedKeyColumnName']).toBe('uid')
+            expect(Tag.$getRelation('users')!['relatedKey']).toBe('uid')
+            expect(Tag.$getRelation('users')!['relatedKeyColumnName']).toBe('uid')
         })
 
         test('compute pivotForeignKey from table name + primary key', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            User.$getRelation('tags')!.boot()
+            Tag.$getRelation('users')!.boot()
 
-            expect(User.$getRelation('tags')!['pivotForeignKey']).toBe('taggable_id')
+            expect(Tag.$getRelation('users')!['pivotForeignKey']).toBe('tag_id')
         })
 
         test('use custom defined pivotForeignKey', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables',
+                    pivotForeignKey: 'user_uid'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables',
-                    pivotForeignKey: 'user_uid'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            User.$getRelation('tags')!.boot()
+            Tag.$getRelation('users')!.boot()
 
-            expect(User.$getRelation('tags')!['pivotForeignKey']).toBe('user_uid')
+            expect(Tag.$getRelation('users')!['pivotForeignKey']).toBe('user_uid')
         })
 
         test('compute relatedPivotForeignKey from related model name + primary key', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
 
-            User.$getRelation('tags')!.boot()
+            Tag.$getRelation('users')!.boot()
 
-            expect(User.$getRelation('tags')!['pivotRelatedForeignKey']).toBe('tag_id')
+            expect(Tag.$getRelation('users')!['pivotRelatedForeignKey']).toBe('taggable_id')
         })
 
         test('use custom defined relatedPivotForeignKey', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables',
+                    pivotRelatedForeignKey: 'tag_uid'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables',
-                    pivotRelatedForeignKey: 'tag_uid'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
 
-            User.$getRelation('tags')!.boot()
+            Tag.$getRelation('users')!.boot()
 
-            expect(User.$getRelation('tags')!['pivotRelatedForeignKey']).toBe('tag_uid')
+            expect(Tag.$getRelation('users')!['pivotRelatedForeignKey']).toBe('tag_uid')
         })
     })
 
-    describe('Model | MorphToMany | Set Relations', () => {
+    describe('Model | MorphedByMany | Set Relations', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -283,106 +282,106 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            User.$getRelation('tags')!.boot()
+            Tag.$getRelation('users')!.boot()
 
             const user = new User()
             const tag = new Tag()
-            User.$getRelation('tags')!.setRelated(user, [tag])
-            expect(user.tags).toEqual([tag])
+            Tag.$getRelation('users')!.setRelated(tag, [user])
+            expect(tag.users).toEqual([user])
         })
 
         test('push related model instance', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            User.$getRelation('tags')!.boot()
+            Tag.$getRelation('users')!.boot()
 
-            const user = new User()
             const tag = new Tag()
-            const tag1 = new Tag()
+            const user = new User()
+            const user1 = new User()
 
-            User.$getRelation('tags')!.setRelated(user, [tag])
-            User.$getRelation('tags')!.pushRelated(user, [tag1])
-            expect(user.tags).toEqual([tag, tag1])
+            Tag.$getRelation('users')!.setRelated(tag, [user])
+            Tag.$getRelation('users')!.pushRelated(tag, [user1])
+            expect(tag.users).toEqual([user, user1])
         })
 
         test('set many of related instances', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            User.$getRelation('tags')!.boot()
-
-            const user = new User()
-            user.fill({id: 1})
-
-            const user1 = new User()
-            user1.fill({id: 2})
-
-            const user2 = new User()
-            user2.fill({id: 3})
+            Tag.$getRelation('users')!.boot()
 
             const tag = new Tag()
-            tag.$extras = {
-                pivot_taggable_id: 1,
-            }
+            tag.fill({id: 1})
 
             const tag1 = new Tag()
-            tag1.$extras = {
-                pivot_taggable_id: 2,
-            }
+            tag1.fill({id: 2})
 
             const tag2 = new Tag()
-            tag2.$extras = {
-                pivot_taggable_id: 1,
+            tag2.fill({id: 3})
+
+            const user = new User()
+            user.$extras = {
+                pivot_tag_id: 1,
             }
 
-            User.$getRelation('tags')!.setRelatedForMany([user, user1, user2], [tag, tag1, tag2])
-            expect(user.tags).toEqual([tag, tag2])
-            expect(user1.tags).toEqual([tag1])
-            expect(user2.tags).toEqual([] as any)
+            const user1 = new User()
+            user1.$extras = {
+                pivot_tag_id: 2,
+            }
+
+            const user2 = new User()
+            user2.$extras = {
+                pivot_tag_id: 1,
+            }
+
+            Tag.$getRelation('users')!.setRelatedForMany([tag, tag1, tag2], [user, user1, user2])
+            expect(tag.users).toEqual([user, user2])
+            expect(tag1.users).toEqual([user1])
+            expect(tag2.users).toEqual([] as any)
         })
     })
 
-    describe('Model | MorphToMany | bulk operations', () => {
+    describe('Model | MorphedByMany | bulk operations', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -402,31 +401,31 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            await db.table('users').insert({username: 'virk'})
+            await db.table('tags').insert({name: 'virk'})
 
-            const user = await User.find(1)
-            const {sql, bindings} = user!.related('tags').query().toSQL()
+            const tag = await Tag.find(1)
+            const {sql, bindings} = tag!.related('users').query().toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection()
                 .getWriteClient()
-                .from('tags')
-                .select('tags.*', 'taggables.taggable_id as pivot_taggable_id', 'taggables.tag_id as pivot_tag_id')
-                .innerJoin('taggables', 'tags.id', 'taggables.tag_id')
+                .from('users')
+                .select('users.*', 'taggables.tag_id as pivot_tag_id', 'taggables.taggable_id as pivot_taggable_id')
+                .innerJoin('taggables', 'users.id', 'taggables.taggable_id')
                 .where('taggables.taggable_type', 'User')
-                .where('taggables.taggable_id', 1)
+                .where('taggables.tag_id', 1)
                 .toSQL()
 
             expect(sql).toBe(knexSql)
@@ -437,37 +436,37 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            await db.table('users').multiInsert([
-                {username: 'virk'},
-                {username: 'nikk'},
+            await db.table('tags').multiInsert([
+                {name: 'virk'},
+                {name: 'nikk'},
             ])
 
-            const users = await User.all()
-            User.$getRelation('tags')!.boot()
+            const tags = await Tag.all()
+            Tag.$getRelation('users')!.boot()
 
-            const related = User.$getRelation('tags')!.eagerQuery(users, db.connection())
+            const related = Tag.$getRelation('users')!.eagerQuery(tags, db.connection())
             const {sql, bindings} = related.toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection()
                 .getWriteClient()
-                .from('tags')
-                .select('tags.*', 'taggables.taggable_id as pivot_taggable_id', 'taggables.tag_id as pivot_tag_id')
-                .innerJoin('taggables', 'tags.id', 'taggables.tag_id')
+                .from('users')
+                .select('users.*', 'taggables.tag_id as pivot_tag_id', 'taggables.taggable_id as pivot_taggable_id')
+                .innerJoin('taggables', 'users.id', 'taggables.taggable_id')
                 .where('taggables.taggable_type', 'User')
-                .whereIn('taggables.taggable_id', [2, 1])
+                .whereIn('taggables.tag_id', [2, 1])
                 .toSQL()
 
             expect(sql).toBe(knexSql)
@@ -478,37 +477,37 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables',
+                    pivotColumns: ['score'],
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables',
-                    pivotColumns: ['score'],
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            await db.table('users').insert({username: 'virk'})
+            await db.table('tags').insert({name: 'virk'})
 
-            const user = await User.find(1)
-            const {sql, bindings} = user!.related('tags').query().toSQL()
+            const tag = await Tag.find(1)
+            const {sql, bindings} = tag!.related('users').query().toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection()
                 .getWriteClient()
-                .from('tags')
+                .from('users')
                 .select(
-                    'tags.*',
-                    'taggables.taggable_id as pivot_taggable_id',
+                    'users.*',
                     'taggables.tag_id as pivot_tag_id',
-                    'taggables.score as pivot_score',
+                    'taggables.taggable_id as pivot_taggable_id',
+                    'taggables.score as pivot_score'
                 )
-                .innerJoin('taggables', 'tags.id', 'taggables.tag_id')
+                .innerJoin('taggables', 'users.id', 'taggables.taggable_id')
                 .where('taggables.taggable_type', 'User')
-                .where('taggables.taggable_id', 1)
+                .where('taggables.tag_id', 1)
                 .toSQL()
 
             expect(sql).toBe(knexSql)
@@ -519,36 +518,36 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            await db.table('users').insert({username: 'virk'})
+            await db.table('tags').insert({name: 'virk'})
 
-            const user = await User.find(1)
-            const {sql, bindings} = user!.related('tags').query().pivotColumns(['score']).toSQL()
+            const tag = await Tag.find(1)
+            const {sql, bindings} = tag!.related('users').query().pivotColumns(['score']).toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection()
                 .getWriteClient()
-                .from('tags')
+                .from('users')
                 .select(
                     'taggables.score as pivot_score',
-                    'tags.*',
-                    'taggables.taggable_id as pivot_taggable_id',
+                    'users.*',
                     'taggables.tag_id as pivot_tag_id',
+                    'taggables.taggable_id as pivot_taggable_id',
                 )
-                .innerJoin('taggables', 'tags.id', 'taggables.tag_id')
+                .innerJoin('taggables', 'users.id', 'taggables.taggable_id')
                 .where('taggables.taggable_type', 'User')
-                .where('taggables.taggable_id', 1)
+                .where('taggables.tag_id', 1)
                 .toSQL()
 
             expect(sql).toBe(knexSql)
@@ -559,31 +558,31 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            await db.table('users').insert({username: 'virk'})
+            await db.table('tags').insert({name: 'virk'})
 
-            const user = await User.find(1)
+            const tag = await Tag.find(1)
 
             const now = new Date()
-            const {sql, bindings} = user!.related('tags').query().update({updated_at: now}).toSQL()
+            const {sql, bindings} = tag!.related('users').query().update({updated_at: now}).toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection()
                 .getWriteClient()
                 .from('taggables')
                 .where('taggables.taggable_type', 'User')
-                .where('taggables.taggable_id', 1)
+                .where('taggables.tag_id', 1)
                 .update({updated_at: now})
                 .toSQL()
 
@@ -595,29 +594,29 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            await db.table('users').insert({username: 'virk'})
+            await db.table('tags').insert({name: 'virk'})
 
-            const user = await User.find(1)
+            const tag = await Tag.find(1)
 
-            const {sql, bindings} = user!.related('tags').query().del().toSQL()
+            const {sql, bindings} = tag!.related('users').query().del().toSQL()
             const {sql: knexSql, bindings: knexBindings} = db.connection()
                 .getWriteClient()
                 .from('taggables')
                 .where('taggables.taggable_type', 'User')
-                .where('taggables.taggable_id', 1)
+                .where('taggables.tag_id', 1)
                 .del()
                 .toSQL()
 
@@ -646,20 +645,20 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            await db.table('users').insert({username: 'virk'})
+            await db.table('users').multiInsert([{username: 'virk'}, {username: 'nikk'}])
             await db.table('tags').multiInsert([
                 {name: 'Programming'},
                 {name: 'Cooking'},
@@ -671,8 +670,8 @@ describe('Model | MorphToMany', () => {
                 {taggable_id: 2, tag_id: 2, taggable_type: 'User'},
             ])
 
-            const user = await User.find(1)
-            const total = await user!.related('tags')
+            const tag = await Tag.find(2)
+            const total = await tag!.related('users')
                 .query()
                 .count('* as total')
 
@@ -683,20 +682,20 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            await db.table('users').insert({username: 'virk'})
+            await db.table('users').insert([{username: 'virk'},{username: 'nikk'}])
             await db.table('tags').multiInsert([
                 {name: 'Programming'},
                 {name: 'Cooking'},
@@ -708,18 +707,18 @@ describe('Model | MorphToMany', () => {
                 {taggable_id: 2, tag_id: 2, taggable_type: 'User'},
             ])
 
-            const user = await User.find(1)
-            const total = await user!.related('tags')
+            const tag = await Tag.find(2)
+            const total = await tag!.related('users')
                 .query()
-                .select('name')
-                .groupBy('tags.name')
+                .select('username')
+                .groupBy('users.username')
                 .count('* as total')
 
             expect(total).toHaveLength(2)
-            expect(total[0].name).toBe('Cooking')
+            expect(total[0].username).toBe('nikk')
             expect(Number(total[0].total)).toBe(1)
 
-            expect(total[1].name).toBe('Programming')
+            expect(total[1].username).toBe('virk')
             expect(Number(total[1].total)).toBe(1)
         })
 
@@ -727,20 +726,20 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            await db.table('users').insert({username: 'virk'})
+            await db.table('users').insert([{username: 'virk'}, {username: 'nikk'}])
             await db.table('tags').multiInsert([
                 {name: 'Programming'},
                 {name: 'Cooking'},
@@ -752,8 +751,8 @@ describe('Model | MorphToMany', () => {
                 {taggable_id: 2, tag_id: 2, proficiency: 'Beginner', taggable_type: 'User'},
             ])
 
-            const user = await User.find(1)
-            const total = await user!.related('tags')
+            const tag = await Tag.find(2)
+            const total = await tag!.related('users')
                 .query()
                 .pivotColumns(['proficiency'])
                 .groupBy('taggables.proficiency')
@@ -768,7 +767,7 @@ describe('Model | MorphToMany', () => {
         })
     })
 
-    describe('Model | MorphToMany | preload', () => {
+    describe('Model | MorphedByMany | preload', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -789,27 +788,27 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public name: string
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>;
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>;
+                @column()
+                public username: string
             }
 
             Relation.morphMap({
                 'user': () => User
             });
 
-            await db.insertQuery().table('users').insert([{username: 'virk'}])
-            await db.insertQuery().table('tags').insert([{name: 'Programming'}, {name: 'Dancing'}])
+            await db.insertQuery().table('users').insert([{username: 'virk'},{username: 'nikk'}])
+            await db.insertQuery().table('tags').insert([{name: 'Programming'}])
             await db.insertQuery().table('taggables').insert([
                 {
                     taggable_type: 'user',
@@ -818,12 +817,12 @@ describe('Model | MorphToMany', () => {
                 }
             ])
 
-            const users = await User.query().preload('tags');
-            expect(users).toHaveLength(1)
-            expect(users[0].tags).toHaveLength(1)
-            expect(users[0].tags[0].name).toBe('Programming')
-            expect(users[0].tags[0].$extras.pivot_taggable_id).toBe(1)
-            expect(users[0].tags[0].$extras.pivot_tag_id).toBe(1)
+            const tags = await Tag.query().preload('users');
+            expect(tags).toHaveLength(1)
+            expect(tags[0].users).toHaveLength(1)
+            expect(tags[0].users[0].username).toBe('virk')
+            expect(tags[0].users[0].$extras.pivot_taggable_id).toBe(1)
+            expect(tags[0].users[0].$extras.pivot_tag_id).toBe(1)
         })
 
         test('preload relation for many', async () => {
@@ -831,19 +830,19 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public name: string
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
+                @column()
+                public username: string
             }
 
 
@@ -856,9 +855,9 @@ describe('Model | MorphToMany', () => {
                     tag_id: 1,
                 },
                 {
-                    taggable_id: 1,
+                    taggable_id: 2,
                     taggable_type: 'User',
-                    tag_id: 2,
+                    tag_id: 1,
                 },
                 {
                     taggable_id: 2,
@@ -867,22 +866,22 @@ describe('Model | MorphToMany', () => {
                 },
             ])
 
-            const users = await User.query().preload('tags')
-            expect(users).toHaveLength(2)
-            expect(users[0].tags).toHaveLength(2)
-            expect(users[1].tags).toHaveLength(1)
+            const tags = await Tag.query().preload('users')
+            expect(tags).toHaveLength(2)
+            expect(tags[0].users).toHaveLength(2)
+            expect(tags[1].users).toHaveLength(1)
 
-            expect(users[0].tags[0].name).toBe('Programming')
-            expect(users[0].tags[0].$extras.pivot_taggable_id).toBe(1)
-            expect(users[0].tags[0].$extras.pivot_tag_id).toBe(1)
+            expect(tags[0].users[0].username).toBe('virk')
+            expect(tags[0].users[0].$extras.pivot_taggable_id).toBe(1)
+            expect(tags[0].users[0].$extras.pivot_tag_id).toBe(1)
 
-            expect(users[0].tags[1].name).toBe('Dancing')
-            expect(users[0].tags[1].$extras.pivot_taggable_id).toBe(1)
-            expect(users[0].tags[1].$extras.pivot_tag_id).toBe(2)
+            expect(tags[0].users[1].username).toBe('nikk')
+            expect(tags[0].users[1].$extras.pivot_taggable_id).toBe(2)
+            expect(tags[0].users[1].$extras.pivot_tag_id).toBe(1)
 
-            expect(users[1].tags[0].name).toBe('Dancing')
-            expect(users[1].tags[0].$extras.pivot_taggable_id).toBe(2)
-            expect(users[1].tags[0].$extras.pivot_tag_id).toBe(2)
+            expect(tags[1].users[0].username).toBe('nikk')
+            expect(tags[1].users[0].$extras.pivot_taggable_id).toBe(2)
+            expect(tags[1].users[0].$extras.pivot_tag_id).toBe(2)
         })
 
         test('preload relation using model instance', async () => {
@@ -890,21 +889,20 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public name: string
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
+                @column()
+                public username: string
             }
-
 
             await db.insertQuery().table('users').insert([{username: 'virk'}, {username: 'nikk'}])
             await db.insertQuery().table('tags').insert([{name: 'Programming'}, {name: 'Dancing'}])
@@ -915,9 +913,9 @@ describe('Model | MorphToMany', () => {
                     tag_id: 1,
                 },
                 {
-                    taggable_id: 1,
+                    taggable_id: 2,
                     taggable_type: 'User',
-                    tag_id: 2,
+                    tag_id: 1,
                 },
                 {
                     taggable_id: 2,
@@ -926,26 +924,26 @@ describe('Model | MorphToMany', () => {
                 },
             ])
 
-            const users = await User.query().orderBy('id', 'asc')
-            expect(users).toHaveLength(2)
+            const tags = await Tag.query().orderBy('id', 'asc')
+            expect(tags).toHaveLength(2)
 
-            await users[0].preload('tags')
-            await users[1].preload('tags')
+            await tags[0].preload('users')
+            await tags[1].preload('users')
 
-            expect(users[0].tags).toHaveLength(2)
-            expect(users[1].tags).toHaveLength(1)
+            expect(tags[0].users).toHaveLength(2)
+            expect(tags[1].users).toHaveLength(1)
 
-            expect(users[0].tags[0].name).toBe('Programming')
-            expect(users[0].tags[0].$extras.pivot_taggable_id).toBe(1)
-            expect(users[0].tags[0].$extras.pivot_tag_id).toBe(1)
+            expect(tags[0].users[0].username).toBe('virk')
+            expect(tags[0].users[0].$extras.pivot_taggable_id).toBe(1)
+            expect(tags[0].users[0].$extras.pivot_tag_id).toBe(1)
 
-            expect(users[0].tags[1].name).toBe('Dancing')
-            expect(users[0].tags[1].$extras.pivot_taggable_id).toBe(1)
-            expect(users[0].tags[1].$extras.pivot_tag_id).toBe(2)
+            expect(tags[0].users[1].username).toBe('nikk')
+            expect(tags[0].users[1].$extras.pivot_taggable_id).toBe(2)
+            expect(tags[0].users[1].$extras.pivot_tag_id).toBe(1)
 
-            expect(users[1].tags[0].name).toBe('Dancing')
-            expect(users[1].tags[0].$extras.pivot_taggable_id).toBe(2)
-            expect(users[1].tags[0].$extras.pivot_tag_id).toBe(2)
+            expect(tags[1].users[0].username).toBe('nikk')
+            expect(tags[1].users[0].$extras.pivot_taggable_id).toBe(2)
+            expect(tags[1].users[0].$extras.pivot_tag_id).toBe(2)
         })
 
         test('select extra pivot columns', async () => {
@@ -953,20 +951,20 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public name: string
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables',
+                    pivotColumns: ['proficiency']
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables',
-                    pivotColumns: ['proficiency']
-                })
-                public tags: MorphToMany<typeof Tag>
+                @column()
+                public username: string
             }
 
 
@@ -980,8 +978,8 @@ describe('Model | MorphToMany', () => {
                     taggable_type: 'User'
                 },
                 {
-                    taggable_id: 1,
-                    tag_id: 2,
+                    taggable_id: 2,
+                    tag_id: 1,
                     proficiency: 'beginner',
                     taggable_type: 'User'
                 },
@@ -993,25 +991,25 @@ describe('Model | MorphToMany', () => {
                 },
             ])
 
-            const users = await User.query().preload('tags');
-            expect(users).toHaveLength(2)
-            expect(users[0].tags).toHaveLength(2)
-            expect(users[1].tags).toHaveLength(1)
+            const tags = await Tag.query().preload('users')
+            expect(tags).toHaveLength(2)
+            expect(tags[0].users).toHaveLength(2)
+            expect(tags[1].users).toHaveLength(1)
 
-            expect(users[0].tags[0].name).toBe('Programming')
-            expect(users[0].tags[0].$extras.pivot_taggable_id).toBe(1)
-            expect(users[0].tags[0].$extras.pivot_tag_id).toBe(1)
-            expect(users[0].tags[0].$extras.pivot_proficiency).toBe('expert')
+            expect(tags[0].users[0].username).toBe('virk')
+            expect(tags[0].users[0].$extras.pivot_taggable_id).toBe(1)
+            expect(tags[0].users[0].$extras.pivot_tag_id).toBe(1)
+            expect(tags[0].users[0].$extras.pivot_proficiency).toBe('expert')
 
-            expect(users[0].tags[1].name).toBe('Dancing')
-            expect(users[0].tags[1].$extras.pivot_taggable_id).toBe(1)
-            expect(users[0].tags[1].$extras.pivot_tag_id).toBe(2)
-            expect(users[0].tags[1].$extras.pivot_proficiency).toBe('beginner')
+            expect(tags[0].users[1].username).toBe('nikk')
+            expect(tags[0].users[1].$extras.pivot_taggable_id).toBe(2)
+            expect(tags[0].users[1].$extras.pivot_tag_id).toBe(1)
+            expect(tags[0].users[1].$extras.pivot_proficiency).toBe('beginner')
 
-            expect(users[1].tags[0].name).toBe('Dancing')
-            expect(users[1].tags[0].$extras.pivot_taggable_id).toBe(2)
-            expect(users[1].tags[0].$extras.pivot_tag_id).toBe(2)
-            expect(users[1].tags[0].$extras.pivot_proficiency).toBe('beginner')
+            expect(tags[1].users[0].username).toBe('nikk')
+            expect(tags[1].users[0].$extras.pivot_taggable_id).toBe(2)
+            expect(tags[1].users[0].$extras.pivot_tag_id).toBe(2)
+            expect(tags[1].users[0].$extras.pivot_proficiency).toBe('beginner')
         })
 
         test('select extra pivot columns at runtime', async () => {
@@ -1019,22 +1017,19 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public name: string
-
-                @column()
-                public proficiency: string
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
+                @column()
+                public username: string
             }
 
 
@@ -1048,8 +1043,8 @@ describe('Model | MorphToMany', () => {
                     taggable_type: 'User'
                 },
                 {
-                    taggable_id: 1,
-                    tag_id: 2,
+                    taggable_id: 2,
+                    tag_id: 1,
                     proficiency: 'beginner',
                     taggable_type: 'User'
                 },
@@ -1061,28 +1056,28 @@ describe('Model | MorphToMany', () => {
                 },
             ])
 
-            const users = await User.query().preload('tags', (builder) => {
+            const tags = await Tag.query().preload('users', (builder) => {
                 builder.pivotColumns(['proficiency'])
             })
 
-            expect(users).toHaveLength(2)
-            expect(users[0].tags).toHaveLength(2)
-            expect(users[1].tags).toHaveLength(1)
+            expect(tags).toHaveLength(2)
+            expect(tags[0].users).toHaveLength(2)
+            expect(tags[1].users).toHaveLength(1)
 
-            expect(users[0].tags[0].name).toBe('Programming')
-            expect(users[0].tags[0].$extras.pivot_taggable_id).toBe(1)
-            expect(users[0].tags[0].$extras.pivot_tag_id).toBe(1)
-            expect(users[0].tags[0].$extras.pivot_proficiency).toBe('expert')
+            expect(tags[0].users[0].username).toBe('virk')
+            expect(tags[0].users[0].$extras.pivot_taggable_id).toBe(1)
+            expect(tags[0].users[0].$extras.pivot_tag_id).toBe(1)
+            expect(tags[0].users[0].$extras.pivot_proficiency).toBe('expert')
 
-            expect(users[0].tags[1].name).toBe('Dancing')
-            expect(users[0].tags[1].$extras.pivot_taggable_id).toBe(1)
-            expect(users[0].tags[1].$extras.pivot_tag_id).toBe(2)
-            expect(users[0].tags[1].$extras.pivot_proficiency).toBe('beginner')
+            expect(tags[0].users[1].username).toBe('nikk')
+            expect(tags[0].users[1].$extras.pivot_taggable_id).toBe(2)
+            expect(tags[0].users[1].$extras.pivot_tag_id).toBe(1)
+            expect(tags[0].users[1].$extras.pivot_proficiency).toBe('beginner')
 
-            expect(users[1].tags[0].name).toBe('Dancing')
-            expect(users[1].tags[0].$extras.pivot_taggable_id).toBe(2)
-            expect(users[1].tags[0].$extras.pivot_tag_id).toBe(2)
-            expect(users[1].tags[0].$extras.pivot_proficiency).toBe('beginner')
+            expect(tags[1].users[0].username).toBe('nikk')
+            expect(tags[1].users[0].$extras.pivot_taggable_id).toBe(2)
+            expect(tags[1].users[0].$extras.pivot_tag_id).toBe(2)
+            expect(tags[1].users[0].$extras.pivot_proficiency).toBe('beginner')
         })
 
         test('cherry pick columns during preload', async () => {
@@ -1090,21 +1085,20 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public name: string
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
+                @column()
+                public username: string
             }
-
 
             await db.insertQuery().table('users').insert([{username: 'virk'}])
             await db.insertQuery().table('tags').insert([{name: 'Programming'}, {name: 'Dancing'}])
@@ -1116,14 +1110,14 @@ describe('Model | MorphToMany', () => {
                 },
             ])
 
-            const users = await User.query().preload('tags', (builder) => {
-                return builder.select(['name'])
+            const tags = await Tag.query().preload('users', (builder) => {
+                return builder.select(['username'])
             })
 
-            expect(users).toHaveLength(1)
-            expect(users[0].tags).toHaveLength(1)
-            expect(users[0].tags[0].name).toBe('Programming')
-            expect(users[0].tags[0].$extras).toEqual({pivot_taggable_id: 1, pivot_tag_id: 1})
+            expect(tags).toHaveLength(2)
+            expect(tags[0].users).toHaveLength(1)
+            expect(tags[0].users[0].username).toBe('virk')
+            expect(tags[0].users[0].$extras).toEqual({pivot_taggable_id: 1, pivot_tag_id: 1})
         })
 
         test('raise error when local key is not selected', async () => {
@@ -1133,21 +1127,20 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public name: string
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
+                @column()
+                public username: string
             }
-
 
             await db.insertQuery().table('users').insert([{username: 'virk'}, {username: 'nikk'}])
             await db.insertQuery().table('tags').insert([{name: 'Programming'}, {name: 'Dancing'}])
@@ -1170,9 +1163,9 @@ describe('Model | MorphToMany', () => {
             ])
 
             try {
-                await User.query().select('username').preload('tags')
+                await Tag.query().select('name').preload('users')
             } catch ({message}) {
-                expect(message).toBe('Cannot preload "tags", value of "User.id" is undefined')
+                expect(message).toBe('Cannot preload "users", value of "Tag.id" is undefined')
             }
         })
 
@@ -1181,30 +1174,29 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public name: string
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
+                @column()
+                public username: string
             }
 
-
-            const users = await User.query().preload('tags', () => {
+            const tags = await Tag.query().preload('users', () => {
                 throw new Error('not expected to be here')
             })
-            expect(users).toHaveLength(0)
+            expect(tags).toHaveLength(0)
         })
     })
 
-    describe('Model | MorphToMany | Select', () => {
+    describe('Model | MorphedByMany | Select', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -1221,28 +1213,28 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public isActive: number
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
+                @column()
+                public isActive: number
             }
 
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
             const {sql, bindings} = query.select(['isActive']).toSQL();
-            const {sql: knexSql, bindings: knexBindings} = db.from('tags').select('tags.is_active').toSQL();
+            const {sql: knexSql, bindings: knexBindings} = db.from('users').select('users.is_active').toSQL();
             expect(sql).toBe(knexSql);
         });
 
@@ -1251,28 +1243,28 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public isActive: number
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
+                @column()
+                public isActive: number
             }
 
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
             const {sql, bindings} = query.select('isActive as a').toSQL();
-            const {sql: knexSql, bindings: knexBindings} = db.from('tags').select('tags.is_active as a').toSQL();
+            const {sql: knexSql, bindings: knexBindings} = db.from('users').select('users.is_active as a').toSQL();
             expect(sql).toBe(knexSql);
         });
 
@@ -1281,28 +1273,28 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public isActive: number
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
+                @column()
+                public isActive: number
             }
 
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
             const {sql, bindings} = query.select('name', 'isActive').toSQL();
-            const {sql: knexSql, bindings: knexBindings} = db.from('tags').select('tags.name', 'tags.is_active').toSQL();
+            const {sql: knexSql, bindings: knexBindings} = db.from('users').select('users.name', 'users.is_active').toSQL();
             expect(sql).toBe(knexSql);
         });
 
@@ -1311,29 +1303,29 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public isActive: number
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
+                @column()
+                public isActive: number
             }
 
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
             const {sql, bindings} = query.select({name: 'name', isActive: 'isActive'}).toSQL();
             const {sql: knexSql, bindings: knexBindings} =
-                db.from('tags').select({name: 'tags.name', isActive: 'tags.is_active'}).toSQL();
+                db.from('users').select({name: 'users.name', isActive: 'users.is_active'}).toSQL();
             expect(sql).toBe(knexSql);
         });
 
@@ -1342,29 +1334,29 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public isActive: number
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
+                @column()
+                public isActive: number
             }
 
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
             const {sql, bindings} = query.select('name as n', 'isActive as a').toSQL();
             const {sql: knexSql, bindings: knexBindings} =
-                db.from('tags').select('tags.name as n', 'tags.is_active as a').toSQL();
+                db.from('users').select('users.name as n', 'users.is_active as a').toSQL();
             expect(sql).toBe(knexSql);
         });
 
@@ -1373,29 +1365,29 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public isActive: number
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
+                @column()
+                public isActive: number
             }
 
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
             const {sql, bindings} = query.select(db.from('addresses').count('* as total').as('addresses_total')).toSQL();
             const {sql: knexSql, bindings: knexBindings} =
-                db.from('tags').select(db.from('addresses').count('* as total').as('addresses_total')).toSQL();
+                db.from('users').select(db.from('addresses').count('* as total').as('addresses_total')).toSQL();
             expect(sql).toBe(knexSql);
         });
 
@@ -1404,34 +1396,34 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public isActive: number
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
+                @column()
+                public isActive: number
             }
 
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
             const {sql, bindings} = query.select([db.from('addresses').count('* as total').as('addresses_total')]).toSQL();
             const {sql: knexSql, bindings: knexBindings} =
-                db.from('tags').select(db.from('addresses').count('* as total').as('addresses_total')).toSQL();
+                db.from('users').select(db.from('addresses').count('* as total').as('addresses_total')).toSQL();
             expect(sql).toBe(knexSql);
         });
     });
 
-    describe('Model | MorphToMany | wherePivot', () => {
+    describe('Model | MorphedByMany | wherePivot', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -1447,22 +1439,21 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
@@ -1471,7 +1462,7 @@ describe('Model | MorphToMany', () => {
                 .toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .where('taggables.username', 'virk')
                 .toSQL()
 
@@ -1483,22 +1474,22 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
 
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
@@ -1507,7 +1498,7 @@ describe('Model | MorphToMany', () => {
                 ['toSQL']()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .where((builder) => builder.where('taggables.username', 'virk'))
                 .toSQL()
 
@@ -1519,22 +1510,22 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
 
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
@@ -1543,7 +1534,7 @@ describe('Model | MorphToMany', () => {
                 .toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .where('taggables.age', '>', 22)
                 .toSQL()
 
@@ -1555,22 +1546,22 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
 
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
@@ -1579,7 +1570,7 @@ describe('Model | MorphToMany', () => {
                 .toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .where(
                     'taggables.age',
                     '>',
@@ -1595,22 +1586,21 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
@@ -1620,7 +1610,7 @@ describe('Model | MorphToMany', () => {
                 .toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .where('taggables.age', '>', 22)
                 .orWhere('taggables.age', 18)
                 .toSQL()
@@ -1633,22 +1623,21 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
@@ -1660,7 +1649,7 @@ describe('Model | MorphToMany', () => {
                 .toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .where('taggables.age', '>', 22)
                 .orWhere((builder) => {
                     builder.where('taggables.age', 18)
@@ -1678,21 +1667,20 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public name: string
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
+                @column()
+                public username: string
             }
-
 
             await db.insertQuery().table('users').insert([{username: 'virk'}])
             await db.insertQuery().table('tags').insert([{name: 'Programming'}, {name: 'Dancing'}])
@@ -1710,8 +1698,8 @@ describe('Model | MorphToMany', () => {
             profiler.process((packet) => {
                 if (profilerPacketIndex === 1) {
                     expect(packet.data.relation).toEqual({
-                        model: 'User',
-                        relatedModel: 'Tag',
+                        model: 'Tag',
+                        relatedModel: 'User',
                         pivotTable: 'taggables',
                         type: 'manyToMany',
                     })
@@ -1719,11 +1707,11 @@ describe('Model | MorphToMany', () => {
                 profilerPacketIndex++
             })
 
-            await User.query({profiler}).preload('tags')
+            await Tag.query({profiler}).preload('users')
         })
     })
 
-    describe('Model | MorphToMany | whereNotPivot', () => {
+    describe('Model | MorphedByMany | whereNotPivot', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -1739,28 +1727,27 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
             const {sql, bindings} = query.whereNotPivot('username', 'virk').toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .whereNot('taggables.username', 'virk')
                 .toSQL()
 
@@ -1772,22 +1759,21 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
@@ -1796,7 +1782,7 @@ describe('Model | MorphToMany', () => {
                 .toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .whereNot('taggables.age', '>', 22)
                 .toSQL()
 
@@ -1808,22 +1794,21 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
@@ -1832,7 +1817,7 @@ describe('Model | MorphToMany', () => {
                 .toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .whereNot(
                     'taggables.age',
                     '>',
@@ -1848,22 +1833,21 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
@@ -1873,7 +1857,7 @@ describe('Model | MorphToMany', () => {
                 .toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .whereNot('taggables.age', '>', 22)
                 .orWhereNot('taggables.age', 18)
                 .toSQL()
@@ -1883,7 +1867,7 @@ describe('Model | MorphToMany', () => {
         })
     })
 
-    describe('Model | MorphToMany | whereInPivot', () => {
+    describe('Model | MorphedByMany | whereInPivot', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -1899,22 +1883,21 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
@@ -1923,7 +1906,7 @@ describe('Model | MorphToMany', () => {
                 .toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .whereIn('taggables.username', ['virk', 'nikk'])
                 .toSQL()
 
@@ -1935,22 +1918,21 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
@@ -1961,7 +1943,7 @@ describe('Model | MorphToMany', () => {
                 .toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .whereIn('taggables.username', (builder) => {
                     builder.from('accounts')
                 })
@@ -1975,22 +1957,21 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
@@ -1999,7 +1980,7 @@ describe('Model | MorphToMany', () => {
                 .toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .whereIn('taggables.username', db.connection().getWriteClient().select('id').from('accounts'))
                 .toSQL()
 
@@ -2013,22 +1994,21 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
@@ -2039,7 +2019,7 @@ describe('Model | MorphToMany', () => {
                 .toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .whereIn('taggables.username', [
                     db.connection().getWriteClient().raw(`select ${ref('id')} from ${ref('accounts')}`),
                 ])
@@ -2053,22 +2033,21 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
@@ -2080,7 +2059,7 @@ describe('Model | MorphToMany', () => {
                 .toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .whereIn(
                     ['taggables.username', 'taggables.email'],
                     db.connection().getWriteClient().select('username', 'email').from('accounts'),
@@ -2095,22 +2074,21 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
@@ -2119,7 +2097,7 @@ describe('Model | MorphToMany', () => {
                 .toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .whereIn(['taggables.username', 'taggables.email'], [['foo', 'bar']])
                 .toSQL()
 
@@ -2131,22 +2109,21 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
@@ -2156,7 +2133,7 @@ describe('Model | MorphToMany', () => {
                 .toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .whereIn('taggables.username', ['virk', 'nikk'])
                 .orWhereIn('taggables.username', ['foo'])
                 .toSQL()
@@ -2169,22 +2146,22 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
 
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
@@ -2198,7 +2175,7 @@ describe('Model | MorphToMany', () => {
                 .toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .whereIn('taggables.username', (builder) => {
                     builder.from('accounts')
                 })
@@ -2212,7 +2189,7 @@ describe('Model | MorphToMany', () => {
         })
     })
 
-    describe('Model | MorphToMany | whereNotInPivot', () => {
+    describe('Model | MorphedByMany | whereNotInPivot', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -2228,22 +2205,22 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
 
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
@@ -2252,7 +2229,7 @@ describe('Model | MorphToMany', () => {
                 .toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .whereNotIn('taggables.username', ['virk', 'nikk'])
                 .toSQL()
 
@@ -2264,22 +2241,22 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
 
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
@@ -2290,7 +2267,7 @@ describe('Model | MorphToMany', () => {
                 .toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .whereNotIn('taggables.username', (builder) => {
                     builder.from('accounts')
                 })
@@ -2304,22 +2281,22 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
 
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
@@ -2328,7 +2305,7 @@ describe('Model | MorphToMany', () => {
                 .toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .whereNotIn(
                     'taggables.username',
                     db.connection().getWriteClient().select('username').from('accounts'),
@@ -2343,22 +2320,22 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
 
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
@@ -2367,7 +2344,7 @@ describe('Model | MorphToMany', () => {
                 .toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .whereNotIn(['taggables.username', 'taggables.email'], [['foo', 'bar']])
                 .toSQL()
 
@@ -2379,22 +2356,22 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
 
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
@@ -2404,7 +2381,7 @@ describe('Model | MorphToMany', () => {
                 .toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .whereNotIn('taggables.username', ['virk', 'nikk'])
                 .orWhereNotIn('taggables.username', ['foo'])
                 .toSQL()
@@ -2417,22 +2394,22 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
 
-            const user = new User()
-            const query = user!.related('tags').query()
+            const tag = new Tag()
+            const query = tag!.related('users').query()
 
             query['appliedConstraints'] = true
 
@@ -2446,7 +2423,7 @@ describe('Model | MorphToMany', () => {
                 .toSQL()
 
             const {sql: knexSql, bindings: knexBindings} = db.connection().getWriteClient()
-                .from('tags')
+                .from('users')
                 .whereNotIn('taggables.username', (builder) => {
                     builder.from('accounts')
                 })
@@ -2460,7 +2437,7 @@ describe('Model | MorphToMany', () => {
         })
     })
 
-    describe('Model | MorphToMany | save', () => {
+    describe('Model | MorphedByMany | save', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -2483,6 +2460,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -2491,28 +2474,22 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
             const user = new User()
             user.username = 'virk'
-            await user.save()
 
             const tag = new Tag()
             tag.name = 'Programming'
+            await tag.save();
 
-            await user.related('tags').save(tag)
+            await tag.related('users').save(user)
 
             expect(user.$isPersisted).toBeTruthy()
             expect(tag.$isPersisted).toBeTruthy()
 
             const totalUsers = await db.query().from('users').count('*', 'total')
-            const totalPosts = await db.query().from('tags').count('*', 'total')
+            const totalPosts = await db.query().from('users').count('*', 'total')
             const tagUsers = await db.query().from('taggables')
 
             expect(Number(totalUsers[0].total)).toBe(1)
@@ -2533,6 +2510,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -2541,37 +2524,31 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
             const user = new User()
             user.username = 'virk'
-            await user.save()
 
             const tag = new Tag()
             tag.name = 'Programming'
+            await tag.save()
 
-            await user.related('tags').save(tag)
-            await user.related('tags').save(tag)
+            await tag.related('users').save(user)
+            await tag.related('users').save(user)
 
             expect(user.$isPersisted).toBeTruthy()
             expect(tag.$isPersisted).toBeTruthy()
 
+            const totalTags = await db.query().from('tags').count('*', 'total')
             const totalUsers = await db.query().from('users').count('*', 'total')
-            const totalPosts = await db.query().from('tags').count('*', 'total')
-            const tagUsers = await db.query().from('taggables')
+            const taggable = await db.query().from('taggables')
 
+            expect(Number(totalTags[0].total)).toBe(1)
             expect(Number(totalUsers[0].total)).toBe(1)
-            expect(Number(totalPosts[0].total)).toBe(1)
 
-            expect(tagUsers).toHaveLength(1)
-            expect(tagUsers[0].taggable_id).toBe(user.id)
-            expect(tagUsers[0].tag_id).toBe(tag.id)
+            expect(taggable).toHaveLength(1)
+            expect(taggable[0].taggable_id).toBe(user.id)
+            expect(taggable[0].tag_id).toBe(tag.id)
 
             expect(user.$trx).toBeUndefined()
             expect(tag.$trx).toBeUndefined()
@@ -2584,6 +2561,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -2592,40 +2575,34 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
             const user = new User()
             user.username = 'virk'
-            await user.save()
 
             const tag = new Tag()
             tag.name = 'Programming'
+            await tag.save()
 
-            await user.related('tags').save(tag)
-            await user.related('tags').save(tag, false)
+            await tag.related('users').save(user)
+            await tag.related('users').save(user, false)
 
             expect(user.$isPersisted).toBeTruthy()
             expect(tag.$isPersisted).toBeTruthy()
 
+            const totalTags = await db.query().from('tags').count('*', 'total')
             const totalUsers = await db.query().from('users').count('*', 'total')
-            const totalPosts = await db.query().from('tags').count('*', 'total')
-            const tagUsers = await db.query().from('taggables')
+            const taggables = await db.query().from('taggables')
 
+            expect(Number(totalTags[0].total)).toBe(1)
             expect(Number(totalUsers[0].total)).toBe(1)
-            expect(Number(totalPosts[0].total)).toBe(1)
 
-            expect(tagUsers).toHaveLength(2)
-            expect(tagUsers[0].taggable_id).toBe(user.id)
-            expect(tagUsers[0].tag_id).toBe(tag.id)
+            expect(taggables).toHaveLength(2)
+            expect(taggables[0].taggable_id).toBe(user.id)
+            expect(taggables[0].tag_id).toBe(tag.id)
 
-            expect(tagUsers[1].taggable_id).toBe(user.id)
-            expect(tagUsers[1].tag_id).toBe(tag.id)
+            expect(taggables[1].taggable_id).toBe(user.id)
+            expect(taggables[1].tag_id).toBe(tag.id)
 
             expect(user.$trx).toBeUndefined()
             expect(tag.$trx).toBeUndefined()
@@ -2638,6 +2615,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -2646,51 +2629,45 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
             const user = new User()
             user.username = 'virk'
-            await user.save()
-
-            const user1 = new User()
-            user1.username = 'nikk'
-            await user1.save()
 
             const tag = new Tag()
             tag.name = 'Programming'
+            await tag.save()
 
-            await user.related('tags').save(tag)
-            await user1.related('tags').save(tag)
+            const tag1 = new Tag()
+            tag1.name = 'Being'
+            await tag1.save()
+
+            await tag.related('users').save(user)
+            await tag1.related('users').save(user)
 
             expect(user.$isPersisted).toBeTruthy()
             expect(tag.$isPersisted).toBeTruthy()
 
             const totalUsers = await db.query().from('users').count('*', 'total')
             const totalTags = await db.query().from('tags').count('*', 'total')
-            const tagUsers = await db.query().from('taggables')
+            const taggables = await db.query().from('taggables')
 
-            expect(Number(totalUsers[0].total)).toBe(2)
-            expect(Number(totalTags[0].total)).toBe(1)
+            expect(Number(totalUsers[0].total)).toBe(1)
+            expect(Number(totalTags[0].total)).toBe(2)
 
-            expect(tagUsers[0].taggable_id).toBe(user.id)
-            expect(tagUsers[0].tag_id).toBe(tag.id)
+            expect(taggables[0].taggable_id).toBe(user.id)
+            expect(taggables[0].tag_id).toBe(tag.id)
 
-            expect(tagUsers[1].taggable_id).toBe(user1.id)
-            expect(tagUsers[1].tag_id).toBe(tag.id)
+            expect(taggables[1].taggable_id).toBe(user.id)
+            expect(taggables[1].tag_id).toBe(tag1.id)
 
             expect(user.$trx).toBeUndefined()
-            expect(user1.$trx).toBeUndefined()
             expect(tag.$trx).toBeUndefined()
+            expect(tag1.$trx).toBeUndefined()
         })
     })
 
-    describe('Model | MorphToMany | saveMany', () => {
+    describe('Model | MorphedByMany | saveMany', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -2713,6 +2690,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -2721,46 +2704,39 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
             const user = new User()
             user.username = 'virk'
-            await user.save()
+            const user1 = new User()
+            user1.username = 'nikk'
 
             const tag = new Tag()
             tag.name = 'Programming'
+            await tag.save()
 
-            const tag1 = new Tag()
-            tag1.name = 'Cooking'
-
-            await user.related('tags').saveMany([tag, tag1])
+            await tag.related('users').saveMany([user, user1])
 
             expect(user.$isPersisted).toBeTruthy()
             expect(tag.$isPersisted).toBeTruthy()
 
             const totalUsers = await db.query().from('users').count('*', 'total')
-            const totalPosts = await db.query().from('tags').count('*', 'total')
+            const totalTags = await db.query().from('tags').count('*', 'total')
             const tagUsers = await db.query().from('taggables')
 
-            expect(Number(totalUsers[0].total)).toBe(1)
-            expect(Number(totalPosts[0].total)).toBe(2)
+            expect(Number(totalUsers[0].total)).toBe(2)
+            expect(Number(totalTags[0].total)).toBe(1)
 
             expect(tagUsers).toHaveLength(2)
             expect(tagUsers[0].taggable_id).toBe(user.id)
             expect(tagUsers[0].taggable_type).toBe('User')
             expect(tagUsers[0].tag_id).toBe(tag.id)
-            expect(tagUsers[1].taggable_id).toBe(user.id)
-            expect(tagUsers[1].tag_id).toBe(tag1.id)
+            expect(tagUsers[1].taggable_id).toBe(user1.id)
+            expect(tagUsers[1].tag_id).toBe(tag.id)
 
             expect(user.$trx).toBeUndefined()
+            expect(user1.$trx).toBeUndefined()
             expect(tag.$trx).toBeUndefined()
-            expect(tag1.$trx).toBeUndefined()
         })
 
         test('do not attach duplicates when saveMany is called more than once', async () => {
@@ -2770,6 +2746,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -2778,46 +2760,39 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
             const user = new User()
             user.username = 'virk'
-            await user.save()
+            const user1 = new User()
+            user1.username = 'nikk'
 
             const tag = new Tag()
             tag.name = 'Programming'
+            await tag.save()
 
-            const tag1 = new Tag()
-            tag1.name = 'Cooking'
-
-            await user.related('tags').saveMany([tag, tag1])
-            await user.related('tags').saveMany([tag, tag1])
+            await tag.related('users').saveMany([user, user1])
+            await tag.related('users').saveMany([user, user1])
 
             expect(user.$isPersisted).toBeTruthy()
             expect(tag.$isPersisted).toBeTruthy()
 
             const totalUsers = await db.query().from('users').count('*', 'total')
-            const totalPosts = await db.query().from('tags').count('*', 'total')
+            const totalTags = await db.query().from('tags').count('*', 'total')
             const tagUsers = await db.query().from('taggables')
 
-            expect(Number(totalUsers[0].total)).toBe(1)
-            expect(Number(totalPosts[0].total)).toBe(2)
+            expect(Number(totalUsers[0].total)).toBe(2)
+            expect(Number(totalTags[0].total)).toBe(1)
 
             expect(tagUsers).toHaveLength(2)
             expect(tagUsers[0].taggable_id).toBe(user.id)
             expect(tagUsers[0].tag_id).toBe(tag.id)
-            expect(tagUsers[1].taggable_id).toBe(user.id)
-            expect(tagUsers[1].tag_id).toBe(tag1.id)
+            expect(tagUsers[1].taggable_id).toBe(user1.id)
+            expect(tagUsers[1].tag_id).toBe(tag.id)
 
             expect(user.$trx).toBeUndefined()
             expect(tag.$trx).toBeUndefined()
-            expect(tag1.$trx).toBeUndefined()
+            expect(user1.$trx).toBeUndefined()
         })
 
         test('attach duplicates when saveMany is called more than once with checkExisting = false', async () => {
@@ -2827,6 +2802,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -2835,51 +2816,44 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
             const user = new User()
             user.username = 'virk'
-            await user.save()
+            const user1 = new User()
+            user1.username = 'nikk'
 
             const tag = new Tag()
             tag.name = 'Programming'
+            await tag.save()
 
-            const tag1 = new Tag()
-            tag1.name = 'Cooking'
-
-            await user.related('tags').saveMany([tag, tag1])
-            await user.related('tags').saveMany([tag, tag1], false)
+            await tag.related('users').saveMany([user, user1])
+            await tag.related('users').saveMany([user, user1], false)
 
             expect(user.$isPersisted).toBeTruthy()
             expect(tag.$isPersisted).toBeTruthy()
 
             const totalUsers = await db.query().from('users').count('*', 'total')
-            const totalPosts = await db.query().from('tags').count('*', 'total')
+            const totalTags = await db.query().from('tags').count('*', 'total')
             const tagUsers = await db.query().from('taggables')
 
-            expect(Number(totalUsers[0].total)).toBe(1)
-            expect(Number(totalPosts[0].total)).toBe(2)
+            expect(Number(totalUsers[0].total)).toBe(2)
+            expect(Number(totalTags[0].total)).toBe(1)
 
             expect(tagUsers).toHaveLength(4)
             expect(tagUsers[0].taggable_id).toBe(user.id)
             expect(tagUsers[0].tag_id).toBe(tag.id)
-            expect(tagUsers[1].taggable_id).toBe(user.id)
-            expect(tagUsers[1].tag_id).toBe(tag1.id)
+            expect(tagUsers[1].taggable_id).toBe(user1.id)
+            expect(tagUsers[1].tag_id).toBe(tag.id)
 
             expect(tagUsers[2].taggable_id).toBe(user.id)
             expect(tagUsers[2].tag_id).toBe(tag.id)
-            expect(tagUsers[3].taggable_id).toBe(user.id)
-            expect(tagUsers[3].tag_id).toBe(tag1.id)
+            expect(tagUsers[3].taggable_id).toBe(user1.id)
+            expect(tagUsers[3].tag_id).toBe(tag.id)
 
             expect(user.$trx).toBeUndefined()
             expect(tag.$trx).toBeUndefined()
-            expect(tag1.$trx).toBeUndefined()
+            expect(user1.$trx).toBeUndefined()
         })
 
         test('attach when related pivot entry exists but for a different parent @sanityCheck', async () => {
@@ -2889,6 +2863,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -2897,49 +2877,42 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
             const user = new User()
             user.username = 'virk'
-            await user.save()
-
             const user1 = new User()
             user1.username = 'nikk'
 
             const tag = new Tag()
             tag.name = 'Programming'
+            await tag.save()
 
             const tag1 = new Tag()
             tag1.name = 'Cooking'
 
-            await user.related('tags').saveMany([tag, tag1])
-            await user1.related('tags').saveMany([tag, tag1])
+            await tag.related('users').saveMany([user, user1])
+            await tag1.related('users').saveMany([user, user1])
 
             expect(user.$isPersisted).toBeTruthy()
             expect(tag.$isPersisted).toBeTruthy()
             expect(user1.$isPersisted).toBeTruthy()
 
             const totalUsers = await db.query().from('users').count('*', 'total')
-            const totalPosts = await db.query().from('tags').count('*', 'total')
+            const totalTags = await db.query().from('tags').count('*', 'total')
             const tagUsers = await db.query().from('taggables')
 
             expect(Number(totalUsers[0].total)).toBe(2)
-            expect(Number(totalPosts[0].total)).toBe(2)
+            expect(Number(totalTags[0].total)).toBe(2)
 
             expect(tagUsers).toHaveLength(4)
             expect(tagUsers[0].taggable_id).toBe(user.id)
             expect(tagUsers[0].tag_id).toBe(tag.id)
-            expect(tagUsers[1].taggable_id).toBe(user.id)
-            expect(tagUsers[1].tag_id).toBe(tag1.id)
+            expect(tagUsers[1].taggable_id).toBe(user1.id)
+            expect(tagUsers[1].tag_id).toBe(tag.id)
 
-            expect(tagUsers[2].taggable_id).toBe(user1.id)
-            expect(tagUsers[2].tag_id).toBe(tag.id)
+            expect(tagUsers[2].taggable_id).toBe(user.id)
+            expect(tagUsers[2].tag_id).toBe(tag1.id)
             expect(tagUsers[3].taggable_id).toBe(user1.id)
             expect(tagUsers[3].tag_id).toBe(tag1.id)
 
@@ -2955,6 +2928,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -2963,33 +2942,27 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
             const trx = await db.transaction()
 
             const user = new User()
             user.username = 'virk'
-            user.$trx = trx
-            await user.save()
-
             const user1 = new User()
-            user1.$trx = trx
             user1.username = 'nikk'
 
             const tag = new Tag()
             tag.name = 'Programming'
+            tag.$trx = trx
+            await tag.save()
+
 
             const tag1 = new Tag()
+            tag1.$trx = trx
             tag1.name = 'Cooking'
 
-            await user.related('tags').saveMany([tag, tag1])
-            await user1.related('tags').saveMany([tag, tag1])
+            await tag.related('users').saveMany([user, user1])
+            await tag1.related('users').saveMany([user, user1])
 
             expect(user.$trx.isCompleted).toBeFalsy()
             expect(user1.$trx.isCompleted).toBeFalsy()
@@ -2997,17 +2970,17 @@ describe('Model | MorphToMany', () => {
             await trx.rollback()
 
             const totalUsers = await db.query().from('users').count('*', 'total')
-            const totalPosts = await db.query().from('tags').count('*', 'total')
+            const totalTags = await db.query().from('tags').count('*', 'total')
             const tagUsers = await db.query().from('taggables')
 
             expect(Number(totalUsers[0].total)).toBe(0)
-            expect(Number(totalPosts[0].total)).toBe(0)
+            expect(Number(totalTags[0].total)).toBe(0)
 
             expect(tagUsers).toHaveLength(0)
         })
     })
 
-    describe('Model | MorphToMany | create', () => {
+    describe('Model | MorphedByMany | create', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -3030,6 +3003,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -3038,29 +3017,23 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            const user = new User()
-            user.username = 'virk'
-            await user.save()
+            const tag = new Tag()
+            tag.name = 'Programming'
+            await tag.save()
 
-            const tag = await user.related('tags').create({name: 'Programming'})
+            const user = await tag.related('users').create({username: 'virk'})
 
             expect(user.$isPersisted).toBeTruthy()
             expect(tag.$isPersisted).toBeTruthy()
 
             const totalUsers = await db.query().from('users').count('*', 'total')
-            const totalPosts = await db.query().from('tags').count('*', 'total')
+            const totalTags = await db.query().from('tags').count('*', 'total')
             const tagUsers = await db.query().from('taggables')
 
             expect(Number(totalUsers[0].total)).toBe(1)
-            expect(Number(totalPosts[0].total)).toBe(1)
+            expect(Number(totalTags[0].total)).toBe(1)
 
             expect(tagUsers).toHaveLength(1)
             expect(tagUsers[0].taggable_id).toBe(user.id)
@@ -3077,6 +3050,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -3085,33 +3064,27 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
             const trx = await db.transaction()
 
-            const user = new User()
-            user.username = 'virk'
-            user.$trx = trx
-            await user.save()
+            const tag = new Tag()
+            tag.name = 'Programming'
+            tag.$trx = trx
+            await tag.save()
 
-            const tag = await user.related('tags').create({name: 'Programming'})
+            const user = await tag.related('users').create({username: 'virk'})
             expect(user.$trx.isCompleted).toBeFalsy()
             expect(tag.$trx!.isCompleted).toBeFalsy()
 
             await trx.commit()
 
             const totalUsers = await db.query().from('users').count('*', 'total')
-            const totalPosts = await db.query().from('tags').count('*', 'total')
+            const totalTags = await db.query().from('tags').count('*', 'total')
             const tagUsers = await db.query().from('taggables')
 
             expect(Number(totalUsers[0].total)).toBe(1)
-            expect(Number(totalPosts[0].total)).toBe(1)
+            expect(Number(totalTags[0].total)).toBe(1)
 
             expect(tagUsers).toHaveLength(1)
             expect(tagUsers[0].taggable_id).toBe(user.id)
@@ -3122,7 +3095,7 @@ describe('Model | MorphToMany', () => {
         })
     })
 
-    describe('Model | MorphToMany | createMany', () => {
+    describe('Model | MorphedByMany | createMany', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -3145,6 +3118,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -3153,45 +3132,39 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            const user = new User()
-            user.username = 'virk'
-            await user.save()
+            const tag = new Tag()
+            tag.name = 'virk'
+            await tag.save()
 
-            const [tag, tag1] = await user.related('tags').createMany([
-                {name: 'Programming'},
-                {name: 'Cooking'},
+            const [user, user1] = await tag.related('users').createMany([
+                {username: 'Programming'},
+                {username: 'Cooking'},
             ])
 
             expect(user.$isPersisted).toBeTruthy()
             expect(tag.$isPersisted).toBeTruthy()
-            expect(tag1.$isPersisted).toBeTruthy()
+            expect(user1.$isPersisted).toBeTruthy()
 
             const totalUsers = await db.query().from('users').count('*', 'total')
             const totalTags = await db.query().from('tags').count('*', 'total')
             const tagUsers = await db.query().from('taggables')
 
-            expect(Number(totalUsers[0].total)).toBe(1)
-            expect(Number(totalTags[0].total)).toBe(2)
+            expect(Number(totalUsers[0].total)).toBe(2)
+            expect(Number(totalTags[0].total)).toBe(1)
 
             expect(tagUsers).toHaveLength(2)
             expect(tagUsers[0].taggable_id).toBe(user.id)
             expect(tagUsers[0].taggable_type).toBe('User')
             expect(tagUsers[0].tag_id).toBe(tag.id)
 
-            expect(tagUsers[1].taggable_id).toBe(user.id)
-            expect(tagUsers[1].tag_id).toBe(tag1.id)
+            expect(tagUsers[1].taggable_id).toBe(user1.id)
+            expect(tagUsers[1].tag_id).toBe(tag.id)
 
             expect(user.$trx).toBeUndefined()
             expect(tag.$trx).toBeUndefined()
-            expect(tag1.$trx).toBeUndefined()
+            expect(user1.$trx).toBeUndefined()
         })
 
         test('wrap create many inside a custom transaction', async () => {
@@ -3201,6 +3174,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -3209,43 +3188,37 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
             const trx = await db.transaction()
 
-            const user = new User()
-            user.username = 'virk'
-            user.$trx = trx
-            await user.save()
+            const tag = new Tag()
+            tag.name = 'virk'
+            tag.$trx = trx
+            await tag.save()
 
-            const [tag, tag1] = await user.related('tags').createMany([
-                {name: 'Programming'},
-                {name: 'Cooking'},
+            const [user, user1] = await tag.related('users').createMany([
+                {username: 'Programming'},
+                {username: 'Cooking'},
             ])
 
             expect(user.$trx.isCompleted).toBeFalsy()
             expect(tag.$trx!.isCompleted).toBeFalsy()
-            expect(tag1.$trx!.isCompleted).toBeFalsy()
+            expect(user1.$trx!.isCompleted).toBeFalsy()
 
             await trx.rollback()
 
             const totalUsers = await db.query().from('users').count('*', 'total')
-            const totalPosts = await db.query().from('tags').count('*', 'total')
+            const totalTags = await db.query().from('tags').count('*', 'total')
             const tagUsers = await db.query().from('taggables')
 
             expect(Number(totalUsers[0].total)).toBe(0)
-            expect(Number(totalPosts[0].total)).toBe(0)
+            expect(Number(totalTags[0].total)).toBe(0)
             expect(tagUsers).toHaveLength(0)
         })
     })
 
-    describe('Model | MorphToMany | attach', () => {
+    describe('Model | MorphedByMany | attach', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -3268,6 +3241,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -3276,36 +3255,30 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            const user = new User()
-            user.username = 'virk'
-            await user.save()
+            const tag = new Tag()
+            tag.name = 'virk'
+            await tag.save()
 
-            await user.related('tags').attach([1, 2])
+            await tag.related('users').attach([1, 2])
 
-            expect(user.$isPersisted).toBeTruthy()
+            expect(tag.$isPersisted).toBeTruthy()
 
             const totalUsers = await db.query().from('users').count('*', 'total')
             const totalTags = await db.query().from('tags').count('*', 'total')
             const tagUsers = await db.query().from('taggables')
 
-            expect(Number(totalUsers[0].total)).toBe(1)
-            expect(Number(totalTags[0].total)).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(0)
+            expect(Number(totalTags[0].total)).toBe(1)
 
             expect(tagUsers).toHaveLength(2)
-            expect(tagUsers[0].taggable_id).toBe(user.id)
+            expect(tagUsers[0].taggable_id).toBe(1)
             expect(tagUsers[0].taggable_type).toBe('User')
-            expect(tagUsers[0].tag_id).toBe(1)
+            expect(tagUsers[0].tag_id).toBe(tag.id)
 
-            expect(tagUsers[1].taggable_id).toBe(user.id)
-            expect(tagUsers[1].tag_id).toBe(2)
+            expect(tagUsers[1].taggable_id).toBe(2)
+            expect(tagUsers[1].tag_id).toBe(tag.id)
         })
 
         test('attach with extra attributes', async () => {
@@ -3315,6 +3288,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -3323,19 +3302,13 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            const user = new User()
-            user.username = 'virk'
-            await user.save()
+            const tag = new Tag()
+            tag.name = 'virk'
+            await tag.save()
 
-            await user.related('tags').attach({
+            await tag.related('users').attach({
                 1: {
                     proficiency: 'Beginner',
                 },
@@ -3344,27 +3317,27 @@ describe('Model | MorphToMany', () => {
                 },
             })
 
-            expect(user.$isPersisted).toBeTruthy()
+            expect(tag.$isPersisted).toBeTruthy()
 
             const totalUsers = await db.query().from('users').count('*', 'total')
             const totalTags = await db.query().from('tags').count('*', 'total')
             const tagUsers = await db.query().from('taggables')
 
-            expect(Number(totalUsers[0].total)).toBe(1)
-            expect(Number(totalTags[0].total)).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(0)
+            expect(Number(totalTags[0].total)).toBe(1)
 
             expect(tagUsers).toHaveLength(2)
-            expect(tagUsers[0].taggable_id).toBe(user.id)
-            expect(tagUsers[0].tag_id).toBe(1)
+            expect(tagUsers[0].taggable_id).toBe(1)
+            expect(tagUsers[0].tag_id).toBe(tag.id)
             expect(tagUsers[0].proficiency).toBe('Beginner')
 
-            expect(tagUsers[1].taggable_id).toBe(user.id)
-            expect(tagUsers[1].tag_id).toBe(2)
+            expect(tagUsers[1].taggable_id).toBe(2)
+            expect(tagUsers[1].tag_id).toBe(tag.id)
             expect(tagUsers[1].proficiency).toBe('Master')
         })
     })
 
-    describe('Model | MorphToMany | detach', () => {
+    describe('Model | MorphedByMany | detach', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -3387,6 +3360,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -3395,46 +3374,40 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            const user = new User()
-            user.username = 'virk'
-            await user.save()
+            const tag = new Tag()
+            tag.name = 'virk'
+            await tag.save()
 
             await db.insertQuery().table('taggables').multiInsert([
                 {
-                    taggable_id: user.id,
-                    tag_id: 1,
+                    taggable_id: 1,
+                    tag_id: tag.id,
                     proficiency: 'Beginner',
                     taggable_type: 'User'
                 },
                 {
-                    taggable_id: user.id,
-                    tag_id: 2,
+                    taggable_id: 2,
+                    tag_id: tag.id,
                     proficiency: 'Beginner',
                     taggable_type: 'User'
                 },
             ])
 
-            await user.related('tags').detach([1])
+            await tag.related('users').detach([1])
 
             const totalUsers = await db.query().from('users').count('*', 'total')
             const totalTags = await db.query().from('tags').count('*', 'total')
             const tagUsers = await db.query().from('taggables')
 
-            expect(Number(totalUsers[0].total)).toBe(1)
-            expect(Number(totalTags[0].total)).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(0)
+            expect(Number(totalTags[0].total)).toBe(1)
 
             expect(tagUsers).toHaveLength(1)
-            expect(tagUsers[0].taggable_id).toBe(user.id)
+            expect(tagUsers[0].taggable_id).toBe(2)
             expect(tagUsers[0].taggable_type).toBe('User')
-            expect(tagUsers[0].tag_id).toBe(2)
+            expect(tagUsers[0].tag_id).toBe(tag.id)
         })
 
         test('scope detach self to @sanityCheck', async () => {
@@ -3444,6 +3417,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -3452,22 +3431,16 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            const user = new User()
-            user.username = 'virk'
-            await user.save()
+            const tag = new Tag()
+            tag.name = 'virk'
+            await tag.save()
 
             await db.insertQuery().table('taggables').multiInsert([
                 {
-                    taggable_id: user.id,
-                    tag_id: 1,
+                    taggable_id: 1,
+                    tag_id: tag.id,
                     proficiency: 'Beginner',
                     taggable_type: 'User'
                 },
@@ -3479,25 +3452,25 @@ describe('Model | MorphToMany', () => {
                 },
             ])
 
-            await user.related('tags').detach([2])
+            await tag.related('users').detach([2])
 
             const totalUsers = await db.query().from('users').count('*', 'total')
             const totalTags = await db.query().from('tags').count('*', 'total')
             const tagUsers = await db.query().from('taggables')
 
-            expect(Number(totalUsers[0].total)).toBe(1)
-            expect(Number(totalTags[0].total)).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(0)
+            expect(Number(totalTags[0].total)).toBe(1)
 
             expect(tagUsers).toHaveLength(2)
-            expect(tagUsers[0].taggable_id).toBe(user.id)
-            expect(tagUsers[0].tag_id).toBe(1)
+            expect(tagUsers[0].taggable_id).toBe(1)
+            expect(tagUsers[0].tag_id).toBe(tag.id)
 
             expect(tagUsers[1].taggable_id).toBe(2)
             expect(tagUsers[1].tag_id).toBe(2)
         })
     })
 
-    describe('Model | MorphToMany | sync', () => {
+    describe('Model | MorphedByMany | sync', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -3520,6 +3493,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -3528,57 +3507,51 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            const user = new User()
-            user.username = 'virk'
-            await user.save()
+            const tag = new Tag()
+            tag.name = 'virk'
+            await tag.save()
 
             await db.insertQuery().table('taggables').multiInsert([
                 {
-                    taggable_id: user.id,
-                    tag_id: 1,
+                    taggable_id: 1,
+                    tag_id: tag.id,
                     proficiency: 'Beginner',
                     taggable_type: 'User'
                 },
                 {
-                    taggable_id: user.id,
-                    tag_id: 2,
+                    taggable_id: 2,
+                    tag_id: tag.id,
                     proficiency: 'Master',
                     taggable_type: 'User'
                 },
                 {
-                    taggable_id: 2,
-                    tag_id: 1,
+                    taggable_id: 1,
+                    tag_id: 2,
                     proficiency: 'Master',
                     taggable_type: 'User'
                 },
             ])
 
-            await user.related('tags').sync([1])
+            await tag.related('users').sync([1])
 
             const totalUsers = await db.query().from('users').count('*', 'total')
             const totalTags = await db.query().from('tags').count('*', 'total')
             const tagUsers = await db.query().from('taggables')
 
-            expect(Number(totalUsers[0].total)).toBe(1)
-            expect(Number(totalTags[0].total)).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(0)
+            expect(Number(totalTags[0].total)).toBe(1)
             expect(tagUsers).toHaveLength(2);
 
             expect(tagUsers[0].id).toBe(1)
-            expect(tagUsers[0].taggable_id).toBe(user.id)
+            expect(tagUsers[0].taggable_id).toBe(1)
             expect(tagUsers[0].taggable_type).toBe('User')
-            expect(tagUsers[0].tag_id).toBe(1)
+            expect(tagUsers[0].tag_id).toBe(tag.id)
 
             expect(tagUsers[1].id).toBe(3)
-            expect(tagUsers[1].taggable_id).toBe(2)
-            expect(tagUsers[1].tag_id).toBe(1)
+            expect(tagUsers[1].taggable_id).toBe(1)
+            expect(tagUsers[1].tag_id).toBe(2)
         })
 
         test('keep duplicates of the id under sync', async () => {
@@ -3588,6 +3561,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -3596,56 +3575,50 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            const user = new User()
-            user.username = 'virk'
-            await user.save()
+            const tag = new Tag()
+            tag.name = 'virk'
+            await tag.save()
 
             await db.insertQuery().table('taggables').multiInsert([
                 {
-                    taggable_id: user.id,
-                    tag_id: 1,
+                    taggable_id: 1,
+                    tag_id: tag.id,
                     proficiency: 'Beginner',
                     taggable_type: 'User'
                 },
                 {
-                    taggable_id: user.id,
-                    tag_id: 2,
+                    taggable_id: 2,
+                    tag_id: tag.id,
                     proficiency: 'Master',
                     taggable_type: 'User'
                 },
                 {
-                    taggable_id: user.id,
-                    tag_id: 1,
+                    taggable_id: 1,
+                    tag_id: tag.id,
                     proficiency: 'Master',
                     taggable_type: 'User'
                 },
             ])
 
-            await user.related('tags').sync([1])
+            await tag.related('users').sync([1])
 
             const totalUsers = await db.query().from('users').count('*', 'total')
             const totalTags = await db.query().from('tags').count('*', 'total')
             const tagUsers = await db.query().from('taggables')
 
-            expect(Number(totalUsers[0].total)).toBe(1)
-            expect(Number(totalTags[0].total)).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(0)
+            expect(Number(totalTags[0].total)).toBe(1)
             expect(tagUsers).toHaveLength(2);
 
             expect(tagUsers[0].id).toBe(1)
-            expect(tagUsers[0].taggable_id).toBe(user.id)
-            expect(tagUsers[0].tag_id).toBe(1)
+            expect(tagUsers[0].taggable_id).toBe(1)
+            expect(tagUsers[0].tag_id).toBe(tag.id)
 
             expect(tagUsers[1].id).toBe(3)
-            expect(tagUsers[1].taggable_id).toBe(user.id)
-            expect(tagUsers[1].tag_id).toBe(1)
+            expect(tagUsers[1].taggable_id).toBe(1)
+            expect(tagUsers[1].tag_id).toBe(tag.id)
         })
 
         test('update pivot rows when additional properties are changed', async () => {
@@ -3655,6 +3628,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -3663,40 +3642,34 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            const user = new User()
-            user.username = 'virk'
-            await user.save()
+            const tag = new Tag()
+            tag.name = 'virk'
+            await tag.save()
 
             await db.insertQuery().table('taggables').multiInsert([
                 {
-                    taggable_id: user.id,
-                    tag_id: 1,
+                    taggable_id: 1,
+                    tag_id: tag.id,
                     proficiency: 'Beginner',
                     taggable_type: 'User'
                 },
                 {
-                    taggable_id: user.id,
-                    tag_id: 2,
+                    taggable_id: 2,
+                    tag_id: tag.id,
                     proficiency: 'Master',
                     taggable_type: 'User'
                 },
                 {
-                    taggable_id: 2,
-                    tag_id: 1,
+                    taggable_id: 1,
+                    tag_id: 2,
                     proficiency: 'Master',
                     taggable_type: 'User'
                 },
             ])
 
-            await user.related('tags').sync({
+            await tag.related('users').sync({
                 1: {
                     proficiency: 'Intermediate',
                 },
@@ -3706,18 +3679,18 @@ describe('Model | MorphToMany', () => {
             const totalTags = await db.query().from('tags').count('*', 'total')
             const tagUsers = await db.query().from('taggables').orderBy('id', 'asc')
 
-            expect(Number(totalUsers[0].total)).toBe(1)
-            expect(Number(totalTags[0].total)).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(0)
+            expect(Number(totalTags[0].total)).toBe(1)
             expect(tagUsers).toHaveLength(2);
 
             expect(tagUsers[0].id).toBe(1)
-            expect(tagUsers[0].taggable_id).toBe(user.id)
-            expect(tagUsers[0].tag_id).toBe(1)
+            expect(tagUsers[0].taggable_id).toBe(1)
+            expect(tagUsers[0].tag_id).toBe(tag.id)
             expect(tagUsers[0].proficiency).toBe('Intermediate')
 
             expect(tagUsers[1].id).toBe(3)
-            expect(tagUsers[1].taggable_id).toBe(2)
-            expect(tagUsers[1].tag_id).toBe(1)
+            expect(tagUsers[1].taggable_id).toBe(1)
+            expect(tagUsers[1].tag_id).toBe(2)
             expect(tagUsers[1].proficiency).toBe('Master')
         })
 
@@ -3728,6 +3701,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -3736,57 +3715,51 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            const user = new User()
-            user.username = 'virk'
-            await user.save()
+            const tag = new Tag()
+            tag.name = 'virk'
+            await tag.save()
 
             await db.insertQuery().table('taggables').multiInsert([
                 {
-                    taggable_id: user.id,
-                    tag_id: 1,
+                    taggable_id: 1,
+                    tag_id: tag.id,
                     proficiency: 'Beginner',
                     taggable_type: 'User'
                 },
                 {
-                    taggable_id: user.id,
-                    tag_id: 2,
+                    taggable_id: 2,
+                    tag_id: tag.id,
                     proficiency: 'Master',
                     taggable_type: 'User'
                 },
                 {
-                    taggable_id: 2,
-                    tag_id: 1,
+                    taggable_id: 1,
+                    tag_id: 2,
                     proficiency: 'Master',
                     taggable_type: 'User'
                 },
             ])
 
-            await user.related('tags').sync({1: {}})
+            await tag.related('users').sync({1: {}})
 
             const totalUsers = await db.query().from('users').count('*', 'total')
             const totalTags = await db.query().from('tags').count('*', 'total')
             const tagUsers = await db.query().from('taggables')
 
-            expect(Number(totalUsers[0].total)).toBe(1)
-            expect(Number(totalTags[0].total)).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(0)
+            expect(Number(totalTags[0].total)).toBe(1)
             expect(tagUsers).toHaveLength(2);
 
             expect(tagUsers[0].id).toBe(1)
-            expect(tagUsers[0].taggable_id).toBe(user.id)
-            expect(tagUsers[0].tag_id).toBe(1)
+            expect(tagUsers[0].taggable_id).toBe(1)
+            expect(tagUsers[0].tag_id).toBe(tag.id)
             expect(tagUsers[0].proficiency).toBe('Beginner')
 
             expect(tagUsers[1].id).toBe(3)
-            expect(tagUsers[1].taggable_id).toBe(2)
-            expect(tagUsers[1].tag_id).toBe(1)
+            expect(tagUsers[1].taggable_id).toBe(1)
+            expect(tagUsers[1].tag_id).toBe(2)
             expect(tagUsers[1].proficiency).toBe('Master')
         })
 
@@ -3797,6 +3770,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -3805,62 +3784,56 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            const user = new User()
-            user.username = 'virk'
-            await user.save()
+            const tag = new Tag()
+            tag.name = 'virk'
+            await tag.save()
 
             await db.insertQuery().table('taggables').multiInsert([
                 {
-                    taggable_id: user.id,
-                    tag_id: 1,
+                    taggable_id: 1,
+                    tag_id: tag.id,
                     proficiency: 'Beginner',
                     taggable_type: 'User'
                 },
                 {
-                    taggable_id: user.id,
-                    tag_id: 2,
+                    taggable_id: 1,
+                    tag_id: tag.id,
                     proficiency: 'Master',
                     taggable_type: 'User'
                 },
                 {
-                    taggable_id: 2,
-                    tag_id: 1,
+                    taggable_id: 1,
+                    tag_id: 2,
                     proficiency: 'Master',
                     taggable_type: 'User'
                 },
             ])
 
-            await user.related('tags').sync([1], false)
+            await tag.related('users').sync([1], false)
 
             const totalUsers = await db.query().from('users').count('*', 'total')
             const totalTags = await db.query().from('tags').count('*', 'total')
             const tagUsers = await db.query().from('taggables')
 
-            expect(Number(totalUsers[0].total)).toBe(1)
-            expect(Number(totalTags[0].total)).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(0)
+            expect(Number(totalTags[0].total)).toBe(1)
             expect(tagUsers).toHaveLength(3);
 
             expect(tagUsers[0].id).toBe(1)
-            expect(tagUsers[0].taggable_id).toBe(user.id)
-            expect(tagUsers[0].tag_id).toBe(1)
+            expect(tagUsers[0].taggable_id).toBe(1)
+            expect(tagUsers[0].tag_id).toBe(tag.id)
             expect(tagUsers[0].proficiency).toBe('Beginner')
 
             expect(tagUsers[1].id).toBe(2)
-            expect(tagUsers[1].taggable_id).toBe(user.id)
-            expect(tagUsers[1].tag_id).toBe(2)
+            expect(tagUsers[1].taggable_id).toBe(1)
+            expect(tagUsers[1].tag_id).toBe(tag.id)
             expect(tagUsers[1].proficiency).toBe('Master')
 
             expect(tagUsers[2].id).toBe(3)
-            expect(tagUsers[2].taggable_id).toBe(2)
-            expect(tagUsers[2].tag_id).toBe(1)
+            expect(tagUsers[2].taggable_id).toBe(1)
+            expect(tagUsers[2].tag_id).toBe(2)
             expect(tagUsers[2].proficiency).toBe('Master')
         })
 
@@ -3871,6 +3844,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -3879,28 +3858,22 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            const user = new User()
-            user.username = 'virk'
-            await user.save()
+            const tag = new Tag()
+            tag.name = 'virk'
+            await tag.save()
 
             await db.insertQuery().table('taggables').multiInsert([
                 {
-                    taggable_id: user.id,
-                    tag_id: 1,
+                    taggable_id: 1,
+                    tag_id: tag.id,
                     proficiency: 'Beginner',
                     taggable_type: 'User'
                 },
                 {
-                    taggable_id: user.id,
-                    tag_id: 2,
+                    taggable_id: 2,
+                    tag_id: tag.id,
                     proficiency: 'Master',
                     taggable_type: 'User'
                 },
@@ -3912,24 +3885,24 @@ describe('Model | MorphToMany', () => {
                 },
             ])
 
-            await user.related('tags').sync([1, 2])
+            await tag.related('users').sync([1, 2])
 
             const totalUsers = await db.query().from('users').count('*', 'total')
             const totalTags = await db.query().from('tags').count('*', 'total')
             const tagUsers = await db.query().from('taggables')
 
-            expect(Number(totalUsers[0].total)).toBe(1)
-            expect(Number(totalTags[0].total)).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(0)
+            expect(Number(totalTags[0].total)).toBe(1)
             expect(tagUsers).toHaveLength(3)
 
             expect(tagUsers[0].id).toBe(1)
-            expect(tagUsers[0].taggable_id).toBe(user.id)
-            expect(tagUsers[0].tag_id).toBe(1)
+            expect(tagUsers[0].taggable_id).toBe(1)
+            expect(tagUsers[0].tag_id).toBe(tag.id)
             expect(tagUsers[0].proficiency).toBe('Beginner')
 
             expect(tagUsers[1].id).toBe(2)
-            expect(tagUsers[1].taggable_id).toBe(user.id)
-            expect(tagUsers[1].tag_id).toBe(2)
+            expect(tagUsers[1].taggable_id).toBe(2)
+            expect(tagUsers[1].tag_id).toBe(tag.id)
             expect(tagUsers[1].proficiency).toBe('Master')
 
             expect(tagUsers[2].id).toBe(3)
@@ -3945,6 +3918,12 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public name: string
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
@@ -3953,41 +3932,35 @@ describe('Model | MorphToMany', () => {
 
                 @column()
                 public username: string
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            const user = new User()
-            user.username = 'virk'
-            await user.save()
+            const tag = new Tag()
+            tag.name = 'virk'
+            await tag.save()
 
             await db.insertQuery().table('taggables').multiInsert([
                 {
-                    taggable_id: user.id,
-                    tag_id: 1,
+                    taggable_id: 1,
+                    tag_id: tag.id,
                     proficiency: 'Beginner',
                     taggable_type: 'User'
                 },
                 {
-                    taggable_id: user.id,
-                    tag_id: 2,
+                    taggable_id: 2,
+                    tag_id: tag.id,
                     proficiency: 'Master',
                     taggable_type: 'User'
                 },
                 {
-                    taggable_id: 2,
-                    tag_id: 1,
+                    taggable_id: 1,
+                    tag_id: 2,
                     proficiency: 'Master',
                     taggable_type: 'User'
                 },
             ])
 
             const trx = await db.transaction()
-            await user.related('tags').sync({
+            await tag.related('users').sync({
                 1: {
                     proficiency: 'Intermediate',
                 },
@@ -4002,28 +3975,28 @@ describe('Model | MorphToMany', () => {
             const totalTags = await db.query().from('tags').count('*', 'total')
             const tagUsers = await db.query().from('taggables')
 
-            expect(Number(totalUsers[0].total)).toBe(1)
-            expect(Number(totalTags[0].total)).toBe(0)
+            expect(Number(totalUsers[0].total)).toBe(0)
+            expect(Number(totalTags[0].total)).toBe(1)
             expect(tagUsers).toHaveLength(3)
 
             expect(tagUsers[0].id).toBe(1)
-            expect(tagUsers[0].taggable_id).toBe(user.id)
-            expect(tagUsers[0].tag_id).toBe(1)
+            expect(tagUsers[0].taggable_id).toBe(1)
+            expect(tagUsers[0].tag_id).toBe(tag.id)
             expect(tagUsers[0].proficiency).toBe('Beginner')
 
             expect(tagUsers[1].id).toBe(2)
-            expect(tagUsers[1].taggable_id).toBe(user.id)
-            expect(tagUsers[1].tag_id).toBe(2)
+            expect(tagUsers[1].taggable_id).toBe(2)
+            expect(tagUsers[1].tag_id).toBe(tag.id)
             expect(tagUsers[1].proficiency).toBe('Master')
 
             expect(tagUsers[2].id).toBe(3)
-            expect(tagUsers[2].taggable_id).toBe(2)
-            expect(tagUsers[2].tag_id).toBe(1)
+            expect(tagUsers[2].taggable_id).toBe(1)
+            expect(tagUsers[2].tag_id).toBe(2)
             expect(tagUsers[2].proficiency).toBe('Master')
         })
     })
 
-    describe('Model | MorphToMany | pagination', () => {
+    describe('Model | MorphedByMany | pagination', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -4043,20 +4016,20 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            await db.table('users').insert({username: 'virk'})
+            await db.table('users').insert([{username: 'virk'},{username: 'nikk'}])
             await db.insertQuery().table('tags').insert([
                 {name: 'Programming'},
                 {name: 'Dancing'},
@@ -4069,37 +4042,37 @@ describe('Model | MorphToMany', () => {
                     tag_id: 1,
                 },
                 {
-                    taggable_id: 1,
+                    taggable_id: 2,
                     taggable_type: 'User',
-                    tag_id: 2,
+                    tag_id: 1,
                 },
             ])
 
-            const user = await User.find(1)
-            const tags = await user!.related('tags').query().paginate(1, 1)
+            const tag = await Tag.find(1)
+            const users = await tag!.related('users').query().paginate(1, 1)
 
-            tags.baseUrl('/tags')
+            users.baseUrl('/users')
 
-            expect(tags.all()).toHaveLength(1)
-            expect(tags.all()[0]).toBeInstanceOf(Tag)
-            expect(tags.all()[0].$extras).not.toHaveProperty('total');
-            expect(tags.perPage).toBe(1)
-            expect(tags.currentPage).toBe(1)
-            expect(tags.lastPage).toBe(2)
-            expect(tags.hasPages).toBeTruthy()
-            expect(tags.hasMorePages).toBeTruthy()
-            expect(tags.isEmpty).toBeFalsy()
-            expect(Number(tags.total)).toBe(2)
-            expect(tags.hasTotal).toBeTruthy()
-            expect(tags.getMeta()).toEqual({
+            expect(users.all()).toHaveLength(1)
+            expect(users.all()[0]).toBeInstanceOf(User)
+            expect(users.all()[0].$extras).not.toHaveProperty('total');
+            expect(users.perPage).toBe(1)
+            expect(users.currentPage).toBe(1)
+            expect(users.lastPage).toBe(2)
+            expect(users.hasPages).toBeTruthy()
+            expect(users.hasMorePages).toBeTruthy()
+            expect(users.isEmpty).toBeFalsy()
+            expect(Number(users.total)).toBe(2)
+            expect(users.hasTotal).toBeTruthy()
+            expect(users.getMeta()).toEqual({
                 total: 2,
                 per_page: 1,
                 current_page: 1,
                 last_page: 2,
                 first_page: 1,
-                first_page_url: '/tags?page=1',
-                last_page_url: '/tags?page=2',
-                next_page_url: '/tags?page=2',
+                first_page_url: '/users?page=1',
+                last_page_url: '/users?page=2',
+                next_page_url: '/users?page=2',
                 previous_page_url: null,
             })
         })
@@ -4110,17 +4083,17 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
             await db.table('users').insert({username: 'virk'})
@@ -4143,16 +4116,16 @@ describe('Model | MorphToMany', () => {
             ])
 
             try {
-                await User.query().preload('tags', (query) => {
+                await Tag.query().preload('users', (query) => {
                     query.paginate(1, 5)
                 })
             } catch ({message}) {
-                expect(message).toBe('Cannot paginate relationship "tags" during preload')
+                expect(message).toBe('Cannot paginate relationship "users" during preload')
             }
         })
     })
 
-    describe('Model | MorphToMany | clone', () => {
+    describe('Model | MorphedByMany | clone', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -4172,17 +4145,17 @@ describe('Model | MorphToMany', () => {
             class Tag extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
+
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
-
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
             }
 
             await db.table('users').insert({username: 'virk'})
@@ -4204,13 +4177,13 @@ describe('Model | MorphToMany', () => {
                 },
             ])
 
-            const user = await User.find(1)
-            const clonedQuery = user!.related('tags').query().clone()
+            const tag = await Tag.find(1)
+            const clonedQuery = tag!.related('users').query().clone()
             expect(clonedQuery).toBeInstanceOf(MorphToManyQueryBuilder)
         })
     })
 
-    describe('Model | MorphToMany | scopes', () => {
+    describe('Model | MorphedByMany | scopes', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -4231,26 +4204,26 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public name: string
-
-                public static programmingOnly = scope((query) => {
-                    query.where('name', 'Programming')
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
                 })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
+                @column()
+                public username: string
+
+                public static virkOnly = scope((query) => {
+                    query.where('username', 'virk')
                 })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            await db.table('users').insert({username: 'virk'})
+            await db.table('users').insert([{username: 'virk'},{username: 'nikk'}])
             await db.insertQuery().table('tags').insert([
                 {name: 'Programming'},
                 {name: 'Dancing'},
@@ -4263,21 +4236,21 @@ describe('Model | MorphToMany', () => {
                     taggable_type: 'User'
                 },
                 {
-                    taggable_id: 1,
-                    tag_id: 2,
+                    taggable_id: 2,
+                    tag_id: 1,
                     taggable_type: 'User'
                 },
             ])
 
-            const user = await User.query().preload('tags', (query) => {
-                query.apply((scopes) => scopes.programmingOnly())
+            const tag = await Tag.query().preload('users', (query) => {
+                query.apply((scopes) => scopes.virkOnly())
             }).firstOrFail()
 
-            const userWithoutScopes = await User.query().preload('tags').firstOrFail()
+            const userWithoutScopes = await Tag.query().preload('users').firstOrFail()
 
-            expect(user.tags).toHaveLength(1)
-            expect(userWithoutScopes.tags).toHaveLength(2)
-            expect(user.tags[0].name).toBe('Programming')
+            expect(tag.users).toHaveLength(1)
+            expect(userWithoutScopes.users).toHaveLength(2)
+            expect(tag.users[0].username).toBe('virk')
         })
 
         test('apply scopes on related query', async () => {
@@ -4285,26 +4258,26 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public name: string
-
-                public static programmingOnly = scope((query) => {
-                    query.where('name', 'Programming')
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
                 })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
+                @column()
+                public username: string
+
+                public static virkOnly = scope((query) => {
+                    query.where('username', 'virk')
                 })
-                public tags: MorphToMany<typeof Tag>
             }
 
-            await db.table('users').insert({username: 'virk'})
+            await db.table('users').insert([{username: 'virk'},{username: 'nikk'}])
             await db.insertQuery().table('tags').insert([
                 {name: 'Programming'},
                 {name: 'Dancing'},
@@ -4317,28 +4290,28 @@ describe('Model | MorphToMany', () => {
                     taggable_type: 'User'
                 },
                 {
-                    taggable_id: 1,
-                    tag_id: 2,
+                    taggable_id: 2,
+                    tag_id: 1,
                     taggable_type: 'User'
                 },
             ])
 
-            const user = await User.findOrFail(1)
-            const tags = await user.related('tags').query().apply((scopes) => scopes.programmingOnly())
-            const tagsWithoutScope = await user.related('tags').query()
+            const tag = await Tag.findOrFail(1)
+            const users = await tag.related('users').query().apply((scopes) => scopes.virkOnly())
+            const usersWithoutScope = await tag.related('users').query()
 
-            expect(tags).toHaveLength(1)
-            expect(tagsWithoutScope).toHaveLength(2)
-            expect(tags[0].name).toBe('Programming')
+            expect(users).toHaveLength(1)
+            expect(usersWithoutScope).toHaveLength(2)
+            expect(users[0].username).toBe('virk')
         })
     })
 
-    describe('Model | MorphToMany | global scopes', () => {
+    describe('Model | MorphedByMany | global scopes', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
             await setup()
-            await db.table('users').insert({username: 'virk'})
+            await db.table('users').insert([{username: 'virk'},{username: 'nikk'}])
             await db.insertQuery().table('tags').insert([
                 {name: 'Programming'},
                 {name: 'Dancing'},
@@ -4351,8 +4324,8 @@ describe('Model | MorphToMany', () => {
                     taggable_type: 'User'
                 },
                 {
-                    taggable_id: 1,
-                    tag_id: 2,
+                    taggable_id: 2,
+                    tag_id: 1,
                     taggable_type: 'User'
                 },
             ])
@@ -4368,39 +4341,35 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public name: string
-
-                public static boot() {
-                    this.addGlobalScope(query => query.where('name', 'Programming'))
-                }
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
+                @column()
+                public name: string
+
+                public static boot() {
+                    this.addGlobalScope(query => query.where('username', 'Programming'))
+                }
             }
 
             db.enableQueryLog();
-            await User.query().preload('tags').firstOrFail();
+            await Tag.query().preload('users').firstOrFail();
 
             const {sql} = db.getQueryLog()[1];
-            const {sql: knexSql} = db.from('tags')
-                .select([
-                    'tags.*',
-                    'taggables.taggable_id as pivot_taggable_id',
-                    'taggables.tag_id as pivot_tag_id'
-                ])
-                .join('taggables', 'tags.id', '=', 'taggables.tag_id')
+            const {sql: knexSql} = db.from('users')
+                .select('users.*', 'taggables.tag_id as pivot_tag_id', 'taggables.taggable_id as pivot_taggable_id')
+                .innerJoin('taggables', 'users.id', 'taggables.taggable_id')
                 .where('taggables.taggable_type', 'User')
-                .whereIn('taggables.taggable_id', [1])
-                .where('name', 'Programming').toSQL();
+                .whereIn('taggables.tag_id', [1])
+                .where('username', 'Programming').toSQL();
             expect(sql).toEqual(knexSql);
         });
 
@@ -4409,40 +4378,36 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public name: string
-
-                public static boot() {
-                    this.addGlobalScope(query => query.where('name', 'Programming'))
-                }
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
+                @column()
+                public name: string
+
+                public static boot() {
+                    this.addGlobalScope(query => query.where('username', 'Programming'))
+                }
             }
 
             db.enableQueryLog();
-            const user = await User.findOrFail(1)
-            const tags = await user.related('tags').query();
+            const tag = await Tag.findOrFail(1)
+            const users = await tag.related('users').query();
 
             const {sql} = db.getQueryLog()[1];
-            const {sql: knexSql} = db.from('tags')
-                .select([
-                    'tags.*',
-                    'taggables.taggable_id as pivot_taggable_id',
-                    'taggables.tag_id as pivot_tag_id'
-                ])
-                .join('taggables', 'tags.id', '=', 'taggables.tag_id')
+            const {sql: knexSql} = db.from('users')
+                .select('users.*', 'taggables.tag_id as pivot_tag_id', 'taggables.taggable_id as pivot_taggable_id')
+                .innerJoin('taggables', 'users.id', 'taggables.taggable_id')
                 .where('taggables.taggable_type', 'User')
-                .where('taggables.taggable_id', 1)
-                .where('name', 'Programming').toSQL();
+                .where('taggables.tag_id', 1)
+                .where('username', 'Programming').toSQL();
             expect(sql).toEqual(knexSql);
         });
 
@@ -4451,36 +4416,36 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public name: string
-
-                public static boot() {
-                    this.addGlobalScope(query => query.where('name', 'Programming'))
-                }
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables'
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables'
-                })
-                public tags: MorphToMany<typeof Tag>
+                @column()
+                public name: string
+
+                public static boot() {
+                    this.addGlobalScope(query => query.where('username', 'virk'))
+                }
             }
 
-            const user = await User.findOrFail(1);
+            const tag = await Tag.findOrFail(1);
             db.enableQueryLog();
-            await user.related('tags').query().paginate(1, 20);
+            await tag.related('users').query().paginate(1, 20);
 
             {
                 const {sql} = db.getQueryLog()[0];
-                const {sql: knexSql} = db.from('tags')
-                    .join('taggables', 'tags.id', '=', 'taggables.tag_id')
+                const {sql: knexSql} = db.from('users')
+                    .innerJoin('taggables', 'users.id', 'taggables.taggable_id')
                     .where('taggables.taggable_type', 'User')
-                    .where('taggables.taggable_id', 1)
-                    .where('name', 'Programming')
+                    .where('taggables.tag_id', 1)
+                    .where('username', 'Programming')
                     .count('* as total')
                     .toSQL();
                 expect(sql).toEqual(knexSql);
@@ -4488,16 +4453,12 @@ describe('Model | MorphToMany', () => {
 
             {
                 const {sql} = db.getQueryLog()[1];
-                const {sql: knexSql} = db.from('tags')
-                    .select([
-                        'tags.*',
-                        'taggables.taggable_id as pivot_taggable_id',
-                        'taggables.tag_id as pivot_tag_id'
-                    ])
-                    .join('taggables', 'tags.id', '=', 'taggables.tag_id')
+                const {sql: knexSql} = db.from('users')
+                    .select('users.*', 'taggables.tag_id as pivot_tag_id', 'taggables.taggable_id as pivot_taggable_id')
+                    .innerJoin('taggables', 'users.id', 'taggables.taggable_id')
                     .where('taggables.taggable_type', 'User')
-                    .where('taggables.taggable_id', 1)
-                    .where('name', 'Programming')
+                    .where('taggables.tag_id', 1)
+                    .where('username', 'Programming')
                     .limit(20)
                     .toSQL();
                 expect(sql).toEqual(knexSql);
@@ -4505,7 +4466,7 @@ describe('Model | MorphToMany', () => {
         });
     });
 
-    describe('Model | MorphToMany | onQuery', () => {
+    describe('Model | MorphedByMany | onQuery', () => {
         beforeAll(async () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
@@ -4526,20 +4487,20 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public name: string
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables',
+                    onQuery: (query) => query.where('username', 'virk'),
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables',
-                    onQuery: (query) => query.where('name', 'Programming'),
-                })
-                public tags: MorphToMany<typeof Tag>
+                @column()
+                public username: string
             }
 
             await db.table('users').insert({username: 'virk'})
@@ -4561,9 +4522,9 @@ describe('Model | MorphToMany', () => {
                 },
             ])
 
-            const user = await User.query().preload('tags').firstOrFail()
-            expect(user.tags).toHaveLength(1)
-            expect(user.tags[0].name).toBe('Programming')
+            const tag = await Tag.query().preload('users').firstOrFail()
+            expect(tag.users).toHaveLength(1)
+            expect(tag.users[0].username).toBe('virk')
         })
 
         test('do not invoke onQuery method during preloading subqueries', async () => {
@@ -4573,23 +4534,23 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public name: string
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables',
+                    onQuery: (query) => {
+                        expect(true).toBeTruthy()
+                        query.where('username', 'virk')
+                    },
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables',
-                    onQuery: (query) => {
-                        expect(true).toBeTruthy()
-                        query.where('name', 'Programming')
-                    },
-                })
-                public tags: MorphToMany<typeof Tag>
+                @column()
+                public username: string
             }
 
             await db.table('users').insert({username: 'virk'})
@@ -4605,19 +4566,19 @@ describe('Model | MorphToMany', () => {
                     taggable_type: 'User'
                 },
                 {
-                    taggable_id: 1,
-                    tag_id: 2,
+                    taggable_id: 2,
+                    tag_id: 1,
                     taggable_type: 'User'
                 },
             ])
 
-            const user = await User.query().preload('tags', (query) => {
+            const tag = await Tag.query().preload('users', (query) => {
                 query.where(() => {
                 })
             }).firstOrFail()
 
-            expect(user.tags).toHaveLength(1)
-            expect(user.tags[0].name).toBe('Programming')
+            expect(tag.users).toHaveLength(1)
+            expect(tag.users[0].username).toBe('virk')
         })
 
         test('invoke onQuery method on related query builder', async () => {
@@ -4625,20 +4586,20 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public name: string
+                @morphedByMany(() => User, {
+                    name: 'taggable',
+                    pivotTable: 'taggables',
+                    onQuery: (query) => query.where('username', 'virk'),
+                })
+                public users: MorphedByMany<typeof User>
             }
 
             class User extends BaseModel {
                 @column({isPrimary: true})
                 public id: number
 
-                @morphToMany(() => Tag, {
-                    name: 'taggable',
-                    pivotTable: 'taggables',
-                    onQuery: (query) => query.where('name', 'Programming'),
-                })
-                public tags: MorphToMany<typeof Tag>
+                @column()
+                public username: string
             }
 
             await db.table('users').insert({username: 'virk'})
@@ -4654,16 +4615,16 @@ describe('Model | MorphToMany', () => {
                     taggable_type: 'User'
                 },
                 {
-                    taggable_id: 1,
-                    tag_id: 2,
+                    taggable_id: 2,
+                    tag_id: 1,
                     taggable_type: 'User'
                 },
             ])
 
-            const user = await User.findOrFail(1)
-            const tags = await user.related('tags').query()
-            expect(tags).toHaveLength(1)
-            expect(tags[0].name).toBe('Programming')
+            const tag = await Tag.findOrFail(1)
+            const users = await tag.related('users').query()
+            expect(users).toHaveLength(1)
+            expect(users[0].username).toBe('virk')
         })
 
         test('invoke onQuery method on pivot query builder', async () => {
@@ -4673,22 +4634,22 @@ describe('Model | MorphToMany', () => {
                 @column({isPrimary: true})
                 public id: number
 
-                @column()
-                public name: string
-            }
-
-            class User extends BaseModel {
-                @column({isPrimary: true})
-                public id: number
-
-                @morphToMany(() => Tag, {
+                @morphedByMany(() => User, {
                     name: 'taggable',
                     pivotTable: 'taggables',
                     onQuery: (query) => {
                         expect(query.isPivotOnlyQuery).toBeTruthy()
                     },
                 })
-                public tags: MorphToMany<typeof Tag>
+                public users: MorphedByMany<typeof User>
+            }
+
+            class User extends BaseModel {
+                @column({isPrimary: true})
+                public id: number
+
+                @column()
+                public username: string
             }
 
             await db.table('users').insert({username: 'virk'})
@@ -4704,14 +4665,14 @@ describe('Model | MorphToMany', () => {
                     taggable_type: 'User'
                 },
                 {
-                    taggable_id: 1,
-                    tag_id: 2,
+                    taggable_id: 2,
+                    tag_id: 1,
                     taggable_type: 'User'
                 },
             ])
 
-            const user = await User.findOrFail(1)
-            await user.related('tags').pivotQuery()
+            const tag = await Tag.findOrFail(1)
+            await tag.related('users').pivotQuery()
         })
     })
-});
+})
