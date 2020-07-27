@@ -184,7 +184,7 @@ export interface LucidRow {
 
     merge(value: Partial<ModelAttributes<this>>, allowNonExtraProperties?: boolean): void
 
-    save(): Promise<number>
+    save(): Promise<boolean>
 
     delete(): Promise<number>
 

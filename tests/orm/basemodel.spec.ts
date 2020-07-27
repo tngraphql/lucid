@@ -720,6 +720,7 @@ describe('Base model', () => {
             });
 
             const user = new User()
+            user.fullName = 'bar';
             user.$isPersisted = true
             await user.save()
 
@@ -2366,8 +2367,8 @@ describe('Base model', () => {
             await user.save()
 
             expect(stack).toEqual([
-                'beforeCreateHook',
                 'beforeSaveHook',
+                'beforeCreateHook',
                 'afterCreateHook',
                 'afterSaveHook'
             ])
@@ -2389,23 +2390,23 @@ describe('Base model', () => {
                 public static boot() {
                     super.boot()
 
-                    this.before('create', (model) => {
+                    this.before('save', (model) => {
                         expect(model).toBeInstanceOf(User)
                         expect(model.$isPersisted).toBeFalsy()
                         throw new Error('Wait')
                     })
 
-                    this.before('save', (model) => {
+                    this.before('create', (model) => {
                         expect(model).toBeInstanceOf(User)
                         expect(model.$isPersisted).toBeFalsy()
                     })
 
-                    this.after('create', (model) => {
+                    this.after('save', (model) => {
                         expect(model).toBeInstanceOf(User)
                         expect(model.$isPersisted).toBeTruthy()
                     })
 
-                    this.after('save', (model) => {
+                    this.after('create', (model) => {
                         expect(model).toBeInstanceOf(User)
                         expect(model.$isPersisted).toBeTruthy()
                     })
@@ -2489,7 +2490,7 @@ describe('Base model', () => {
         })
 
         test('invoke before and after update hooks', async () => {
-            expect.assertions(10)
+            expect.assertions(11)
 
             class User extends BaseModel {
                 @column({ isPrimary: true })
@@ -2516,13 +2517,13 @@ describe('Base model', () => {
                 @afterUpdate()
                 public static afterUpdateHook(model: User) {
                     expect(model).toBeInstanceOf(User)
-                    expect(model.$isDirty).toBeFalsy()
+                    expect(model.$isDirty).toBeTruthy()
                 }
 
                 @afterSave()
                 public static afterSaveHook(model: User) {
                     expect(model).toBeInstanceOf(User)
-                    expect(model.$isDirty).toBeFalsy()
+                    expect(model.$isDirty).toBeTruthy()
                 }
             }
 
@@ -2535,6 +2536,7 @@ describe('Base model', () => {
             const users = await db.from('users')
             expect(users).toHaveLength(1)
             expect(users[0].username).toBe('nikk')
+            expect(user.$isDirty).toBeFalsy()
         })
 
         test('abort update when before hook raises exception', async () => {
@@ -2553,13 +2555,13 @@ describe('Base model', () => {
                 public static boot() {
                     super.boot()
 
-                    this.before('update', (model) => {
+                    this.before('save', (model) => {
                         expect(model).toBeInstanceOf(User)
                         expect(model.$isDirty).toBeTruthy()
                         throw new Error('Wait')
                     })
 
-                    this.before('save', (model) => {
+                    this.before('update', (model) => {
                         expect(model).toBeInstanceOf(User)
                         expect(model.$isDirty).toBeTruthy()
                     })
@@ -4717,7 +4719,7 @@ describe('Base model', () => {
                     [
                         {
                             username: 'virk',
-                            email: 'virk-1@adonisjs.com',
+                            email: 'virk-2@adonisjs.com',
                         },
                     ],
                 ),
@@ -4786,18 +4788,18 @@ describe('Base model', () => {
             User = UserModel
         });
 
-        it('save insert success should return number', async () => {
+        it('save insert success should return boolean', async () => {
             const user = new User()
             user.username = 'virk';
-            expect(await user.save()).toBe(1);
+            expect(await user.save()).toBe(true);
         });
 
-        it('save update success should return number', async () => {
+        it('save update success should return boolean', async () => {
             const user = new User()
             user.username = 'virk';
             await user.save();
             user.username = 'nguyen';
-            expect(await user.save()).toBe(1);
+            expect(await user.save()).toBe(true);
         });
 
         it('update success. get changes', async () => {

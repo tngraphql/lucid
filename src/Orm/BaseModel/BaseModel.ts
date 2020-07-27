@@ -201,7 +201,6 @@ export class BaseModel implements LucidRow {
         return this.query().withoutGlobalScopes(scope);
     }
 
-
     /**
      * Register the global scopes for this builder instance.
      *
@@ -1714,57 +1713,71 @@ export class BaseModel implements LucidRow {
      */
     public async save() {
         this.ensureIsntDeleted()
-        const Model = this.constructor as typeof BaseModel
+        const Model = this.constructor as typeof BaseModel;
 
-        /**
-         * Persit the model when it's not persisted already
-         */
+        await Model.$hooks.exec('before', 'save', this);
+
+        let saved = false;
+
         if (!this.$isPersisted) {
-            await Model.$hooks.exec('before', 'create', this)
-            await Model.$hooks.exec('before', 'save', this)
-
-            this.initiateAutoCreateColumns();
-            const [result] = (await Model.$adapter.insert(this, this.prepareForAdapter(this.$attributes))) || [null];
-            this.$hydrateOriginals()
-            if (result) {
-                this.$isPersisted = true;
-            }
-
-            await Model.$hooks.exec('after', 'create', this)
-            await Model.$hooks.exec('after', 'save', this)
-
-            return result;
+            saved = await this.performInsert(Model);
+        } else {
+            saved = this.$isDirty ? await this.performUpdate(Model) : true;
         }
 
+        if (saved) {
+            await this.firstSave();
+        }
+
+        return !!saved;
+    }
+
+    protected async performUpdate(Model) {
         /**
          * Call hooks before hand, so that they have the chance
          * to make mutations that produces one or more `$dirty`
          * fields.
          */
         await Model.$hooks.exec('before', 'update', this);
-        await Model.$hooks.exec('before', 'save', this);
-
-        /**
-         * Do not issue updates when model doesn't have any mutations
-         */
-        if (!this.$isDirty) {
-            return
-        }
 
         /**
          * Perform update
          */
         this.initiateAutoUpdateColumns()
-        const [result] = (await Model.$adapter.update(this, this.prepareForAdapter(this.$dirty))) || [null];
-        this.$syncChanges();
 
-        this.$hydrateOriginals()
+        if (this.$isDirty) {
+            await Model.$adapter.update(this, this.prepareForAdapter(this.$dirty));
 
-        if (result) this.$isPersisted = true
+            this.$syncChanges();
 
-        await Model.$hooks.exec('after', 'update', this)
-        await Model.$hooks.exec('after', 'save', this)
+            await Model.$hooks.exec('after', 'update', this)
+        }
+
+        return true;
+    }
+
+    protected async performInsert(Model) {
+        await Model.$hooks.exec('before', 'create', this)
+
+        this.initiateAutoCreateColumns();
+
+        const [result] = (await Model.$adapter.insert(this, this.prepareForAdapter(this.$attributes))) || [null];
+
+        if (result) {
+            this.$isPersisted = true;
+        }
+
+        await Model.$hooks.exec('after', 'create', this)
+
         return result;
+    }
+
+    protected async firstSave() {
+        const Model = this.constructor as typeof BaseModel
+
+        await Model.$hooks.exec('after', 'save', this)
+
+        this.$hydrateOriginals();
     }
 
     /**
