@@ -1143,6 +1143,11 @@ export class BaseModel implements LucidRow {
     public $original: ModelObject = {}
 
     /**
+     * The changed model attributes.
+     */
+    protected $changes: ModelObject = {}
+
+    /**
      * Preloaded relationships on the model instance
      */
     public $preloaded: { [relation: string]: LucidRow | LucidRow[] } = {}
@@ -1555,6 +1560,15 @@ export class BaseModel implements LucidRow {
         this.$original = Object.assign({}, this.$attributes)
     }
 
+    public $syncChanges() {
+        this.$changes = this.$dirty;
+        return this;
+    }
+
+    public getChanges() {
+        return this.$changes;
+    }
+
     /**
      * Set bulk attributes on the model instance. Setting relationships via
      * fill isn't allowed, since we disallow setting relationships
@@ -1742,6 +1756,8 @@ export class BaseModel implements LucidRow {
          */
         this.initiateAutoUpdateColumns()
         const [result] = (await Model.$adapter.update(this, this.prepareForAdapter(this.$dirty))) || [null];
+        this.$syncChanges();
+
         this.$hydrateOriginals()
 
         if (result) this.$isPersisted = true

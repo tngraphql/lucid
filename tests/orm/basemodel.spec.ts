@@ -4799,5 +4799,14 @@ describe('Base model', () => {
             user.username = 'nguyen';
             expect(await user.save()).toBe(1);
         });
+
+        it('update success. get changes', async () => {
+            const user = new User()
+            user.username = 'virk';
+            await user.save();
+            user.username = 'nguyen';
+            await user.save();
+            expect(user.getChanges()).toEqual({username: 'nguyen'});
+        });
     });
 })

@@ -176,7 +176,9 @@ export interface LucidRow {
      */
     $consumeAdapterResult(adapterResult: ModelObject, sideloadAttributes?: ModelObject): void
 
-    $hydrateOriginals(): void
+    $hydrateOriginals(): void;
+
+    getChanges(): { [key: string]: any }
 
     fill(value: Partial<ModelAttributes<this>>, allowNonExtraProperties?: boolean): void
 
