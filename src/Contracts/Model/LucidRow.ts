@@ -249,4 +249,6 @@ export interface LucidRow {
     prepareForAdapter(attributes: ModelObject);
 
     newModelQuery(): ModelQueryBuilderContract<LucidModel>
+
+    getConnection(options?: ModelAdapterOptions): QueryClientContract;
 }

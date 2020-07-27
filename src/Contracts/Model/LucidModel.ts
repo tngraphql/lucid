@@ -25,6 +25,7 @@ import {
     ModelRelationOptions
 } from './types';
 import { SimplePaginatorContract } from '../Database/SimplePaginatorContract';
+import {QueryClientContract} from "../Database/QueryClientContract";
 
 // export type LucidModel = typeof BaseModel & {new(): LucidRow};
 
@@ -461,6 +462,8 @@ export interface LucidModel {
     registerGlobalScopes(builder);
 
     morphMap(map: {[key: string]: () => LucidModel});
+
+    getConnection(options?: ModelAdapterOptions): QueryClientContract;
 
     new(): LucidRow
 }

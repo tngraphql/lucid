@@ -215,6 +215,23 @@ export class BaseModel implements LucidRow {
     }
 
     /**
+     * Get the database connection for the model.
+     *
+     */
+    public static getConnection(options = {})
+    {
+        return this.$adapter.modelConstructorClient(this, options);
+    }
+    /**
+     * Get the database connection for the model.
+     *
+     */
+    public getConnection(options) {
+        const Model = this.constructor as typeof BaseModel;
+        return Model.getConnection(options);
+    }
+
+    /**
      * Create a model instance from the adapter result. The result value must
      * be a valid object, otherwise `null` is returned.
      */
