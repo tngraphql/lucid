@@ -59,7 +59,7 @@ import {ModelEventEmitter} from './ModelEventEmitter';
 import {proxyHandler} from './proxyHandler'
 import {DATE_TIME_TYPES} from '../Decorators/date';
 import {MorphTo} from "../Relations/MorphTo";
-import {MORPH_METADATA_KEY, Relation} from "../Relations/Base/Relation";
+import {Relation} from "../Relations/Base/Relation";
 import {MorphOne} from "../Relations/MorphOne";
 import {MorphMany} from "../Relations/MorphMany";
 import {MorphToMany} from "../Relations/MorphToMany";
@@ -2086,8 +2086,6 @@ export class BaseModel implements LucidRow {
             return column;
         }
 
-        const model = this.constructor as LucidModel;
-
         return this.getTable() + '.' + column;
     }
 
@@ -2098,6 +2096,10 @@ export class BaseModel implements LucidRow {
         const model = this.constructor as typeof BaseModel;
 
         return model.qualifyColumn(column);
+    }
+
+    public static getQualifiedKeyName() {
+        return this.qualifyColumn(this.primaryKey);
     }
 
     static morphMap(map: {[key: string]: () => LucidModel}) {

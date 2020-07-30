@@ -134,4 +134,27 @@ export abstract class BaseQueryBuilder extends ModelQueryBuilder implements Rela
         this.sideload(Object.assign({}, query.sideloaded));
         return this;
     }
+
+    public getRelationExistenceQuery(query, parentQuery, column = '*') {
+        this.whereColumn(
+            parentQuery.resolveKey(parentQuery.qualifyColumn(this.getParentKeyName())),
+            '=',
+            this.resolveKey(this.getExistenceCompareKey())
+        )
+    }
+
+    public getRelationExistenceCountQuery(query, parentQuery) {
+        this.getRelationExistenceQuery(query, parentQuery);
+
+        query.knexQuery['_statements'] = query.knexQuery['_statements'].filter(x => x.grouping !== 'columns');
+
+        query.count('*');
+    }
+
+    abstract getExistenceCompareKey();
+
+    protected getParentKeyName() {
+        // @ts-ignore
+        return this.relation.model.primaryKey;
+    }
 }

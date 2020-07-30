@@ -452,6 +452,8 @@ export interface LucidModel {
      */
     qualifyColumn(column: string): string;
 
+    getQualifiedKeyName(): string;
+
     prepareForAdapter(attributes: ModelObject);
 
     /**

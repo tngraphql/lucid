@@ -9,6 +9,8 @@ import {LucidModel} from "../../../Contracts/Model/LucidModel";
 export const MORPH_METADATA_KEY = Symbol('morph:map');
 
 export class Relation {
+    static $selfJoinCount = 0;
+
     public relatedModel: any;
 
     public async getEager(query: RelationQueryBuilderContract<any, any>) {

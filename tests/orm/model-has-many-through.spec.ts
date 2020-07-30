@@ -7,11 +7,12 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-import { HasManyThrough } from '../../src/Contracts/Orm/Relations/types';
+import {BelongsTo, HasManyThrough} from '../../src/Contracts/Orm/Relations/types';
 import { scope } from '../../src/Helpers/scope';
-import { column, hasManyThrough } from '../../src/Orm/Decorators';
+import {belongsTo, column, hasManyThrough} from '../../src/Orm/Decorators';
 import { HasManyThroughQueryBuilder } from '../../src/Orm/Relations/HasManyThrough/QueryBuilder';
 import { cleanup, getBaseModel, getDb, getProfiler, ormAdapter, resetTables, setup } from '../helpers';
+import {Relation} from "../../src/Orm/Relations/Base/Relation";
 
 let db: ReturnType<typeof getDb>
 let BaseModel: ReturnType<typeof getBaseModel>
@@ -2501,4 +2502,499 @@ describe('Model | Has Many Through', () => {
             expect(bindings).toEqual(knexBindings)
         })
     })
+
+    describe('Model HasQuery', () => {
+        let Profile;
+        let User;
+        let Post;
+        let Country;
+
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+            await setup()
+
+            class UserModel extends BaseModel {
+                static table = 'users'
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public countryId: number
+
+                @belongsTo(() => CountryModel)
+                public country: BelongsTo<typeof CountryModel>;
+            }
+
+            class PostModel extends BaseModel {
+                static table = 'posts'
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public userId: number
+
+                @column()
+                public countryId: number
+
+                @column()
+                public title: string
+            }
+
+            class CountryModel extends BaseModel {
+                static table = 'countries'
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public userId: number
+
+                @column()
+                public countryId: number
+
+                @hasManyThrough([() => PostModel, () => CountryModel])
+                public posts2: HasManyThrough<typeof PostModel>
+
+                @hasManyThrough([() => CountryModel, () => UserModel])
+                public countries: HasManyThrough<typeof CountryModel>
+
+                @hasManyThrough([() => PostModel, () => UserModel])
+                public posts: HasManyThrough<typeof PostModel>
+            }
+
+            User = UserModel;
+            Post = PostModel;
+            Country = CountryModel;
+        })
+
+        afterAll(async () => {
+            await cleanup()
+            await db.manager.closeAll()
+        })
+
+        afterEach(async () => {
+            await resetTables()
+            Relation.$selfJoinCount = 0;
+        })
+
+        it('has query', async () => {
+            const {sql, bindings} = Country.query().has('posts').toSQL();
+
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .whereExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('has nested query', async () => {
+            const {sql, bindings} = Country.query().has('countries').toSQL();
+
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .whereExists(builder => {
+                    builder
+                        .from('countries as lucid_reserved_0')
+                        .select('*')
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'lucid_reserved_0.user_id'
+                        )
+                        .whereRaw('countries.id = lucid_reserved_0.country_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('has nested t query', async () => {
+            const {sql, bindings} = Country.query().has('posts2').toSQL();
+
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .whereExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('*')
+                        .innerJoin(
+                            'countries as lucid_reserved_0', // user
+                            'lucid_reserved_0.id',
+                            'posts.country_id'
+                        )
+                        .whereRaw('countries.id = lucid_reserved_0.country_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('withcount query', async () => {
+            const {sql, bindings} = Country.query().withCount('posts').toSQL();
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('countries.*')
+                // @ts-ignore
+                .select(db.raw('(select count(*) from `posts` inner join `users` on `users`.`id` = `posts`.`user_id` where countries.id = users.country_id) as `posts_count`'))
+                .toSQL();
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orHas query', async () => {
+            const {sql, bindings} = Country.query().where('id', 1).orHas('posts').toSQL();
+
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .where('id', 1)
+                .orWhereExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereHas query', async () => {
+            const {sql, bindings} = Country.query().whereHas('posts').toSQL();
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .whereExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereHas use callback query', async () => {
+            const {sql, bindings} = Country.query().whereHas('posts', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .whereExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                        .where('posts.id', 1)
+                })
+                .toSQL();
+
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereHas query', async () => {
+            const {sql, bindings} = Country.query().orWhereHas('posts').toSQL();
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .orWhereExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereHas using callback query', async () => {
+            const {sql, bindings} = Country.query().orWhereHas('posts', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .orWhereExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                        .where('posts.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('doesntHave query', async () => {
+            const {sql, bindings} = Country.query().doesntHave('posts').toSQL();
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .whereNotExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orDoesntHave query', async () => {
+            const {sql, bindings} = Country.query().where('id', 1).orDoesntHave('posts').toSQL();
+
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .where('id', 1)
+                .orWhereNotExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereDoesntHave query', async () => {
+            const {sql, bindings} = Country.query().where('id', 1).whereDoesntHave('posts').toSQL();
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .where('id', 1)
+                .whereNotExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereDoesntHave using callback query', async () => {
+            const {sql, bindings} = Country.query().where('id', 1).whereDoesntHave('posts', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .where('id', 1)
+                .whereNotExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                        .where('posts.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereDoesntHave query', async () => {
+            const {sql, bindings} = Country.query().where('id', 1).orWhereDoesntHave('posts').toSQL();
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .where('id', 1)
+                .orWhereNotExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                        // .where('posts.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereDoesntHave using callback query', async () => {
+            const {sql, bindings} = Country.query().where('id', 1).orWhereDoesntHave('posts', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .where('id', 1)
+                .orWhereNotExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                        .where('posts.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('has query when have global scope', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public countryId: number;
+            }
+
+            class Post extends BaseModel {
+                @column()
+                public userId: number
+
+                static boot() {
+                    super.boot();
+
+                    this.addGlobalScope('test',builder => builder.where('posts.id', 1))
+                }
+            }
+
+            class Country extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasManyThrough([() => Post, () => User])
+                public posts: HasManyThrough<typeof Post>
+            }
+
+            const {sql, bindings} = Country.query().has('posts').toSQL();
+            const {sql: knexSql, bindings: knexBindings} = db
+                .from('countries')
+                .select('*')
+                .whereExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                        .where('posts.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+            expect(bindings).toEqual(knexBindings);
+        });
+    });
 })

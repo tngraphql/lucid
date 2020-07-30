@@ -16,6 +16,9 @@ import { unique } from '../../../utils'
 import { BaseQueryBuilder } from '../Base/QueryBuilder'
 
 import { BelongsTo } from './BelongsTo'
+import {ModelQueryBuilderContract} from "../../../Contracts/Model/ModelQueryBuilderContract";
+import {LucidModel} from "../../../Contracts/Model/LucidModel";
+import {Relation} from "../Base/Relation";
 
 /**
  * Extends the model query builder for executing queries in scope
@@ -83,7 +86,11 @@ export class BelongsToQueryBuilder extends BaseQueryBuilder {
             return
         }
 
-        this.appliedConstraints = true
+        if (!this.parent) {
+            return;
+        }
+
+        this.appliedConstraints = true;
         const queryAction = this.queryAction()
 
         /**
@@ -144,5 +151,43 @@ export class BelongsToQueryBuilder extends BaseQueryBuilder {
      */
     public paginate(): Promise<any> {
         throw new Error(`Cannot paginate a belongsTo relationship "(${ this.relation.relationName })"`)
+    }
+
+    public getRelationExistenceQuery(query, parentQuery, column = '*') {
+        if (query.getTable() === parentQuery.getTable()) {
+            return this.getRelationExistenceQueryForSelfRelation(query, parentQuery, column);
+        }
+
+        this.whereColumn(
+            parentQuery.resolveKey(parentQuery.qualifyColumn(this.relation.foreignKey)),
+            '=',
+            this.resolveKey(this.qualifyColumn(this.relation.localKey))
+        );
+
+        return this;
+    }
+
+    protected getRelationExistenceQueryForSelfRelation(query: ModelQueryBuilderContract<LucidModel, number>, parentQuery, column = '*') {
+        const hash = this.getRelationCountHash();
+
+        query.knexQuery.table(`${query.model.getTable()} as ${hash}`);
+
+        query.setTable(hash);
+
+        this.whereColumn(
+            parentQuery.resolveKey(parentQuery.qualifyColumn(this.relation.foreignKey)),
+            '=',
+            this.resolveKey(hash + '.' + this.relation.localKey)
+        );
+
+        return this;
+    }
+
+    public getRelationCountHash() {
+        return 'lucid_reserved_' + Relation.$selfJoinCount++;
+    }
+
+    public getExistenceCompareKey() {
+        return this.relation.relatedModel().qualifyColumn(this.relation.foreignKey);
     }
 }
