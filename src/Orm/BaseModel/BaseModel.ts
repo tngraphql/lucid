@@ -1703,6 +1703,25 @@ export class BaseModel implements LucidRow {
         })
     }
 
+    protected initiateDefaultValueColumns() {
+        const model = this.constructor as LucidModel
+
+        model.$columnsDefinitions.forEach((column, attributeName) => {
+            const value = column.defaultValue;
+
+            /**
+             * Set the default value when its missing flags are defined.
+             */
+
+            const attributeValue = this[attributeName];
+
+            if (typeof attributeValue === "undefined") {
+                this[attributeName] = value;
+                return
+            }
+        });
+    }
+
     /**
      * Invoked when performing the update call. The method initiates
      * all `datetime` columns, if there have `autoUpdate` flag
@@ -1777,6 +1796,7 @@ export class BaseModel implements LucidRow {
         await Model.$hooks.exec('before', 'create', this)
 
         this.initiateAutoCreateColumns();
+        this.initiateDefaultValueColumns()
 
         const [result] = (await Model.$adapter.insert(this, this.prepareForAdapter(this.$attributes))) || [null];
 
