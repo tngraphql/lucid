@@ -5,8 +5,8 @@
  * Time: 4:16 PM
  */
 import {cleanup, getBaseModel, getDb, getProfiler, ormAdapter, resetTables, setup} from "../helpers";
-import {column, hasOne, morphTo} from "../../src/Orm/Decorators";
-import {HasOne, MorphTo} from "../../src/Contracts/Orm/Relations/types";
+import {column, hasOne, morphOne, morphTo} from "../../src/Orm/Decorators";
+import {HasOne, MorphOne, MorphTo} from "../../src/Contracts/Orm/Relations/types";
 import {MorphToQueryBuilder} from "../../src/Orm/Relations/MorphTo/QueryBuilder";
 
 let db: ReturnType<typeof getDb>
@@ -1778,4 +1778,115 @@ describe('Model | MorphTo', () => {
             expect(bindings).toEqual(knexBindings)
         })
     })
+
+    describe('Model HasQuery', () => {
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+            await setup()
+        })
+
+        afterAll(async () => {
+            await cleanup()
+            await db.manager.closeAll()
+        })
+
+        afterEach(async () => {
+            await resetTables()
+        })
+
+        it('has query', async () => {
+            expect.assertions(1);
+
+            class Post extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public title: string
+            }
+
+            class Friend extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public username: string
+            }
+
+            class Comment extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public commentableId: number
+
+                @column()
+                public commentableType: string
+
+                @morphTo({})
+                public commentable
+
+                static boot() {
+                    this.morphMap({
+                        'post': () => Post,
+                        'friend': () => Friend
+                    });
+                }
+            }
+
+           try {
+               Comment.query().where('id', 1).has('commentable').toSQL();
+           } catch ({message}) {
+               expect(message).toBe('has() and whereHas() do not support MorphTo relationships.');
+           }
+        });
+
+        it('withCount query', async () => {
+            expect.assertions(1);
+
+            class Post extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public title: string
+            }
+
+            class Friend extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public username: string
+            }
+
+            class Comment extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public commentableId: number
+
+                @column()
+                public commentableType: string
+
+                @morphTo({})
+                public commentable
+
+                static boot() {
+                    this.morphMap({
+                        'post': () => Post,
+                        'friend': () => Friend
+                    });
+                }
+            }
+
+            try {
+                Comment.query().where('id', 1).withCount('commentable').toSQL();
+            } catch ({message}) {
+                expect(message).toBe('withCount() do not support MorphTo relationships.');
+            }
+        });
+    });
 });

@@ -2663,8 +2663,7 @@ describe('Model | Has Many Through', () => {
             const {sql: knexSql} = db
                 .from('countries')
                 .select('countries.*')
-                // @ts-ignore
-                .select(db.raw('('+q.toSQL().sql+') as `posts_count`'))
+                .selectSub(q, 'posts_count')
                 .toSQL();
             expect(sql).toBe(knexSql);
         });

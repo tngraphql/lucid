@@ -4873,8 +4873,7 @@ describe('Model | MorphToMany', () => {
                 .from('users')
                 .select('users.*')
                 .where('id', 1)
-                // @ts-ignore
-                .select(db.raw('('+q.toSQL().sql+') as `tags_count`'))
+                .selectSub(q, 'tags_count')
                 .toSQL();
             expect(sql).toBe(knexSql);
         });

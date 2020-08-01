@@ -1205,8 +1205,6 @@ export abstract class Chainable extends Macroable implements ChainableContract {
             [as]: this.knexQuery.client.raw(`(${sql})`, bindings)
         });
 
-        // this.selectRaw(this.knexQuery.client.raw(`(${sql}) as ${as}`, bindings))
-
         return this;
     }
 

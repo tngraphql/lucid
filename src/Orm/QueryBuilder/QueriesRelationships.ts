@@ -22,11 +22,13 @@ class QueriesRelationships implements QueriesRelationshipsContract {
             return this.hasNested(relation, operator, count, boolean, callback);
         }
 
-        relation = this.getRelationWithoutConstraintsrelation(relation);
+        relation = this.getRelation(relation);
 
-        if (relation.relation.constructor.name === 'MorphTo') {
+        if (relation.constructor.name === 'MorphTo') {
             throw new Error('has() and whereHas() do not support MorphTo relationships.');
         }
+
+        relation = this.getRelationWithoutConstraints(relation);
 
         const hasQuery = relation.query();
 
@@ -42,8 +44,11 @@ class QueriesRelationships implements QueriesRelationshipsContract {
         return this;
     }
 
-    protected getRelationWithoutConstraintsrelation(relationName: string) {
-        const relation = this.model.$getRelation(relationName) as any;
+    protected getRelation(relationName: string) {
+        return this.model.$getRelation(relationName) as any;
+    }
+
+    protected getRelationWithoutConstraints(relation) {
         relation!.boot();
 
         return relation.client(null, this.model.getConnection());
@@ -108,7 +113,13 @@ class QueriesRelationships implements QueriesRelationshipsContract {
         let [name, alias] = relation.split(' as ');
         alias = alias ? alias : relation + '_count';
 
-        relation = this.getRelationWithoutConstraintsrelation(relation);
+        relation = this.getRelation(relation);
+
+        if (relation.constructor.name === 'MorphTo') {
+            throw new Error('withCount() do not support MorphTo relationships.');
+        }
+
+        relation = this.getRelationWithoutConstraints(relation);
 
         const hasQuery = relation.query();
 

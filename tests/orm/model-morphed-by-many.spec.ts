@@ -4770,8 +4770,7 @@ describe('Model | MorphedByMany', () => {
                 .from('tags')
                 .select('tags.*')
                 .where('id', 1)
-                // @ts-ignore
-                .select(db.raw('('+q.toSQL().sql+') as `users_count`'))
+                .selectSub(q, 'users_count')
                 .toSQL();
             expect(sql).toBe(knexSql);
         });

@@ -4495,8 +4495,7 @@ describe('Model | ManyToMany', () => {
                 .from('users')
                 .select('users.*')
                 .where('id', 1)
-                // @ts-ignore
-                .select(db.raw('('+q.toSQL().sql+') as `skills_count`'))
+                .selectSub(q, 'skills_count')
                 .toSQL();
             expect(sql).toBe(knexSql);
         });

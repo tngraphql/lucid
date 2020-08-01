@@ -2741,8 +2741,7 @@ describe('Model | MorphMany', () => {
                 .from('posts')
                 .select('posts.*')
                 .where('id', 1)
-                // @ts-ignore
-                .select(db.raw('('+q.toSQL().sql+') as `comments_count`'))
+                .selectSub(q, 'comments_count')
                 .toSQL();
             expect(sql).toBe(knexSql);
         });

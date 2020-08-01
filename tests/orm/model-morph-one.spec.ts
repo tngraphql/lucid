@@ -2309,8 +2309,7 @@ describe('Model | MorphOne', () => {
                 .from('posts')
                 .select('posts.*')
                 .where('id', 1)
-                // @ts-ignore
-                .select(db.raw('('+q.toSQL().sql+') as `comment_count`'))
+                .selectSub(q, 'comment_count')
                 .toSQL();
             expect(sql).toBe(knexSql);
         });

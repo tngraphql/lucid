@@ -1638,7 +1638,7 @@ describe('Model | BelongsTo | Options', () => {
                 .select('users.*')
                 .where('id', 1)
                 // @ts-ignore
-                .select(db.raw('('+q.toSQL().sql+') as `profile_count`'))
+                .selectSub(q, 'profile_count')
                 .toSQL();
             expect(sql).toBe(knexSql);
         });
