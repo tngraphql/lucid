@@ -2624,4 +2624,383 @@ describe('Model | MorphMany', () => {
             expect(bindings).toEqual(knexBindings)
         })
     })
+
+    describe('Model HasQuery', () => {
+        let Post;
+        let Comment;
+
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+            await setup()
+
+            class PostModel extends BaseModel {
+                static table = 'posts';
+
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public uid: number
+
+                @column()
+                public title: string
+
+                @morphMany(() => CommentModel, {name: 'commentable', localKey: 'uid'})
+                public comments: MorphMany<typeof CommentModel>
+            }
+
+            class CommentModel extends BaseModel {
+                static table = 'comments';
+
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public commentableId: number
+
+                @column()
+                public commentableType: string
+
+                @morphMany(() => CommentModel, {name: 'commentable', localKey: 'id'})
+                public comments: MorphMany<typeof CommentModel>
+
+                static boot() {
+                    this.morphMap({
+                        'post': () => Post,
+                    });
+                }
+            }
+
+            Post = PostModel;
+            Comment = CommentModel;
+        })
+
+        afterAll(async () => {
+            await cleanup()
+            await db.manager.closeAll()
+        })
+
+        afterEach(async () => {
+            await resetTables()
+        })
+
+        it('has query', async () => {
+            const {sql, bindings} = Post.query().where('id', 1).has('comments').toSQL();
+            const {sql: knexSql} = db
+                .from('posts')
+                .select('*')
+                .where('id', 1)
+                .whereExists(builder => {
+                    builder
+                        .from('comments')
+                        .where('commentable_type', 'post')
+                        .whereRaw('posts.uid = comments.commentable_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('has nested query', async () => {
+            const {sql, bindings} = Post.query().where('id', 1).has('comments.comments.comments').toSQL();
+            const {sql: knexSql} = db
+                .from('posts')
+                .select('*')
+                .where('id', 1)
+                .whereExists(builder => {
+                    builder
+                        .from('comments')
+                        .where('commentable_type', 'post')
+                        .whereRaw('posts.uid = comments.commentable_id')
+                        .whereExists(builder => {
+                            builder
+                                .from('comments as lucid_reserved_0')
+                                .where('commentable_type', 'post')
+                                .whereRaw('comments.id = lucid_reserved_0.commentable_id')
+                                .whereExists(builder => {
+                                    builder
+                                        .from('comments')
+                                        .where('commentable_type', 'post')
+                                        .whereRaw('lucid_reserved_0.id = comments.commentable_id')
+                                })
+                        })
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('withcount query', async () => {
+            const {sql, bindings} = Post.query().where('id', 1).withCount('comments').toSQL();
+            const q = db.from('comments')
+                .count('*')
+                .where('commentable_type', 1)
+                .whereRaw('posts.uid = comments.commentable_id')
+            const {sql: knexSql} = db
+                .from('posts')
+                .select('posts.*')
+                .where('id', 1)
+                // @ts-ignore
+                .select(db.raw('('+q.toSQL().sql+') as `comments_count`'))
+                .toSQL();
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orHas query', async () => {
+            const {sql, bindings} = Post.query().where('id', 1).orHas('comments').toSQL();
+            const {sql: knexSql} = db
+                .from('posts')
+                .select('*')
+                .where('id', 1)
+                .orWhereExists(builder => {
+                    builder
+                        .from('comments')
+                        .where('commentable_type', 'post')
+                        .whereRaw('posts.uid = comments.commentable_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereHas query', async () => {
+            const {sql, bindings} = Post.query().where('id', 1).whereHas('comments').toSQL();
+            const {sql: knexSql} = db
+                .from('posts')
+                .select('*')
+                .where('id', 1)
+                .whereExists(builder => {
+                    builder
+                        .from('comments')
+                        .where('commentable_type', 'post')
+                        .whereRaw('posts.uid = comments.commentable_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereHas use callback query', async () => {
+            const {sql, bindings} = Post.query().where('id', 1).whereHas('comments', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('posts')
+                .select('*')
+                .where('id', 1)
+                .whereExists(builder => {
+                    builder
+                        .from('comments')
+                        .where('commentable_type', 'post')
+                        .whereRaw('posts.uid = comments.commentable_id')
+                        .where('comments.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereHas query', async () => {
+            const {sql, bindings} = Post.query().where('id', 1).orWhereHas('comments').toSQL();
+            const {sql: knexSql} = db
+                .from('posts')
+                .select('*')
+                .where('id', 1)
+                .orWhereExists(builder => {
+                    builder
+                        .from('comments')
+                        .where('commentable_type', 'post')
+                        .whereRaw('posts.uid = comments.commentable_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereHas using callback query', async () => {
+            const {sql, bindings} = Post.query().where('id', 1).orWhereHas('comments', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('posts')
+                .select('*')
+                .where('id', 1)
+                .orWhereExists(builder => {
+                    builder
+                        .from('comments')
+                        .where('commentable_type', 'post')
+                        .whereRaw('posts.uid = comments.commentable_id')
+                        .where('comments.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('doesntHave query', async () => {
+            const {sql, bindings} = Post.query().where('id', 1).doesntHave('comments').toSQL();
+            const {sql: knexSql} = db
+                .from('posts')
+                .select('*')
+                .where('id', 1)
+                .whereNotExists(builder => {
+                    builder
+                        .from('comments')
+                        .where('commentable_type', 'post')
+                        .whereRaw('posts.uid = comments.commentable_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orDoesntHave query', async () => {
+            const {sql, bindings} = Post.query().where('id', 1).orDoesntHave('comments').toSQL();
+            const {sql: knexSql} = db
+                .from('posts')
+                .select('*')
+                .where('id', 1)
+                .orWhereNotExists(builder => {
+                    builder
+                        .from('comments')
+                        .where('commentable_type', 'post')
+                        .whereRaw('posts.uid = comments.commentable_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereDoesntHave query', async () => {
+            const {sql, bindings} = Post.query().where('id', 1).whereDoesntHave('comments').toSQL();
+            const {sql: knexSql} = db
+                .from('posts')
+                .select('*')
+                .where('id', 1)
+                .whereNotExists(builder => {
+                    builder
+                        .from('comments')
+                        .where('commentable_type', 'post')
+                        .whereRaw('posts.uid = comments.commentable_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereDoesntHave using callback query', async () => {
+            const {sql, bindings} = Post.query().where('id', 1).whereDoesntHave('comments', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('posts')
+                .select('*')
+                .where('id', 1)
+                .whereNotExists(builder => {
+                    builder
+                        .from('comments')
+                        .where('commentable_type', 'post')
+                        .whereRaw('posts.uid = comments.commentable_id')
+                        .where('comments.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereDoesntHave query', async () => {
+            const {sql, bindings} = Post.query().where('id', 1).orWhereDoesntHave('comments').toSQL();
+            const {sql: knexSql} = db
+                .from('posts')
+                .select('*')
+                .where('id', 1)
+                .orWhereNotExists(builder => {
+                    builder
+                        .from('comments')
+                        .where('commentable_type', 'post')
+                        .whereRaw('posts.uid = comments.commentable_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereDoesntHave using callback query', async () => {
+            const {sql, bindings} = Post.query().where('id', 1).orWhereDoesntHave('comments', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('posts')
+                .select('*')
+                .where('id', 1)
+                .orWhereNotExists(builder => {
+                    builder
+                        .from('comments')
+                        .where('commentable_type', 'post')
+                        .whereRaw('posts.uid = comments.commentable_id')
+                        .where('comments.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('has query when have global scope', async () => {
+
+            class Post extends BaseModel {
+                static table = 'posts';
+
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public uid: number
+
+                @column()
+                public title: string
+
+                @morphMany(() => Comment, {name: 'commentable', localKey: 'uid'})
+                public comments: MorphMany<typeof Comment>
+            }
+
+            class Comment extends BaseModel {
+                static table = 'comments';
+
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public commentableId: number
+
+                @column()
+                public commentableType: string
+
+                static boot() {
+                    this.morphMap({
+                        'post': () => Post,
+                    });
+                    this.addGlobalScope('name', query => {
+                        query.where(query.qualifyColumn('type'), 'twitter')
+                    });
+                }
+            }
+
+            const {sql, bindings} = Post.query().has('comments').toSQL();
+            const {sql: knexSql, bindings: knexBindings} = db
+                .from('posts')
+                .select('*')
+                .whereExists(builder => {
+                    builder
+                        .from('comments')
+                        .where('commentable_type', 'post')
+                        .whereRaw('posts.uid = comments.commentable_id')
+                        .where('comments.type', 'twitter')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+            expect(bindings).toEqual(knexBindings);
+        });
+    });
 });

@@ -123,4 +123,8 @@ export class MorphToQueryBuilder extends BaseQueryBuilder {
     public update(columns: any): any {
         return super.update(columns);
     }
+
+    public getExistenceCompareKey() {
+        throw new Error("Method not implemented.");
+    }
 }

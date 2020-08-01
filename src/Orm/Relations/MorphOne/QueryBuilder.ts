@@ -15,6 +15,9 @@ import { getValue, unique } from '../../../utils'
 import { BaseQueryBuilder } from '../Base/QueryBuilder'
 
 import { MorphOne } from './index'
+import {ModelQueryBuilderContract} from "../../../Contracts/Model/ModelQueryBuilderContract";
+import {LucidModel} from "../../../Contracts/Model/LucidModel";
+import {Relation} from "../Base/Relation";
 
 /**
  * Extends the model query builder for executing queries in scope
@@ -82,8 +85,11 @@ export class MorphOneQueryBuilder extends BaseQueryBuilder {
         if ( this.appliedConstraints ) {
             return
         }
+        if (!this.parent) {
+            return;
+        }
 
-        this.appliedConstraints = true
+        this.appliedConstraints = true;
         const queryAction = this.queryAction()
 
         const type = this.relation.getMorphClass(this.relation.model);
@@ -118,5 +124,50 @@ export class MorphOneQueryBuilder extends BaseQueryBuilder {
      */
     public paginate(): Promise<any> {
         throw new Error(`Cannot paginate a morphOne relationship "(${ this.relation.relationName })"`)
+    }
+
+    public getRelationExistenceQuery(query, parentQuery, column = '*') {
+        if (query.getTable() === parentQuery.getTable()) {
+            return this.getRelationExistenceQueryForSelfRelation(query, parentQuery, column);
+        }
+
+        const type = this.relation.getMorphClass(this.relation.model);
+        this.where(this.relation.morphType, type);
+
+        super.getRelationExistenceQuery(query, parentQuery, column);
+
+        return this;
+    }
+
+    protected getRelationExistenceQueryForSelfRelation(query: ModelQueryBuilderContract<LucidModel, number>, parentQuery, column = '*') {
+        const hash = this.getRelationCountHash();
+
+        query.knexQuery.table(`${query.model.getTable()} as ${hash}`);
+
+        query.setTable(hash);
+
+        const type = this.relation.getMorphClass(this.relation.model);
+        this.where(this.relation.morphType, type);
+
+        this.whereColumn(
+            parentQuery.resolveKey(parentQuery.qualifyColumn(this.getParentKeyName())),
+            '=',
+            this.resolveKey(hash + '.' + this.relation.foreignKey)
+        );
+
+        return this;
+    }
+
+    protected getParentKeyName() {
+        // @ts-ignore
+        return this.relation.localKey;
+    }
+
+    public getRelationCountHash() {
+        return 'lucid_reserved_' + Relation.$selfJoinCount++;
+    }
+
+    public getExistenceCompareKey() {
+        return this.relation.relatedModel().qualifyColumn(this.relation.foreignKey);
     }
 }

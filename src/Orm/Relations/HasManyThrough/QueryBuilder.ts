@@ -20,6 +20,7 @@ import { HasManyThrough } from './index'
 import {ModelQueryBuilderContract} from "../../../Contracts/Model/ModelQueryBuilderContract";
 import {LucidModel} from "../../../Contracts/Model/LucidModel";
 import {Relation} from "../Base/Relation";
+import {SoftDeletes} from "../../SoftDeletes";
 
 /**
  * Extends the model query builder for executing queries in scope
@@ -70,6 +71,12 @@ export class HasManyThroughQueryBuilder extends BaseQueryBuilder {
     private addWhereConstraints(builder: HasManyThroughQueryBuilder) {
         const queryAction = this.queryAction()
         const throughTable = this.relation.throughModel().getTable()
+
+        if (this.throughParentSoftDeletes()) {
+            // @ts-ignore
+            this.whereNull(this.relation.throughModel().getQualifiedDeletedAtColumn());
+        }
+
         if (!this.parent) {
             return;
         }
@@ -227,6 +234,10 @@ export class HasManyThroughQueryBuilder extends BaseQueryBuilder {
             throw new Error(`Cannot paginate relationship "${ this.relation.relationName }" during preload`)
         }
         return this.paginateRelated(page, perPage)
+    }
+
+    public throughParentSoftDeletes() {
+        return this.relation.throughModel()['_classUse'].includes(SoftDeletes);
     }
 
     public getRelationExistenceQuery(query, parentQuery, column = '*') {

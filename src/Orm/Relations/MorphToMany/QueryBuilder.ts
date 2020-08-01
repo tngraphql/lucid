@@ -18,6 +18,8 @@ import { getValue, isObject, unique } from '../../../utils'
 import { BaseQueryBuilder } from '../Base/QueryBuilder'
 
 import { MorphToMany } from './index'
+import {ModelQueryBuilderContract} from "../../../Contracts/Model/ModelQueryBuilderContract";
+import {Relation} from "../Base/Relation";
 
 /**
  * Extends the model query builder for executing queries in scope
@@ -96,6 +98,10 @@ export class MorphToManyQueryBuilder extends BaseQueryBuilder implements MorphTo
         const type = this.relation.morphClass;
         this.wherePivot(this.relation.morphType, type);
 
+        if (!this.parent) {
+            return;
+        }
+
         /**
          * Eager query contraints
          */
@@ -126,7 +132,7 @@ export class MorphToManyQueryBuilder extends BaseQueryBuilder implements MorphTo
             return this.transformRelatedTableColumns(columns[0]);
         }
 
-        const relatedTable = this.relation.relatedModel().getTable();
+        const relatedTable = this.getTable();
         return columns.map((column) => {
             if ( typeof (column) === 'string' ) {
                 return `${ relatedTable }.${ this.resolveKey(column) }`
@@ -373,7 +379,7 @@ export class MorphToManyQueryBuilder extends BaseQueryBuilder implements MorphTo
          */
         this.innerJoin(
             this.relation.pivotTable,
-            `${ this.relation.relatedModel().getTable() }.${ this.relation.relatedKeyColumnName }`,
+            `${ this.getTable() }.${ this.relation.relatedKeyColumnName }`,
             `${ this.relation.pivotTable }.${ this.relation.pivotRelatedForeignKey }`
         )
 
@@ -409,5 +415,43 @@ export class MorphToManyQueryBuilder extends BaseQueryBuilder implements MorphTo
             throw new Error(`Cannot paginate relationship "${ this.relation.relationName }" during preload`)
         }
         return this.paginateRelated(page, perPage)
+    }
+
+    public getRelationExistenceQuery(query, parentQuery, column = '*') {
+        if (query.getTable() === parentQuery.getTable()) {
+            return this.getRelationExistenceQueryForSelfRelation(query, parentQuery, column);
+        }
+
+        this.applyConstraints();
+
+        super.getRelationExistenceQuery(query, parentQuery, column = '*');
+
+        return this;
+    }
+
+    protected getRelationExistenceQueryForSelfRelation(query: ModelQueryBuilderContract<LucidModel, number>, parentQuery, column = '*') {
+        const hash = this.getRelationCountHash();
+
+        query.knexQuery.table(`${query.model.getTable()} as ${hash}`);
+
+        query.setTable(hash);
+
+        this.applyConstraints();
+
+        super.getRelationExistenceQuery(query, parentQuery, column = '*');
+
+        return this;
+    }
+
+    protected getParentKeyName() {
+        return this.relation.localKey;
+    }
+
+    public getRelationCountHash() {
+        return 'lucid_reserved_' + Relation.$selfJoinCount++;
+    }
+
+    public getExistenceCompareKey() {
+        return this.relation.pivotTable + '.' + this.relation.pivotForeignKey;
     }
 }

@@ -8,9 +8,9 @@
  * file that was distributed with this source code.
  */
 
-import {MorphedByMany} from '../../src/Contracts/Orm/Relations/types';
+import {MorphedByMany, MorphToMany} from '../../src/Contracts/Orm/Relations/types';
 import {scope} from '../../src/Helpers/scope';
-import {column, morphedByMany} from '../../src/Orm/Decorators';
+import {column, morphedByMany, morphToMany} from '../../src/Orm/Decorators';
 import {cleanup, getBaseModel, getDb, getProfiler, ormAdapter, resetTables, setup} from '../helpers';
 import {Relation} from "../../src/Orm/Relations/Base/Relation";
 import {MorphToManyQueryBuilder} from "../../src/Orm/Relations/MorphToMany/QueryBuilder";
@@ -4675,4 +4675,477 @@ describe('Model | MorphedByMany', () => {
             await tag.related('users').pivotQuery()
         })
     })
+
+    describe('Model HasQuery', () => {
+        let Tag;
+        let User;
+
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+            await setup()
+            class UserModel extends BaseModel {
+                static table = 'users';
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public uid: number
+            }
+
+            class TagModel extends BaseModel {
+                static table = 'tags';
+
+                @column({isPrimary: true})
+                public id: number
+
+                @column()
+                public uid: number
+
+                @column()
+                public name: string
+
+                @morphedByMany(() => UserModel, {
+                    name: 'taggable',
+                    pivotTable: 'taggables',
+                    localKey: 'uid'
+                })
+                public users: MorphedByMany<typeof UserModel>;
+            }
+
+            User = UserModel;
+            Tag = TagModel;
+        })
+
+        afterAll(async () => {
+            await cleanup()
+            await db.manager.closeAll()
+        })
+
+        afterEach(async () => {
+            await resetTables()
+        })
+
+        it('has query', async () => {
+            const {sql, bindings} = Tag.query().where('id', 1).has('users').toSQL();
+            const {sql: knexSql} = db
+                .from('tags')
+                .select('*')
+                .where('id', 1)
+                .whereExists(builder => {
+                    builder
+                        .from('users')
+                        .select('users.*')
+                        .select({
+                            'pivot_tag_id': 'taggables.tag_id',
+                            'pivot_taggable_id': 'taggables.taggable_id'
+                        })
+                        .innerJoin(
+                            'taggables',
+                            'users.id',
+                            'taggables.taggable_id'
+                        )
+                        .where('taggables.taggable_type', 'tag')
+                        .whereRaw('tags.uid = taggables.tag_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('withcount query', async () => {
+            const {sql, bindings} = Tag.query().where('id', 1).withCount('users').toSQL();
+
+            const q = db.from('users')
+                .innerJoin(
+                    'taggables',
+                    'users.id',
+                    'taggables.taggable_id'
+                )
+                .where('taggables.taggable_type', 'tag')
+                .whereRaw('tags.uid = taggables.tag_id')
+                .count('*')
+
+            const {sql: knexSql} = db
+                .from('tags')
+                .select('tags.*')
+                .where('id', 1)
+                // @ts-ignore
+                .select(db.raw('('+q.toSQL().sql+') as `users_count`'))
+                .toSQL();
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orHas query', async () => {
+            const {sql, bindings} = Tag.query().where('id', 1).orHas('users').toSQL();
+            const {sql: knexSql} = db
+                .from('tags')
+                .select('*')
+                .where('id', 1)
+                .orWhereExists(builder => {
+                    builder
+                        .from('users')
+                        .select('users.*')
+                        .select({
+                            'pivot_tag_id': 'taggables.tag_id',
+                            'pivot_taggable_id': 'taggables.taggable_id'
+                        })
+                        .innerJoin(
+                            'taggables',
+                            'users.id',
+                            'taggables.taggable_id'
+                        )
+                        .where('taggables.taggable_type', 'tag')
+                        .whereRaw('tags.uid = taggables.tag_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereHas query', async () => {
+            const {sql, bindings} = Tag.query().where('id', 1).whereHas('users').toSQL();
+            const {sql: knexSql} = db
+                .from('tags')
+                .select('*')
+                .where('id', 1)
+                .whereExists(builder => {
+                    builder
+                        .from('users')
+                        .select('users.*')
+                        .select({
+                            'pivot_tag_id': 'taggables.tag_id',
+                            'pivot_taggable_id': 'taggables.taggable_id'
+                        })
+                        .innerJoin(
+                            'taggables',
+                            'users.id',
+                            'taggables.taggable_id'
+                        )
+                        .where('taggables.taggable_type', 'tag')
+                        .whereRaw('tags.uid = taggables.tag_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereHas use callback query', async () => {
+            const {sql, bindings} = Tag.query().where('id', 1).whereHas('users', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('tags')
+                .select('*')
+                .where('id', 1)
+                .whereExists(builder => {
+                    builder
+                        .from('users')
+                        .select('users.*')
+                        .select({
+                            'pivot_tag_id': 'taggables.tag_id',
+                            'pivot_taggable_id': 'taggables.taggable_id'
+                        })
+                        .innerJoin(
+                            'taggables',
+                            'users.id',
+                            'taggables.taggable_id'
+                        )
+                        .where('taggables.taggable_type', 'tag')
+                        .whereRaw('tags.uid = taggables.tag_id')
+                        .where('users.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereHas query', async () => {
+            const {sql, bindings} = Tag.query().where('id', 1).orWhereHas('users').toSQL();
+            const {sql: knexSql} = db
+                .from('tags')
+                .select('*')
+                .where('id', 1)
+                .orWhereExists(builder => {
+                    builder
+                        .from('users')
+                        .select('users.*')
+                        .select({
+                            'pivot_tag_id': 'taggables.tag_id',
+                            'pivot_taggable_id': 'taggables.taggable_id'
+                        })
+                        .innerJoin(
+                            'taggables',
+                            'users.id',
+                            'taggables.taggable_id'
+                        )
+                        .where('taggables.taggable_type', 'tag')
+                        .whereRaw('tags.uid = taggables.tag_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereHas using callback query', async () => {
+            const {sql, bindings} = Tag.query().where('id', 1).orWhereHas('users', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('tags')
+                .select('*')
+                .where('id', 1)
+                .orWhereExists(builder => {
+                    builder
+                        .from('users')
+                        .select('users.*')
+                        .select({
+                            'pivot_tag_id': 'taggables.tag_id',
+                            'pivot_taggable_id': 'taggables.taggable_id'
+                        })
+                        .innerJoin(
+                            'taggables',
+                            'users.id',
+                            'taggables.taggable_id'
+                        )
+                        .where('taggables.taggable_type', 'tag')
+                        .whereRaw('tags.uid = taggables.tag_id')
+                        .where('users.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('doesntHave query', async () => {
+            const {sql, bindings} = Tag.query().where('id', 1).doesntHave('users').toSQL();
+            const {sql: knexSql} = db
+                .from('tags')
+                .select('*')
+                .where('id', 1)
+                .whereNotExists(builder => {
+                    builder
+                        .from('users')
+                        .select('users.*')
+                        .select({
+                            'pivot_tag_id': 'taggables.tag_id',
+                            'pivot_taggable_id': 'taggables.taggable_id'
+                        })
+                        .innerJoin(
+                            'taggables',
+                            'users.id',
+                            'taggables.taggable_id'
+                        )
+                        .where('taggables.taggable_type', 'tag')
+                        .whereRaw('tags.uid = taggables.tag_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orDoesntHave query', async () => {
+            const {sql, bindings} = Tag.query().where('id', 1).orDoesntHave('users').toSQL();
+            const {sql: knexSql} = db
+                .from('tags')
+                .select('*')
+                .where('id', 1)
+                .orWhereNotExists(builder => {
+                    builder
+                        .from('users')
+                        .select('users.*')
+                        .select({
+                            'pivot_tag_id': 'taggables.tag_id',
+                            'pivot_taggable_id': 'taggables.taggable_id'
+                        })
+                        .innerJoin(
+                            'taggables',
+                            'users.id',
+                            'taggables.taggable_id'
+                        )
+                        .where('taggables.taggable_type', 'tag')
+                        .whereRaw('tags.uid = taggables.tag_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereDoesntHave query', async () => {
+            const {sql, bindings} = Tag.query().where('id', 1).whereDoesntHave('users').toSQL();
+            const {sql: knexSql} = db
+                .from('tags')
+                .select('*')
+                .where('id', 1)
+                .whereNotExists(builder => {
+                    builder
+                        .from('users')
+                        .select('users.*')
+                        .select({
+                            'pivot_tag_id': 'taggables.tag_id',
+                            'pivot_taggable_id': 'taggables.taggable_id'
+                        })
+                        .innerJoin(
+                            'taggables',
+                            'users.id',
+                            'taggables.taggable_id'
+                        )
+                        .where('taggables.taggable_type', 'tag')
+                        .whereRaw('tags.uid = taggables.tag_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereDoesntHave using callback query', async () => {
+            const {sql, bindings} = Tag.query().where('id', 1).whereDoesntHave('users', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('tags')
+                .select('*')
+                .where('id', 1)
+                .whereNotExists(builder => {
+                    builder
+                        .from('users')
+                        .select('users.*')
+                        .select({
+                            'pivot_tag_id': 'taggables.tag_id',
+                            'pivot_taggable_id': 'taggables.taggable_id'
+                        })
+                        .innerJoin(
+                            'taggables',
+                            'users.id',
+                            'taggables.taggable_id'
+                        )
+                        .where('taggables.taggable_type', 'tag')
+                        .whereRaw('tags.uid = taggables.tag_id')
+                        .where('users.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereDoesntHave query', async () => {
+            const {sql, bindings} = Tag.query().where('id', 1).orWhereDoesntHave('users').toSQL();
+            const {sql: knexSql} = db
+                .from('tags')
+                .select('*')
+                .where('id', 1)
+                .orWhereNotExists(builder => {
+                    builder
+                        .from('users')
+                        .select('users.*')
+                        .select({
+                            'pivot_tag_id': 'taggables.tag_id',
+                            'pivot_taggable_id': 'taggables.taggable_id'
+                        })
+                        .innerJoin(
+                            'taggables',
+                            'users.id',
+                            'taggables.taggable_id'
+                        )
+                        .where('taggables.taggable_type', 'tag')
+                        .whereRaw('tags.uid = taggables.tag_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereDoesntHave using callback query', async () => {
+            const {sql, bindings} = Tag.query().where('id', 1).orWhereDoesntHave('users', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('tags')
+                .select('*')
+                .where('id', 1)
+                .orWhereNotExists(builder => {
+                    builder
+                        .from('users')
+                        .select('users.*')
+                        .select({
+                            'pivot_tag_id': 'taggables.tag_id',
+                            'pivot_taggable_id': 'taggables.taggable_id'
+                        })
+                        .innerJoin(
+                            'taggables',
+                            'users.id',
+                            'taggables.taggable_id'
+                        )
+                        .where('taggables.taggable_type', 'tag')
+                        .whereRaw('tags.uid = taggables.tag_id')
+                        .where('users.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('has query when have global scope', async () => {
+            class UserModel extends BaseModel {
+                static table = 'users';
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public uid: number
+
+                static boot() {
+                    this.addGlobalScope('name', query => {
+                        query.where(query.qualifyColumn('type'), 'twitter')
+                    });
+                }
+            }
+
+            class Tag extends BaseModel {
+                static table = 'tags';
+
+                @column({isPrimary: true})
+                public id: number
+
+                @column()
+                public uid: number
+
+                @column()
+                public name: string
+
+                @morphedByMany(() => UserModel, {
+                    name: 'taggable',
+                    pivotTable: 'taggables',
+                    localKey: 'uid'
+                })
+                public users: MorphedByMany<typeof UserModel>;
+            }
+
+            const {sql, bindings} = Tag.query().has('users').toSQL();
+            const {sql: knexSql, bindings: knexBindings} = db
+                .from('tags')
+                .select('*')
+                .whereExists(builder => {
+                    builder
+                        .from('users')
+                        .select('users.*')
+                        .select({
+                            'pivot_tag_id': 'taggables.tag_id',
+                            'pivot_taggable_id': 'taggables.taggable_id'
+                        })
+                        .innerJoin(
+                            'taggables',
+                            'users.id',
+                            'taggables.taggable_id'
+                        )
+                        .where('taggables.taggable_type', 'UserModel')
+                        .whereRaw('tags.uid = taggables.tag_id')
+                        .where('users.type', 'twitter')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+            expect(bindings).toEqual(knexBindings);
+        });
+    });
 })

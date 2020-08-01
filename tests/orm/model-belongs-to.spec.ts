@@ -1630,12 +1630,15 @@ describe('Model | BelongsTo | Options', () => {
 
         it('withcount query', async () => {
             const {sql, bindings} = User.query().where('id', 1).withCount('profile').toSQL();
+            const q = db.from('profiles')
+                .count('*')
+                .whereRaw('users.uid = profiles.user_id')
             const {sql: knexSql} = db
                 .from('users')
                 .select('users.*')
                 .where('id', 1)
                 // @ts-ignore
-                .select(db.raw('(select count(*) from `profiles` where users.uid = profiles.user_id) as `profile_count`'))
+                .select(db.raw('('+q.toSQL().sql+') as `profile_count`'))
                 .toSQL();
             expect(sql).toBe(knexSql);
         });

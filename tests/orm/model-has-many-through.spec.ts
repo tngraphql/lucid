@@ -13,6 +13,8 @@ import {belongsTo, column, hasManyThrough} from '../../src/Orm/Decorators';
 import { HasManyThroughQueryBuilder } from '../../src/Orm/Relations/HasManyThrough/QueryBuilder';
 import { cleanup, getBaseModel, getDb, getProfiler, ormAdapter, resetTables, setup } from '../helpers';
 import {Relation} from "../../src/Orm/Relations/Base/Relation";
+import {SoftDeletes} from "../../src/Orm/SoftDeletes";
+import {DateTime} from "luxon";
 
 let db: ReturnType<typeof getDb>
 let BaseModel: ReturnType<typeof getBaseModel>
@@ -2624,7 +2626,7 @@ describe('Model | Has Many Through', () => {
             expect(sql).toBe(knexSql);
         });
 
-        it('has nested t query', async () => {
+        it('has nested query', async () => {
             const {sql, bindings} = Country.query().has('posts2').toSQL();
 
             const {sql: knexSql} = db
@@ -2648,11 +2650,21 @@ describe('Model | Has Many Through', () => {
 
         it('withcount query', async () => {
             const {sql, bindings} = Country.query().withCount('posts').toSQL();
+            const q = db.from('posts')
+                .count('*')
+                .innerJoin(
+                    'users',
+                    'users.id',
+                    'posts.user_id'
+                )
+                .whereRaw('countries.id = users.country_id')
+
+
             const {sql: knexSql} = db
                 .from('countries')
                 .select('countries.*')
                 // @ts-ignore
-                .select(db.raw('(select count(*) from `posts` inner join `users` on `users`.`id` = `posts`.`user_id` where countries.id = users.country_id) as `posts_count`'))
+                .select(db.raw('('+q.toSQL().sql+') as `posts_count`'))
                 .toSQL();
             expect(sql).toBe(knexSql);
         });
@@ -2951,6 +2963,12 @@ describe('Model | Has Many Through', () => {
 
                 @column()
                 public countryId: number;
+
+                static boot() {
+                    super.boot();
+
+                    this.addGlobalScope('test',builder => builder.where('posts.id', 1))
+                }
             }
 
             class Post extends BaseModel {
@@ -2990,6 +3008,80 @@ describe('Model | Has Many Through', () => {
                         )
                         .whereRaw('countries.id = users.country_id')
                         .where('posts.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+            expect(bindings).toEqual(knexBindings);
+        });
+
+        it('has query when have softdelete', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public countryId: number;
+
+                @column.dateTime({autoCreate: true})
+                public createdAt: DateTime
+
+                @column.dateTime({autoCreate: true, autoUpdate: true})
+                public updatedAt: DateTime;
+
+                @column.dateTime()
+                public deletedAt: DateTime;
+
+                static boot() {
+                    this.use(SoftDeletes);
+                }
+            }
+
+            class Post extends BaseModel {
+                @column()
+                public userId: number
+
+                @column.dateTime({autoCreate: true})
+                public createdAt: DateTime
+
+                @column.dateTime({autoCreate: true, autoUpdate: true})
+                public updatedAt: DateTime;
+
+                @column.dateTime()
+                public deletedAt: DateTime;
+
+                static boot() {
+                    this.use(SoftDeletes);
+                }
+            }
+
+            class Country extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasManyThrough([() => Post, () => User])
+                public posts: HasManyThrough<typeof Post>
+            }
+
+            const {sql, bindings} = Country.query().has('posts').toSQL();
+            const {sql: knexSql, bindings: knexBindings} = db
+                .from('countries')
+                .select('*')
+                .whereExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereNull('users.deleted_at')
+                        .whereRaw('countries.id = users.country_id')
+                        .whereNull('posts.deleted_at')
                 })
                 .toSQL();
 
