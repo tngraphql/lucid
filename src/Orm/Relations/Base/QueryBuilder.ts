@@ -105,7 +105,7 @@ export abstract class BaseQueryBuilder extends ModelQueryBuilder implements Rela
          */
         this.getRelationKeys().forEach((key) => {
             key = this.resolveKey(key)
-            if ( ! columns.value.includes(key) ) {
+            if (key && ! columns.value.includes(key) ) {
                 columns.value.push(key)
             }
         })
@@ -125,5 +125,35 @@ export abstract class BaseQueryBuilder extends ModelQueryBuilder implements Rela
      */
     public exec() {
         return super.exec()
+    }
+
+    public mergeConstraintsFrom(query) {
+        const cloneQuery = query.knexQuery['_statements'];
+        this.knexQuery['_statements'].push.apply(this.knexQuery['_statements'], cloneQuery);
+        this.sideload(Object.assign({}, query.sideloaded));
+        return this;
+    }
+
+    public getRelationExistenceQuery(query, parentQuery, column = '*') {
+        this.whereColumn(
+            parentQuery.resolveKey(parentQuery.qualifyColumn(this.getParentKeyName())),
+            '=',
+            this.resolveKey(this.getExistenceCompareKey())
+        )
+    }
+
+    public getRelationExistenceCountQuery(query, parentQuery) {
+        this.getRelationExistenceQuery(query, parentQuery);
+
+        query.knexQuery['_statements'] = query.knexQuery['_statements'].filter(x => x.grouping !== 'columns');
+
+        query.count('*');
+    }
+
+    abstract getExistenceCompareKey();
+
+    protected getParentKeyName() {
+        // @ts-ignore
+        return this.relation.model.primaryKey;
     }
 }

@@ -158,6 +158,9 @@ export interface ChainableContract {
     with: With<this>,
     withRecursive: With<this>,
 
+    selectRaw: RawQueryFn<this>
+    selectSub(query: ChainableContract, as: string): this
+
     withSchema(schema: string): this,
 
     as(name: string): this

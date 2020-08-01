@@ -18,12 +18,13 @@ import { ensureRelationIsBooted } from '../../../utils'
 
 import { KeysExtractor } from '../KeysExtractor'
 import { BelongsToQueryClient } from './QueryClient'
+import {Relation} from "../Base/Relation";
 
 
 /**
  * Manages loading and persisting belongs to relationship
  */
-export class BelongsTo implements BelongsToRelationContract<LucidModel, LucidModel> {
+export class BelongsTo extends Relation implements BelongsToRelationContract<LucidModel, LucidModel> {
     /**
      * Relationship name
      */
@@ -64,6 +65,7 @@ export class BelongsTo implements BelongsToRelationContract<LucidModel, LucidMod
         private options: RelationOptions<ModelBelongsTo<LucidModel>>,
         public model: LucidModel
     ) {
+        super();
     }
 
     /**

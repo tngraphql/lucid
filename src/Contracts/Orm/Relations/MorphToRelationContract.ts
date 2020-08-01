@@ -8,10 +8,10 @@
  * file that was distributed with this source code.
  */
 
-import {QueryClientContract} from '../../Database/QueryClientContract';
-import {LucidModel} from '../../Model/LucidModel';
-import {BaseRelationContract} from './BaseRelationContract';
-import {MorphToClientContract} from "./MorphToClientContract";
+import { QueryClientContract } from '../../Database/QueryClientContract';
+import { MorphToClientContract } from './MorphToClientContract';
+import { LucidModel } from '../../Model/LucidModel';
+import { BaseRelationContract } from './BaseRelationContract';
 
 /**
  * Has one relationship interface

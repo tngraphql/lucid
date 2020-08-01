@@ -22,7 +22,12 @@ import {
     HasManyDecorator,
     HasManyThroughDecorator,
     HasOneDecorator,
-    ManyToManyDecorator, MorphToDecorator
+    ManyToManyDecorator,
+    MorphedByManyDecorator,
+    MorphManyDecorator,
+    MorphOneDecorator,
+    MorphToDecorator,
+    MorphToManyDecorator
 } from '../../Contracts/Orm/Relations/types';
 
 import { dateColumn, dateTimeColumn } from './date'
@@ -117,14 +122,108 @@ export const hasManyThrough: HasManyThroughDecorator = ([relatedModel, throughMo
     }
 }
 
-export const morphTo: MorphToDecorator = (relation?) => {
+/**
+ * Define morphTo relationship
+ */
+export const morphTo: MorphToDecorator = (relation = {}) => {
     return function decorateAsRelation(target, property: string) {
         const Model = target.constructor as LucidModel
         const relatedModel = () => Model;
-        Model.bootIfNotBooted()
-        Model.$addRelation(property, 'morphTo', relatedModel, Object.assign({ relatedModel }, relation))
+        Model.bootIfNotBooted();
+
+        const type = relation.type ? relation.type : property + "Type";
+        const id = relation.id ? relation.id : property + "Id";
+        relation.localKey = relation.localKey || 'id';
+
+        Model.$addRelation(property, 'morphTo', relatedModel, Object.assign({ relatedModel }, relation, {
+            type,
+            id
+        }))
     }
 }
+
+/**
+ * Define morphOne relationship
+ */
+export const morphOne: MorphOneDecorator = (relatedModel, relation ) => {
+    return function decorateAsRelation(target, property: string) {
+        const Model = target.constructor as LucidModel
+        Model.bootIfNotBooted();
+
+        const name = relation.name;
+        const type = relation.type ? relation.type : name + "Type";
+        const id = relation.id ? relation.id : name + "Id";
+        relation.localKey = relation.localKey || 'id';
+
+        Model.$addRelation(property, 'morphOne', relatedModel, Object.assign({ relatedModel }, relation, {
+            type,
+            id
+        }))
+    }
+}
+
+/**
+ * Define morphMany relationship
+ */
+export const morphMany: MorphManyDecorator = (relatedModel, relation ) => {
+    return function decorateAsRelation(target, property: string) {
+        const Model = target.constructor as LucidModel
+        Model.bootIfNotBooted();
+
+        const name = relation.name;
+        const type = relation.type ? relation.type : name + "Type";
+        const id = relation.id ? relation.id : name + "Id";
+        relation.localKey = relation.localKey || 'id';
+
+        Model.$addRelation(property, 'morphMany', relatedModel, Object.assign({ relatedModel }, relation, {
+            type,
+            id
+        }))
+    }
+}
+
+/**
+ * Define morphToMany relationship
+ */
+export const morphToMany: MorphToManyDecorator = (relatedModel, relation) => {
+    return function decorateAsRelation(target, property: string) {
+        const Model = target.constructor as LucidModel
+        Model.bootIfNotBooted();
+
+        const name = relation.name;
+        const type = relation.type ? relation.type : name + "_type";
+        const pivotForeignKey = relation.pivotForeignKey ? relation.pivotForeignKey : name + "_id";
+        relation.localKey = relation.localKey || 'id';
+
+        Model.$addRelation(property, 'morphToMany', relatedModel, Object.assign({ relatedModel }, relation, {
+            type,
+            pivotForeignKey
+        }))
+    }
+}
+
+/**
+ * Define morphToMany relationship
+ */
+export const morphedByMany: MorphedByManyDecorator = (relatedModel, relation) => {
+    return function decorateAsRelation(target, property: string) {
+        const Model = target.constructor as LucidModel
+        Model.bootIfNotBooted();
+
+        const name = relation.name;
+        const type = relation.type ? relation.type : name + "_type";
+        const pivotRelatedForeignKey = relation.pivotRelatedForeignKey ? relation.pivotRelatedForeignKey : name + "_id";
+        relation.localKey = relation.localKey || 'id';
+
+        Model.$addRelation(property, 'morphToMany', relatedModel, Object.assign({ relatedModel }, relation, {
+            type,
+            pivotRelatedForeignKey,
+            inverse: true
+        }))
+    }
+}
+
+
 
 /**
  * Before/After save hook

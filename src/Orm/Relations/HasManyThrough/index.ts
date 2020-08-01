@@ -18,11 +18,12 @@ import { ensureRelationIsBooted } from '../../../utils'
 
 import { KeysExtractor } from '../KeysExtractor'
 import { HasManyThroughClient } from './QueryClient'
+import {Relation} from "../Base/Relation";
 
 /**
  * Manages loading and persisting has many through relationship
  */
-export class HasManyThrough implements HasManyThroughRelationContract<LucidModel, LucidModel> {
+export class HasManyThrough extends Relation implements HasManyThroughRelationContract<LucidModel, LucidModel> {
     public type = 'hasManyThrough' as const
 
     public booted: boolean = false
@@ -68,6 +69,7 @@ export class HasManyThrough implements HasManyThroughRelationContract<LucidModel
         private options: ThroughRelationOptions<ModelHasManyThrough<LucidModel>> & { throughModel: () => LucidModel },
         public model: LucidModel
     ) {
+        super();
     }
 
     /**

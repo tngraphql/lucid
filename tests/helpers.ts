@@ -195,11 +195,32 @@ export async function setup(destroyDb: boolean = true) {
         })
     }
 
+    const hasTagsTable = await db.schema.hasTable('tags')
+    if ( ! hasTagsTable ) {
+        await db.schema.createTable('tags', (table) => {
+            table.increments()
+            table.string('name').notNullable()
+            table.timestamps()
+        })
+    }
+    const hasTagablesTable = await db.schema.hasTable('taggables')
+    if ( ! hasTagablesTable ) {
+        await db.schema.createTable('taggables', (table) => {
+            table.increments()
+            table.integer('tag_id')
+            table.integer('taggable_id')
+            table.string('taggable_type').notNullable()
+            table.string('proficiency')
+            table.timestamps()
+        })
+    }
+
     const hasComments = await db.schema.hasTable('comments')
     if ( ! hasComments ) {
         await db.schema.createTable('comments', (table) => {
             table.increments()
             table.integer('post_id')
+            table.integer('user_id')
             table.integer('commentable_id')
             table.string('commentable_type')
             table.string('body')
@@ -255,6 +276,8 @@ export async function cleanup(customTables?: string[]) {
     await db.schema.dropTableIfExists('comments')
     await db.schema.dropTableIfExists('identities')
     await db.schema.dropTableIfExists('knex_migrations')
+    await db.schema.dropTableIfExists('tags')
+    await db.schema.dropTableIfExists('taggables')
 
     await db.destroy()
 }
@@ -273,6 +296,8 @@ export async function resetTables() {
     await db.table('posts').truncate()
     await db.table('comments').truncate()
     await db.table('identities').truncate()
+    await db.table('tags').truncate()
+    await db.table('taggables').truncate()
     await db.destroy()
 }
 
@@ -432,6 +457,17 @@ export function getPosts(count: number, userId: number) {
         return {
             user_id: userId,
             title: chance.sentence({ words: 5 })
+        }
+    })
+}
+
+export function getComments(count: number, userId: number, type: 'post') {
+    const chance = new Chance()
+    return [...new Array(count)].map(() => {
+        return {
+            commentable_id: userId,
+            commentable_type: type,
+            body: chance.sentence({ words: 5 })
         }
     })
 }

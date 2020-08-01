@@ -19,31 +19,4 @@ import { ModelAttributes } from '../../Model/LucidRow';
 export interface MorphToClientContract<Relation extends RelationshipsContract,
     RelatedModel extends LucidModel,
     > extends RelationQueryClientContract<Relation, RelatedModel> {
-    /**
-     * Save related instance. Sets up the FK automatically
-     */
-    save(related: InstanceType<RelatedModel>): Promise<void>
-
-    /**
-     * Create related instance. Sets up the FK automatically
-     */
-    create(
-        values: Partial<ModelAttributes<InstanceType<RelatedModel>>>
-    ): Promise<InstanceType<RelatedModel>>
-
-    /**
-     * Return first or create related instance
-     */
-    firstOrCreate(
-        search: Partial<ModelAttributes<InstanceType<RelatedModel>>>,
-        savePayload?: Partial<ModelAttributes<InstanceType<RelatedModel>>>
-    ): Promise<InstanceType<RelatedModel>>
-
-    /**
-     * Update or create related instance
-     */
-    updateOrCreate(
-        search: Partial<ModelAttributes<InstanceType<RelatedModel>>>,
-        updatePayload: Partial<ModelAttributes<InstanceType<RelatedModel>>>
-    ): Promise<InstanceType<RelatedModel>>
 }

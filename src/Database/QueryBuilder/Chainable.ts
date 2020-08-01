@@ -1193,6 +1193,38 @@ export abstract class Chainable extends Macroable implements ChainableContract {
     }
 
     /**
+     * Add a subselect expression to the query.
+     *
+     * @param query
+     * @param as
+     */
+    public selectSub(query, as) {
+        const {sql, bindings} = query.toSQL();
+
+        this.select({
+            [as]: this.knexQuery.client.raw(`(${sql})`, bindings)
+        });
+
+        return this;
+    }
+
+    /**
+     * Add a new "raw" select expression to the query.
+     *
+     * @param sql
+     * @param bindings
+     */
+    public selectRaw(sql: any, bindings?: any): this {
+        if (bindings) {
+            this.select(this.knexQuery.client.raw(sql, bindings));
+        } else {
+            this.select(this.knexQuery.client.raw(sql));
+        }
+
+        return this;
+    }
+
+    /**
      * Count rows for the current query
      */
     public count(columns: any, alias?: any): this {

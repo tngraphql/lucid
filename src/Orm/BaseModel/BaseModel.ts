@@ -39,7 +39,7 @@ import {
 import {AdapterContract} from '../../Contracts/Orm/AdapterContract';
 import {
     ManyToManyRelationOptions,
-    ModelRelations, MorphToOptions,
+    ModelRelations, MorphOneRelationOptions, MorphToManyRelationOptions,
     RelationOptions,
     RelationshipsContract,
     ThroughRelationOptions
@@ -59,8 +59,12 @@ import {ModelEventEmitter} from './ModelEventEmitter';
 import {proxyHandler} from './proxyHandler'
 import {DATE_TIME_TYPES} from '../Decorators/date';
 import {MorphTo} from "../Relations/MorphTo";
+import {Relation} from "../Relations/Base/Relation";
+import {MorphOne} from "../Relations/MorphOne";
+import {MorphMany} from "../Relations/MorphMany";
+import {MorphToMany} from "../Relations/MorphToMany";
 
-const MANY_RELATIONS = ['hasMany', 'manyToMany', 'hasManyThrough']
+const MANY_RELATIONS = ['hasMany', 'manyToMany', 'hasManyThrough', 'morphMany', 'morphToMany']
 
 function StaticImplements<T>() {
     return (_t: T) => {
@@ -197,7 +201,6 @@ export class BaseModel implements LucidRow {
         return this.query().withoutGlobalScopes(scope);
     }
 
-
     /**
      * Register the global scopes for this builder instance.
      *
@@ -209,6 +212,23 @@ export class BaseModel implements LucidRow {
         });
 
         return builder;
+    }
+
+    /**
+     * Get the database connection for the model.
+     *
+     */
+    public static getConnection(options = {})
+    {
+        return this.$adapter.modelConstructorClient(this, options);
+    }
+    /**
+     * Get the database connection for the model.
+     *
+     */
+    public getConnection(options) {
+        const Model = this.constructor as typeof BaseModel;
+        return Model.getConnection(options);
     }
 
     /**
@@ -397,22 +417,35 @@ export class BaseModel implements LucidRow {
         this.$relationsDefinitions.set(name, new HasManyThrough(name, relatedModel, options, this))
     }
 
-    /**
-     * Register morph to relationship
-     */
-    protected static $addMorphTo(
+    protected static $addMorphTo(name: string,
+                                 relatedModel: () => LucidModel,
+                                 options: RelationOptions<ModelRelations>
+    ) {
+        this.$relationsDefinitions.set(name, new MorphTo(name, relatedModel, options, this))
+    }
+
+    protected static $addMorphOne(
         name: string,
         relatedModel: () => LucidModel,
-        options: MorphToOptions<ModelRelations>
+        options: MorphOneRelationOptions<ModelRelations>
     ) {
-        const type = options.type ? options.type : name + 'Type';
-        const id = options.id ? options.id : name + 'Id';
+        this.$relationsDefinitions.set(name, new MorphOne(name, relatedModel, options, this))
+    }
 
-        this.$relationsDefinitions.set(name, new MorphTo(name, relatedModel, {
-            ...options,
-            type,
-            id
-        }, this))
+    protected static $addMorphMany(
+        name: string,
+        relatedModel: () => LucidModel,
+        options: MorphOneRelationOptions<ModelRelations>
+    ) {
+        this.$relationsDefinitions.set(name, new MorphMany(name, relatedModel, options, this))
+    }
+
+    protected static $addMorphToMany(
+        name: string,
+        relatedModel: () => LucidModel,
+        options: MorphToManyRelationOptions<ModelRelations>
+    ) {
+        this.$relationsDefinitions.set(name, new MorphToMany(name, relatedModel, options, this))
     }
 
     /**
@@ -440,9 +473,17 @@ export class BaseModel implements LucidRow {
             case 'hasManyThrough':
                 this.$addHasManyThrough(name, relatedModel, options as ThroughRelationOptions<ModelRelations>)
                 break
-
             case "morphTo":
                 this.$addMorphTo(name, relatedModel, options);
+                break;
+            case "morphOne":
+                this.$addMorphOne(name, relatedModel, options as MorphOneRelationOptions<ModelRelations>);
+                break;
+            case "morphMany":
+                this.$addMorphMany(name, relatedModel, options as MorphOneRelationOptions<ModelRelations>);
+                break;
+            case "morphToMany":
+                this.$addMorphToMany(name, relatedModel, options as MorphToManyRelationOptions<ModelRelations>);
                 break;
             default:
                 throw new Error(`${type} is not a supported relation type`)
@@ -1118,6 +1159,11 @@ export class BaseModel implements LucidRow {
     public $original: ModelObject = {}
 
     /**
+     * The changed model attributes.
+     */
+    protected $changes: ModelObject = {}
+
+    /**
      * Preloaded relationships on the model instance
      */
     public $preloaded: { [relation: string]: LucidRow | LucidRow[] } = {}
@@ -1530,6 +1576,15 @@ export class BaseModel implements LucidRow {
         this.$original = Object.assign({}, this.$attributes)
     }
 
+    public $syncChanges() {
+        this.$changes = this.$dirty;
+        return this;
+    }
+
+    public getChanges() {
+        return this.$changes;
+    }
+
     /**
      * Set bulk attributes on the model instance. Setting relationships via
      * fill isn't allowed, since we disallow setting relationships
@@ -1648,25 +1703,6 @@ export class BaseModel implements LucidRow {
         })
     }
 
-    protected initiateDefaultValueColumns() {
-        const model = this.constructor as LucidModel
-
-        model.$columnsDefinitions.forEach((column, attributeName) => {
-            const value = column.defaultValue;
-
-            /**
-             * Set the default value when its missing flags are defined.
-             */
-
-            const attributeValue = this[attributeName];
-
-            if (typeof attributeValue === "undefined") {
-                this[attributeName] = value;
-                return
-            }
-        });
-    }
-
     /**
      * Invoked when performing the update call. The method initiates
      * all `datetime` columns, if there have `autoUpdate` flag
@@ -1694,56 +1730,71 @@ export class BaseModel implements LucidRow {
      */
     public async save() {
         this.ensureIsntDeleted()
-        const Model = this.constructor as typeof BaseModel
+        const Model = this.constructor as typeof BaseModel;
 
-        /**
-         * Persit the model when it's not persisted already
-         */
+        await Model.$hooks.exec('before', 'save', this);
+
+        let saved = false;
+
         if (!this.$isPersisted) {
-            await Model.$hooks.exec('before', 'create', this)
-            await Model.$hooks.exec('before', 'save', this)
-
-            this.initiateAutoCreateColumns();
-            this.initiateDefaultValueColumns()
-            const [result] = (await Model.$adapter.insert(this, this.prepareForAdapter(this.$attributes))) || [null];
-            this.$hydrateOriginals()
-            if (result) {
-                this.$isPersisted = true;
-            }
-
-            await Model.$hooks.exec('after', 'create', this)
-            await Model.$hooks.exec('after', 'save', this)
-
-            return result;
+            saved = await this.performInsert(Model);
+        } else {
+            saved = this.$isDirty ? await this.performUpdate(Model) : true;
         }
 
+        if (saved) {
+            await this.firstSave();
+        }
+
+        return !!saved;
+    }
+
+    protected async performUpdate(Model) {
         /**
          * Call hooks before hand, so that they have the chance
          * to make mutations that produces one or more `$dirty`
          * fields.
          */
         await Model.$hooks.exec('before', 'update', this);
-        await Model.$hooks.exec('before', 'save', this);
-
-        /**
-         * Do not issue updates when model doesn't have any mutations
-         */
-        if (!this.$isDirty) {
-            return
-        }
 
         /**
          * Perform update
          */
         this.initiateAutoUpdateColumns()
-        const [result] = (await Model.$adapter.update(this, this.prepareForAdapter(this.$dirty))) || [null];
-        this.$hydrateOriginals()
 
-        if (result) this.$isPersisted = true
+        if (this.$isDirty) {
+            await Model.$adapter.update(this, this.prepareForAdapter(this.$dirty));
 
-        await Model.$hooks.exec('after', 'update', this)
-        await Model.$hooks.exec('after', 'save', this)
+            this.$syncChanges();
+
+            await Model.$hooks.exec('after', 'update', this)
+        }
+
+        return true;
+    }
+
+    protected async performInsert(Model) {
+        await Model.$hooks.exec('before', 'create', this)
+
+        this.initiateAutoCreateColumns();
+
+        const [result] = (await Model.$adapter.insert(this, this.prepareForAdapter(this.$attributes))) || [null];
+
+        if (result) {
+            this.$isPersisted = true;
+        }
+
+        await Model.$hooks.exec('after', 'create', this)
+
         return result;
+    }
+
+    protected async firstSave() {
+        const Model = this.constructor as typeof BaseModel
+
+        await Model.$hooks.exec('after', 'save', this)
+
+        this.$hydrateOriginals();
     }
 
     /**
@@ -2035,8 +2086,6 @@ export class BaseModel implements LucidRow {
             return column;
         }
 
-        const model = this.constructor as LucidModel;
-
         return this.getTable() + '.' + column;
     }
 
@@ -2047,5 +2096,14 @@ export class BaseModel implements LucidRow {
         const model = this.constructor as typeof BaseModel;
 
         return model.qualifyColumn(column);
+    }
+
+    public static getQualifiedKeyName() {
+        return this.qualifyColumn(this.primaryKey);
+    }
+
+    static morphMap(map: {[key: string]: () => LucidModel}) {
+        Relation.morphMap(map);
+        // Reflect.defineMetadata(MORPH_METADATA_KEY, map, this);
     }
 }

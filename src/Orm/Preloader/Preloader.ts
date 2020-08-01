@@ -59,7 +59,7 @@ export class Preloader implements PreloaderContract<LucidRow> {
         /**
          * hasOne and belongsTo will always return an array of a single row (if done right)
          */
-        if ( relation.type === 'hasOne' || relation.type === 'belongsTo' ) {
+        if ( ['hasOne', 'belongsTo', 'morphTo', 'morphOne'].includes(relation.type) ) {
             relation.setRelated(parent, result[0])
             return
         }
@@ -89,12 +89,10 @@ export class Preloader implements PreloaderContract<LucidRow> {
             callback(query)
         }
 
-        const result = await query.selectRelationKeys().exec()
-
         /**
          * Set array of related instances
          */
-        relation.setRelatedForMany(parent, result)
+        relation.setRelatedForMany(parent, await relation.getEager(query))
     }
 
     /**

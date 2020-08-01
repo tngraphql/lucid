@@ -9,6 +9,7 @@
  */
 
 import { QueryClientContract } from '../../../Contracts/Database/QueryClientContract';
+import { MorphToClientContract } from '../../../Contracts/Orm/Relations/MorphToClientContract';
 import { LucidModel } from '../../../Contracts/Model/LucidModel';
 import { LucidRow, ModelObject } from '../../../Contracts/Model/LucidRow';
 import { OneOrMany } from '../../../Contracts/Model/types';
@@ -16,7 +17,6 @@ import { getValue, managedTransaction } from '../../../utils'
 
 import { MorphTo } from './index'
 import { MorphToQueryBuilder } from './QueryBuilder'
-import {MorphToClientContract} from "../../../Contracts/Orm/Relations/MorphToClientContract";
 
 /**
  * Query client for executing queries in scope to the defined
@@ -53,7 +53,7 @@ export class MorphToQueryClient implements MorphToClientContract<MorphTo, LucidM
      * Returns value for the foreign key
      */
     private getForeignKeyValue(parent: LucidRow, action: string) {
-        return getValue(parent, this.relation.localKey, this.relation, action)
+        return getValue(parent, this.relation.foreignKey, this.relation, action)
     }
 
     /**
@@ -63,23 +63,23 @@ export class MorphToQueryClient implements MorphToClientContract<MorphTo, LucidM
         return MorphToQueryClient.query(this.client, this.relation, this.parent)
     }
 
-    /**
+    /*/!**
      * Save related model instance
-     */
+     *!/
     public async save(related: LucidRow) {
         await managedTransaction(this.parent.$trx || this.client, async (trx) => {
             this.parent.$trx = trx
             await this.parent.save()
 
-            related[this.relation.foreignKey] = this.getForeignKeyValue(this.parent, 'save')
+            related[this.relation.localKey] = this.getForeignKeyValue(this.parent, 'save')
             related.$trx = trx
             await related.save()
         })
     }
 
-    /**
+    /!**
      * Create instance of the related model
-     */
+     *!/
     public async create(values: ModelObject): Promise<LucidRow> {
         const parent = this.parent
 
@@ -88,14 +88,14 @@ export class MorphToQueryClient implements MorphToClientContract<MorphTo, LucidM
             await parent.save()
 
             return this.relation.relatedModel().create(Object.assign({
-                [this.relation.foreignKey]: this.getForeignKeyValue(parent, 'create')
+                [this.relation.localKey]: this.getForeignKeyValue(parent, 'create')
             }, values), { client: trx })
         })
     }
 
-    /**
+    /!**
      * Get the first matching related instance or create a new one
-     */
+     *!/
     public async firstOrCreate(
         search: ModelObject,
         savePayload?: ModelObject
@@ -105,14 +105,14 @@ export class MorphToQueryClient implements MorphToClientContract<MorphTo, LucidM
             await this.parent.save()
 
             return this.relation.relatedModel().firstOrCreate(Object.assign({
-                [this.relation.foreignKey]: this.getForeignKeyValue(this.parent, 'firstOrCreate')
+                [this.relation.localKey]: this.getForeignKeyValue(this.parent, 'firstOrCreate')
             }, search), savePayload, { client: trx })
         })
     }
 
-    /**
+    /!**
      * Update the existing row or create a new one
-     */
+     *!/
     public async updateOrCreate(
         search: ModelObject,
         updatePayload: ModelObject
@@ -122,8 +122,8 @@ export class MorphToQueryClient implements MorphToClientContract<MorphTo, LucidM
             await this.parent.save()
 
             return this.relation.relatedModel().updateOrCreate(Object.assign({
-                [this.relation.foreignKey]: this.getForeignKeyValue(this.parent, 'updateOrCreate')
+                [this.relation.localKey]: this.getForeignKeyValue(this.parent, 'updateOrCreate')
             }, search), updatePayload, { client: trx })
         })
-    }
+    }*/
 }

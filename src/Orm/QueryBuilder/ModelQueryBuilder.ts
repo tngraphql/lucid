@@ -27,6 +27,8 @@ import { Preloader } from '../Preloader/Preloader'
 import _ = require('lodash');
 import {DATE_TIME_TYPES} from "../Decorators/date";
 import {DateTime} from "luxon";
+import {QueriesRelationshipsContract} from "./QueriesRelationshipsContract";
+import {QueriesRelationships} from "./QueriesRelationships";
 
 /**
  * A wrapper to invoke scope methods on the query builder
@@ -53,11 +55,23 @@ class ModelScopes {
     }
 }
 
+function mixins(base, mixin) {
+    const methods = Object.getOwnPropertyNames(mixin.prototype).filter(x => !['constructor'].includes(x));
+    const staticMethods = Object.getOwnPropertyNames(mixin).filter(x => !['length', 'prototype', 'name'].includes(x));
+
+    methods.forEach(method => {
+        base.prototype[method] = mixin.prototype[method];
+    });
+    staticMethods.forEach(method => {
+        base[method] = mixin[method];
+    });
+}
+
 /**
  * Database query builder exposes the API to construct and run queries for selecting,
  * updating and deleting records.
  */
-export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderContract<LucidModel> {
+class ModelQueryBuilder extends Chainable implements ModelQueryBuilderContract<LucidModel> {
     /**
      * Sideloaded attributes that will be passed to the model instances
      */
@@ -127,6 +141,8 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
 
     protected _onDelete;
 
+    protected _table: string;
+
     constructor(
         builder: Knex.QueryBuilder,
         public model: LucidModel,
@@ -140,6 +156,9 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
         }
     ) {
         super(builder, customFn, (key: string) => {
+            if (typeof key !== "string") {
+                return key;
+            }
             if (key.includes('.')) {
                 let [table, column] = key.split('.');
 
@@ -157,7 +176,9 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
             return column;
         }
 
-        builder.table(model.getTable());
+        this.setTable(model.getTable());
+
+        builder.table(this.getTable());
 
         const p = new Proxy(this, {
             get(target: any, key: string | number, receiver: any): any {
@@ -519,6 +540,7 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
      * Returns SQL query as a string
      */
     public toQuery(): string {
+        this.applyScopes()
         return this.knexQuery.toQuery()
     }
 
@@ -584,6 +606,7 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
      * Get sql representation of the query
      */
     public toSQL(): Knex.Sql {
+        this.applyScopes()
         return this.knexQuery.toSQL()
     }
 
@@ -614,4 +637,40 @@ export class ModelQueryBuilder extends Chainable implements ModelQueryBuilderCon
     public get [Symbol.toStringTag]() {
         return this.constructor.name
     }
+
+    /**
+     * Set the table associated with the model.
+     *
+     */
+    public setTable(table: string) {
+        this._table = table;
+    }
+
+    /**
+     * Get the table associated with the model.
+     *
+     */
+    public getTable(): string {
+        return this._table;
+    }
+
+    /**
+     * Qualify the given column name by the model's table.
+     *
+     */
+    public qualifyColumn(column) {
+        if (column.includes('.')) {
+            return column;
+        }
+
+        return this.getTable() + '.' + column;
+    }
 }
+
+mixins(ModelQueryBuilder, QueriesRelationships);
+
+interface ModelQueryBuilder extends QueriesRelationshipsContract {
+
+}
+
+export {ModelQueryBuilder};

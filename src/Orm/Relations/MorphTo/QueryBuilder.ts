@@ -54,7 +54,7 @@ export class MorphToQueryBuilder extends BaseQueryBuilder {
      * The keys for constructing the join query
      */
     protected getRelationKeys(): string[] {
-        return [this.relation.foreignKey]
+        return [this.relation.localKey]
     }
 
     /**
@@ -85,22 +85,25 @@ export class MorphToQueryBuilder extends BaseQueryBuilder {
 
         this.appliedConstraints = true
         const queryAction = this.queryAction()
+        if (!this.parent) {
+            return;
+        }
 
         /**
          * Eager query contraints
          */
         if ( Array.isArray(this.parent) ) {
-            this.whereIn(this.relation.foreignKey, unique(this.parent.map((model) => {
-                return getValue(model, this.relation.localKey, this.relation, queryAction)
-            })))
-            return
+            this.whereIn(this.relation.localKey, unique(this.parent.map((model) => {
+                return getValue(model, this.relation.foreignKey, this.relation, queryAction)
+            })));
+            return;
         }
 
         /**
          * Query constraints
          */
-        const value = getValue(this.parent, this.relation.localKey, this.relation, queryAction)
-        this.where(this.relation.foreignKey, value)
+        const value = getValue(this.parent, this.relation.foreignKey, this.relation, queryAction)
+        this.where(this.relation.localKey, value)
 
         /**
          * Do not add limit when updating or deleting
@@ -115,5 +118,13 @@ export class MorphToQueryBuilder extends BaseQueryBuilder {
      */
     public paginate(): Promise<any> {
         throw new Error(`Cannot paginate a hasOne relationship "(${ this.relation.relationName })"`)
+    }
+
+    public update(columns: any): any {
+        return super.update(columns);
+    }
+
+    public getExistenceCompareKey() {
+        throw new Error("Method not implemented.");
     }
 }

@@ -16,13 +16,14 @@ import { Aggregate, Counter, Update } from '../querybuilder';
 import { LucidModel } from './LucidModel';
 import { ModelAdapterOptions, ModelObject } from './LucidRow';
 import { ExtractScopes } from './types';
+import {QueriesRelationshipsContract} from "../../Orm/QueryBuilder/QueriesRelationshipsContract";
 
 /**
  * Model query builder will have extras methods on top of the Database query builder
  */
 export interface ModelQueryBuilderContract<Model extends LucidModel,
     Result extends any = InstanceType<Model>>
-    extends ChainableContract, ExcutableQueryBuilderContract<Result[]> {
+    extends QueriesRelationshipsContract, ChainableContract, ExcutableQueryBuilderContract<Result[]> {
 
     model: Model
 
@@ -98,6 +99,13 @@ export interface ModelQueryBuilderContract<Model extends LucidModel,
      * Execute query with pagination
      */
     paginate(page: number, perPage?: number): Promise<SimplePaginatorContract<Result[]>>
+
+
+    getTable(): string;
+
+    setTable(table: string): void;
+
+    qualifyColumn(column): string;
 
     /**
      * Mutations (update and increment can be one query aswell)
