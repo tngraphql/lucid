@@ -18,11 +18,12 @@ import { ensureRelationIsBooted } from '../../../utils'
 
 import { KeysExtractor } from '../KeysExtractor'
 import { HasManyQueryClient } from './QueryClient'
+import {Relation} from "../Base/Relation";
 
 /**
  * Manages persisting and fetching relationships
  */
-export class HasMany implements HasManyRelationContract<LucidModel, LucidModel> {
+export class HasMany extends Relation implements HasManyRelationContract<LucidModel, LucidModel> {
     /**
      * The relationship name
      */
@@ -64,6 +65,7 @@ export class HasMany implements HasManyRelationContract<LucidModel, LucidModel> 
         private options: RelationOptions<ModelHasMany<LucidModel>>,
         public model: LucidModel
     ) {
+        super();
     }
 
     /**

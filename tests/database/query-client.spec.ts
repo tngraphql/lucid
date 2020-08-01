@@ -418,6 +418,8 @@ describe('Query client', () => {
                     'profiles',
                     'skill_user',
                     'skills',
+                    "taggables",
+                    "tags",
                     'users'
                 ])
             } else {
@@ -430,6 +432,8 @@ describe('Query client', () => {
                     'profiles',
                     'skills',
                     'skill_user',
+                    "taggables",
+                    "tags",
                     'users'
                 ])
             }

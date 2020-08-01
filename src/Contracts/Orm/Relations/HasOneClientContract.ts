@@ -8,10 +8,10 @@
  * file that was distributed with this source code.
  */
 
-import { RelationQueryClientContract } from '../Orm/Relations/RelationQueryClientContract';
-import { RelationshipsContract } from '../Orm/Relations/types';
-import { LucidModel } from './LucidModel';
-import { ModelAttributes } from './LucidRow';
+import { RelationQueryClientContract } from './RelationQueryClientContract';
+import { RelationshipsContract } from './types';
+import { LucidModel } from '../../Model/LucidModel';
+import { ModelAttributes } from '../../Model/LucidRow';
 
 /**
  * Query client for has one relationship

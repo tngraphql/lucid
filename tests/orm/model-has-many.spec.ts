@@ -8,9 +8,9 @@
  * file that was distributed with this source code.
  */
 
-import { HasMany } from '../../src/Contracts/Orm/Relations/types';
+import {BelongsTo, HasMany, HasOne} from '../../src/Contracts/Orm/Relations/types';
 import { scope } from '../../src/Helpers/scope';
-import { column, hasMany } from '../../src/Orm/Decorators';
+import {belongsTo, column, hasMany, hasOne} from '../../src/Orm/Decorators';
 import { HasManyQueryBuilder } from '../../src/Orm/Relations/HasMany/QueryBuilder';
 import { cleanup, getBaseModel, getDb, getPosts, getProfiler, ormAdapter, resetTables, setup } from '../helpers';
 
@@ -368,14 +368,14 @@ describe('Model | HasMany', () => {
 
             const user = await User.find(1)
             const { sql, bindings } = user!.related('posts').query().update({
-                title: 'Adonis 101',
+                title: 'tngraphql 101',
             }).toSQL()
 
             const { sql: knexSql, bindings: knexBindings } = db.connection()
                                                                .getWriteClient()
                                                                .from('posts')
                                                                .where('user_id', 1)
-                                                               .update({ title: 'Adonis 101' })
+                                                               .update({ title: 'tngraphql 101' })
                                                                .toSQL()
 
             expect(sql).toBe(knexSql)
@@ -448,7 +448,7 @@ describe('Model | HasMany', () => {
 
             await db.table('users').insert({ username: 'virk' })
             await db.table('posts').multiInsert([
-                { title: 'Adonis 101', user_id: 1 },
+                { title: 'tngraphql 101', user_id: 1 },
                 { title: 'Lucid 101', user_id: 1 },
                 { title: 'Profiler 101', user_id: 2 },
             ])
@@ -495,7 +495,7 @@ describe('Model | HasMany', () => {
             await db.insertQuery().table('posts').insert([
                 {
                     user_id: user0.id,
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                 },
                 {
                     user_id: user1.id,
@@ -536,7 +536,7 @@ describe('Model | HasMany', () => {
             await db.insertQuery().table('posts').insert([
                 {
                     user_id: 1,
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                 },
                 {
                     user_id: 1,
@@ -586,7 +586,7 @@ describe('Model | HasMany', () => {
             await db.insertQuery().table('posts').insert([
                 {
                     user_id: 1,
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                 },
                 {
                     user_id: 1,
@@ -632,7 +632,7 @@ describe('Model | HasMany', () => {
             await db.insertQuery().table('posts').insert([
                 {
                     user_id: 1,
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                 },
                 {
                     user_id: 1,
@@ -679,7 +679,7 @@ describe('Model | HasMany', () => {
             await db.insertQuery().table('posts').insert([
                 {
                     user_id: 1,
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                 },
                 {
                     user_id: 1,
@@ -728,7 +728,7 @@ describe('Model | HasMany', () => {
             await db.insertQuery().table('posts').insert([
                 {
                     user_id: 1,
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                 },
                 {
                     user_id: 1,
@@ -785,7 +785,7 @@ describe('Model | HasMany', () => {
             await db.insertQuery().table('posts').insert([
                 {
                     user_id: 1,
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                 },
                 {
                     user_id: 2,
@@ -852,7 +852,7 @@ describe('Model | HasMany', () => {
             await db.insertQuery().table('posts').insert([
                 {
                     user_id: 1,
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                 },
                 {
                     user_id: 2,
@@ -928,7 +928,7 @@ describe('Model | HasMany', () => {
             await db.insertQuery().table('posts').insert([
                 {
                     user_id: 1,
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                 },
                 {
                     user_id: 2,
@@ -983,7 +983,7 @@ describe('Model | HasMany', () => {
             await db.insertQuery().table('posts').insert([
                 {
                     user_id: user0.id,
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                 },
                 {
                     user_id: user1.id,
@@ -1073,7 +1073,7 @@ describe('Model | HasMany', () => {
             await user.save()
 
             const post = new Post()
-            post.title = 'Adonis 101'
+            post.title = 'tngraphql 101'
 
             await user.related('posts').save(post)
 
@@ -1132,7 +1132,7 @@ describe('Model | HasMany', () => {
             await user.save()
 
             const post = new Post()
-            post.title = 'Adonis 101'
+            post.title = 'tngraphql 101'
 
             const post1 = new Post()
             post1.title = 'Lucid 101'
@@ -1181,7 +1181,7 @@ describe('Model | HasMany', () => {
             user.username = 'virk'
 
             const post = new Post()
-            post.title = 'Adonis 101'
+            post.title = 'tngraphql 101'
 
             const post1 = new Post()
 
@@ -1230,7 +1230,7 @@ describe('Model | HasMany', () => {
             user.username = 'virk'
 
             const post = new Post()
-            post.title = 'Adonis 101'
+            post.title = 'tngraphql 101'
 
             try {
                 await user.related('posts').saveMany([post])
@@ -1294,7 +1294,7 @@ describe('Model | HasMany', () => {
             user.username = 'virk'
             await user.save()
 
-            const post = await user.related('posts').create({ title: 'Adonis 101' })
+            const post = await user.related('posts').create({ title: 'tngraphql 101' })
 
             expect(post.$isPersisted).toBeTruthy()
             expect(user.id).toBe(post.userId)
@@ -1352,7 +1352,7 @@ describe('Model | HasMany', () => {
 
             const [post, post1] = await user.related('posts').createMany([
                 {
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                 },
                 {
                     title: 'Lucid 101',
@@ -1401,7 +1401,7 @@ describe('Model | HasMany', () => {
             user.username = 'virk'
 
             try {
-                await user.related('posts').createMany([{ title: 'Adonis 101' }, {}])
+                await user.related('posts').createMany([{ title: 'tngraphql 101' }, {}])
             } catch (error) {
                 expect(error).toBeDefined()
             }
@@ -1442,7 +1442,7 @@ describe('Model | HasMany', () => {
             user.$trx = trx
             user.username = 'virk'
 
-            const [post] = await user.related('posts').createMany([{ title: 'Adonis 101' }])
+            const [post] = await user.related('posts').createMany([{ title: 'tngraphql 101' }])
             expect(user.$trx.isCompleted).toBeFalsy()
             await trx.rollback()
 
@@ -1501,13 +1501,13 @@ describe('Model | HasMany', () => {
 
             await db.insertQuery().table('posts').insert({ title: 'Lucid 101' })
             const post = await user.related('posts').firstOrCreate({}, {
-                title: 'Adonis 101',
+                title: 'tngraphql 101',
             })
 
             expect(post.$isPersisted).toBeTruthy()
             expect(post.$isLocal).toBeTruthy()
             expect(user.id).toBe(post.userId)
-            expect(post.title).toBe('Adonis 101')
+            expect(post.title).toBe('tngraphql 101')
 
             const posts = await db.query().from('posts').orderBy('id', 'asc')
             expect(posts).toHaveLength(2)
@@ -1543,7 +1543,7 @@ describe('Model | HasMany', () => {
 
             await db.insertQuery().table('posts').insert({ title: 'Lucid 101', user_id: user.id })
             const post = await user.related('posts').firstOrCreate({}, {
-                title: 'Adonis 101',
+                title: 'tngraphql 101',
             })
 
             expect(post.$isPersisted).toBeTruthy()
@@ -1602,13 +1602,13 @@ describe('Model | HasMany', () => {
 
             await db.insertQuery().table('posts').insert({ title: 'Lucid 101' })
             const post = await user.related('posts').updateOrCreate({}, {
-                title: 'Adonis 101',
+                title: 'tngraphql 101',
             })
 
             expect(post.$isPersisted).toBeTruthy()
             expect(post.$isLocal).toBeTruthy()
             expect(user.id).toBe(post.userId)
-            expect(post.title).toBe('Adonis 101')
+            expect(post.title).toBe('tngraphql 101')
 
             const posts = await db.query().from('posts').orderBy('id', 'asc')
             expect(posts).toHaveLength(2)
@@ -1644,18 +1644,18 @@ describe('Model | HasMany', () => {
 
             await db.insertQuery().table('posts').insert({ title: 'Lucid 101', user_id: user.id })
             const post = await user.related('posts').updateOrCreate({}, {
-                title: 'Adonis 101',
+                title: 'tngraphql 101',
             })
 
             expect(post.$isPersisted).toBeTruthy()
             expect(post.$isLocal).toBeFalsy()
             expect(user.id).toBe(post.userId)
-            expect(post.title).toBe('Adonis 101')
+            expect(post.title).toBe('tngraphql 101')
 
             const posts = await db.query().from('posts').orderBy('id', 'asc')
             expect(posts).toHaveLength(1)
             expect(posts[0].user_id).toBe(user.id)
-            expect(posts[0].title).toBe('Adonis 101')
+            expect(posts[0].title).toBe('tngraphql 101')
         })
     })
 
@@ -1819,7 +1819,7 @@ describe('Model | HasMany', () => {
                 public title: string
 
                 public static adonisOnly = scope((query) => {
-                    query.where('title', 'Adonis 101')
+                    query.where('title', 'tngraphql 101')
                 })
             }
 
@@ -1836,7 +1836,7 @@ describe('Model | HasMany', () => {
 
             const [ userId ] = await db.table('users').insert({ username: 'virk' }).returning('id')
             await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Lucid 101' })
-            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Adonis 101' })
+            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'tngraphql 101' })
 
             const user = await User.query().preload('posts', (query) => {
                 query.apply((scopes) => scopes.adonisOnly())
@@ -1846,7 +1846,7 @@ describe('Model | HasMany', () => {
 
             expect(user.posts).toHaveLength(1)
             expect(userWithoutScope.posts).toHaveLength(2)
-            expect(user.posts[0].title).toBe('Adonis 101')
+            expect(user.posts[0].title).toBe('tngraphql 101')
         })
 
         test('apply scopes on related query', async () => {
@@ -1858,7 +1858,7 @@ describe('Model | HasMany', () => {
                 public title: string
 
                 public static adonisOnly = scope((query) => {
-                    query.where('title', 'Adonis 101')
+                    query.where('title', 'tngraphql 101')
                 })
             }
 
@@ -1875,7 +1875,7 @@ describe('Model | HasMany', () => {
 
             const [ userId ] = await db.table('users').insert({ username: 'virk' }).returning('id')
             await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Lucid 101' })
-            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Adonis 101' })
+            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'tngraphql 101' })
 
             const user = await User.findOrFail(1)
 
@@ -1884,9 +1884,133 @@ describe('Model | HasMany', () => {
 
             expect(posts).toHaveLength(1)
             expect(postsWithoutScope).toHaveLength(2)
-            expect(posts[0].title).toBe('Adonis 101')
+            expect(posts[0].title).toBe('tngraphql 101')
         })
     })
+
+    describe('Model | HasMany | global scopes', () => {
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+            await setup()
+            const [ userId ] = await db.table('users').insert({ username: 'virk' }).returning('id')
+            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Lucid 101' })
+            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'lucid 101' })
+        })
+
+        afterAll(async () => {
+            await cleanup()
+            await db.manager.closeAll()
+        })
+
+        it('apply scopes during eagerload', async () => {
+            class Post extends BaseModel {
+                @column()
+                public userId: number
+
+                @column()
+                public title: string
+
+                public static boot() {
+                    this.addGlobalScope(query => query.where('title', 'lucid 101'));
+                };
+
+            }
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasMany(() => Post)
+                public posts: HasMany<typeof Post>
+            }
+
+            db.enableQueryLog();
+            await User.query().preload('posts').firstOrFail();
+
+            const {sql} = db.getQueryLog()[1];
+            const {sql: knexSql} = db.from('posts').whereIn('user_id', [1]).where('title', 'lucid 101').toSQL();
+            expect(sql).toEqual(knexSql);
+        });
+
+        it('apply scopes on related query', async () => {
+            class Post extends BaseModel {
+                @column()
+                public userId: number
+
+                @column()
+                public title: string
+
+                public static boot() {
+                    this.addGlobalScope(query => query.where('title', 'lucid 101'));
+                };
+
+            }
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasMany(() => Post)
+                public posts: HasMany<typeof Post>
+            }
+
+            db.enableQueryLog();
+            const user = await User.findOrFail(1)
+
+            const posts = await user.related('posts').query();
+
+            const {sql} = db.getQueryLog()[1];
+            const {sql: knexSql} = db.from('posts').where('user_id', 1).where('title', 'lucid 101').toSQL();
+            expect(sql).toEqual(knexSql);
+        });
+
+        it('apply scopes on related paginate', async () => {
+            class Post extends BaseModel {
+                @column()
+                public userId: number
+
+                @column()
+                public title: string
+
+                public static boot() {
+                    this.addGlobalScope(query => query.where('title', 'lucid 101'));
+                };
+
+            }
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasMany(() => Post)
+                public posts: HasMany<typeof Post>
+            }
+
+
+            const user = await User.findOrFail(1)
+            db.enableQueryLog();
+            const posts = await user.related('posts').query().paginate(1, 20);
+            {
+                const {sql} = db.getQueryLog()[0];
+                const {sql: knexSql} = db.from('posts')
+                    .where('title', 'lucid 101')
+                    .where('user_id', 1)
+                    .count('* as total')
+                    .toSQL();
+                expect(sql).toEqual(knexSql);
+            }
+            {
+                const {sql} = db.getQueryLog()[1];
+                const {sql: knexSql} = db.from('posts')
+                    .where('title', 'lucid 101')
+                    .where('user_id', 1)
+                    .limit(20)
+                    .toSQL();
+                expect(sql).toEqual(knexSql);
+            }
+        });
+    });
 
     describe('Model | HasMany | onQuery', () => {
         beforeAll(async () => {
@@ -1918,7 +2042,7 @@ describe('Model | HasMany', () => {
                 public id: number
 
                 @hasMany(() => Post, {
-                    onQuery: (query) => query.where('title', 'Adonis 101'),
+                    onQuery: (query) => query.where('title', 'tngraphql 101'),
                 })
                 public posts: HasMany<typeof Post>
             }
@@ -1928,11 +2052,11 @@ describe('Model | HasMany', () => {
 
             const [ userId ] = await db.table('users').insert({ username: 'virk' }).returning('id')
             await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Lucid 101' })
-            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Adonis 101' })
+            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'tngraphql 101' })
 
             const user = await User.query().preload('posts').firstOrFail()
             expect(user.posts).toHaveLength(1)
-            expect(user.posts[0].title).toBe('Adonis 101')
+            expect(user.posts[0].title).toBe('tngraphql 101')
         })
 
         test('do not invoke onQuery method on preloading subqueries', async () => {
@@ -1953,7 +2077,7 @@ describe('Model | HasMany', () => {
                 @hasMany(() => Post, {
                     onQuery: (query) => {
                         expect(true).toBeTruthy()
-                        query.where('title', 'Adonis 101')
+                        query.where('title', 'tngraphql 101')
                     },
                 })
                 public posts: HasMany<typeof Post>
@@ -1964,11 +2088,11 @@ describe('Model | HasMany', () => {
 
             const [ userId ] = await db.table('users').insert({ username: 'virk' }).returning('id')
             await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Lucid 101' })
-            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Adonis 101' })
+            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'tngraphql 101' })
 
             const user = await User.query().preload('posts', (query) => query.where(() => {})).firstOrFail()
             expect(user.posts).toHaveLength(1)
-            expect(user.posts[0].title).toBe('Adonis 101')
+            expect(user.posts[0].title).toBe('tngraphql 101')
         })
 
         test('invoke onQuery method on related query', async () => {
@@ -1985,7 +2109,7 @@ describe('Model | HasMany', () => {
                 public id: number
 
                 @hasMany(() => Post, {
-                    onQuery: (query) => query.where('title', 'Adonis 101'),
+                    onQuery: (query) => query.where('title', 'tngraphql 101'),
                 })
                 public posts: HasMany<typeof Post>
             }
@@ -1995,13 +2119,13 @@ describe('Model | HasMany', () => {
 
             const [ userId ] = await db.table('users').insert({ username: 'virk' }).returning('id')
             await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Lucid 101' })
-            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Adonis 101' })
+            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'tngraphql 101' })
 
             const user = await User.findOrFail(1)
 
             const posts = await user.related('posts').query()
             expect(posts).toHaveLength(1)
-            expect(posts[0].title).toBe('Adonis 101')
+            expect(posts[0].title).toBe('tngraphql 101')
         })
 
         test('do not invoke onQuery method on related query subqueries', async () => {
@@ -2018,7 +2142,7 @@ describe('Model | HasMany', () => {
                 public id: number
 
                 @hasMany(() => Post, {
-                    onQuery: (query) => query.where('title', 'Adonis 101'),
+                    onQuery: (query) => query.where('title', 'tngraphql 101'),
                 })
                 public posts: HasMany<typeof Post>
             }
@@ -2028,7 +2152,7 @@ describe('Model | HasMany', () => {
 
             const [ userId ] = await db.table('users').insert({ username: 'virk' }).returning('id')
             await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Lucid 101' })
-            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'Adonis 101' })
+            await db.insertQuery().table('posts').insert({ user_id: userId, title: 'tngraphql 101' })
 
             const user = await User.findOrFail(1)
 
@@ -2038,7 +2162,7 @@ describe('Model | HasMany', () => {
 
             const { sql: knexSql, bindings: knexBindings } = db.connection()
                                                                .from('posts')
-                                                               .where('title', 'Adonis 101')
+                                                               .where('title', 'tngraphql 101')
                                                                .where((query) => query.whereNotNull('created_at'))
                                                                .where('user_id', 1)
                                                                .toSQL()
@@ -2047,4 +2171,372 @@ describe('Model | HasMany', () => {
             expect(bindings).toEqual(knexBindings)
         })
     })
+
+    describe('Model HasQuery', () => {
+        let Profile;
+        let User;
+
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+            await setup()
+
+            class ProfileModel extends BaseModel {
+                static table = 'profiles';
+
+                @column({isPrimary: true})
+                public id: number
+
+                @column()
+                public uid: number
+
+                @column()
+                public userId: number
+
+                @column()
+                public displayName: string
+
+                @hasMany(() => ProfileModel, {foreignKey: 'id', localKey: 'uid'})
+                public user: HasMany<typeof ProfileModel>
+
+                // static boot() {
+                //     this.addGlobalScope('name', query => {
+                //         query.where(query.qualifyColumn('type'), 'twitter')
+                //     });
+                //     this.withoutGlobalScope('name');
+                // }
+            }
+
+            class UserModel extends BaseModel {
+                static table = 'users';
+
+                @column({isPrimary: true})
+                public id: number
+
+                @column()
+                public uid: number
+
+                @column()
+                public username: string
+
+                @hasMany(() => ProfileModel, {localKey: 'uid'})
+                public profile: HasMany<typeof ProfileModel>
+            }
+
+            User = UserModel;
+            Profile = ProfileModel;
+        })
+
+        afterAll(async () => {
+            await cleanup()
+            await db.manager.closeAll()
+        })
+
+        afterEach(async () => {
+            await resetTables()
+        })
+
+        it('has query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).has('profile').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .whereExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('has nested query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).has('profile.user.user').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .whereExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                        .whereExists(builder => {
+                            builder
+                                .from('profiles as lucid_reserved_0')
+                                .whereRaw('profiles.uid = lucid_reserved_0.id')
+                                .whereExists(builder => {
+                                    builder
+                                        .from('profiles')
+                                        .whereRaw('lucid_reserved_0.uid = profiles.id')
+                                })
+                        })
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('withcount query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).withCount('profile').toSQL();
+            const q = db.from('profiles')
+                .count('*')
+                .whereRaw('users.uid = profiles.user_id');
+
+            const {sql: knexSql} = db
+                .from('users')
+                .select('users.*')
+                .where('id', 1)
+                .selectSub(q, 'profile_count')
+                .toSQL();
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orHas query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).orHas('profile').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .orWhereExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereHas query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).whereHas('profile').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .whereExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereHas use callback query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).whereHas('profile', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .whereExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                        .where('profiles.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereHas query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).orWhereHas('profile').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .orWhereExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereHas using callback query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).orWhereHas('profile', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .orWhereExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                        .where('profiles.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('doesntHave query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).doesntHave('profile').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .whereNotExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orDoesntHave query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).orDoesntHave('profile').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .orWhereNotExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereDoesntHave query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).whereDoesntHave('profile').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .whereNotExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereDoesntHave using callback query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).whereDoesntHave('profile', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .whereNotExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                        .where('profiles.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereDoesntHave query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).orWhereDoesntHave('profile').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .orWhereNotExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereDoesntHave using callback query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).orWhereDoesntHave('profile', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .orWhereNotExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                        .where('profiles.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('has query when have global scope', async () => {
+            class Profile extends BaseModel {
+                static table = 'profiles';
+
+                @column({isPrimary: true})
+                public id: number
+
+                @column()
+                public uid: number
+
+                @column()
+                public userId: number
+
+                @column()
+                public displayName: string
+
+                @hasOne(() => Profile, {foreignKey: 'id', localKey: 'uid'})
+                public user: HasOne<typeof Profile>
+
+                static boot() {
+                    this.addGlobalScope('name', query => {
+                        query.where(query.qualifyColumn('type'), 'twitter')
+                    });
+                }
+            }
+
+            class User extends BaseModel {
+                static table = 'users';
+
+                @column({isPrimary: true})
+                public id: number
+
+                @column()
+                public uid: number
+
+                @column()
+                public username: string
+
+                @hasOne(() => Profile, {localKey: 'uid'})
+                public profile: HasOne<typeof Profile>
+            }
+
+            const {sql, bindings} = User.query().has('profile').toSQL();
+            const {sql: knexSql, bindings: knexBindings} = db
+                .from('users')
+                .select('*')
+                .whereExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                        .where('profiles.type', 'twitter')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+            expect(bindings).toEqual(knexBindings);
+        });
+    });
 })

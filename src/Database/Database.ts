@@ -279,10 +279,11 @@ export class Database implements DatabaseContract {
     protected _logs = [];
     public enableQueryLog() {
         this._logs = [];
-        this.knexQuery().client.once('query', data => {
-            this._logs.push(data);
-        });
+        this.knexQuery().client.off('query', this.onEventQuery);
+        this.knexQuery().client.on('query', this.onEventQuery);
     }
+
+    protected onEventQuery = this.onEvent.bind(this);
 
     protected onEvent(data) {
         this._logs.push(data);

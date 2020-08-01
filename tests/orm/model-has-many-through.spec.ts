@@ -7,11 +7,14 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-import { HasManyThrough } from '../../src/Contracts/Orm/Relations/types';
+import {BelongsTo, HasManyThrough} from '../../src/Contracts/Orm/Relations/types';
 import { scope } from '../../src/Helpers/scope';
-import { column, hasManyThrough } from '../../src/Orm/Decorators';
+import {belongsTo, column, hasManyThrough} from '../../src/Orm/Decorators';
 import { HasManyThroughQueryBuilder } from '../../src/Orm/Relations/HasManyThrough/QueryBuilder';
 import { cleanup, getBaseModel, getDb, getProfiler, ormAdapter, resetTables, setup } from '../helpers';
+import {Relation} from "../../src/Orm/Relations/Base/Relation";
+import {SoftDeletes} from "../../src/Orm/SoftDeletes";
+import {DateTime} from "luxon";
 
 let db: ReturnType<typeof getDb>
 let BaseModel: ReturnType<typeof getBaseModel>
@@ -646,7 +649,7 @@ describe('Model | Has Many Through', () => {
             await db.table('posts').multiInsert([
                 {
                     user_id: 1,
-                    title: 'Adonis 101'
+                    title: 'tngraphql 101'
                 },
                 {
                     user_id: 1,
@@ -672,14 +675,10 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-
-
             class Post extends BaseModel {
                 @column()
                 public userId: number
             }
-
-
 
             class Country extends BaseModel {
                 @column({ isPrimary: true })
@@ -688,7 +687,6 @@ describe('Model | Has Many Through', () => {
                 @hasManyThrough([() => Post, () => User])
                 public posts: HasManyThrough<typeof Post>
             }
-
 
             await db.table('countries').insert({ name: 'India' })
             await db.table('users').insert({
@@ -699,7 +697,7 @@ describe('Model | Has Many Through', () => {
             await db.table('posts').multiInsert([
                 {
                     user_id: 1,
-                    title: 'Adonis 101'
+                    title: 'tngraphql 101'
                 },
                 {
                     user_id: 1,
@@ -721,9 +719,9 @@ describe('Model | Has Many Through', () => {
 
             expect(total).toHaveLength(2)
             expect(Number(total[0].total)).toEqual(1)
-            expect(total[0].title).toBe('Adonis 101')
+            expect(total[0].title).toBe('Lucid 101')
             expect(Number(total[0].total)).toEqual(1)
-            expect(total[1].title).toBe('Lucid 101')
+            expect(total[1].title).toBe('tngraphql 101')
         })
     })
 
@@ -785,21 +783,21 @@ describe('Model | Has Many Through', () => {
             ])
 
             await db.insertQuery().table('posts').insert([
-                { title: 'Adonis 101', user_id: 1 },
+                { title: 'tngraphql 101', user_id: 1 },
                 { title: 'Lucid 101', user_id: 1 },
-                { title: 'Adonis5', user_id: 2 }
+                { title: 'tngraphql5', user_id: 2 }
             ])
 
             const countries = await Country.query().preload('posts')
             expect(countries).toHaveLength(1)
             expect(countries[0].posts).toHaveLength(3)
-            expect(countries[0].posts[0].title).toBe('Adonis 101')
+            expect(countries[0].posts[0].title).toBe('tngraphql 101')
             expect(countries[0].posts[0].$extras.through_country_id).toBe(1)
 
             expect(countries[0].posts[1].title).toBe('Lucid 101')
             expect(countries[0].posts[1].$extras.through_country_id).toBe(1)
 
-            expect(countries[0].posts[2].title).toBe('Adonis5')
+            expect(countries[0].posts[2].title).toBe('tngraphql5')
             expect(countries[0].posts[2].$extras.through_country_id).toBe(1)
         })
 
@@ -845,9 +843,9 @@ describe('Model | Has Many Through', () => {
             ])
 
             await db.insertQuery().table('posts').insert([
-                { title: 'Adonis 101', user_id: 1 },
+                { title: 'tngraphql 101', user_id: 1 },
                 { title: 'Lucid 101', user_id: 1 },
-                { title: 'Adonis5', user_id: 2 }
+                { title: 'tngraphql5', user_id: 2 }
             ])
 
             const countries = await Country.query().preload('posts')
@@ -855,13 +853,13 @@ describe('Model | Has Many Through', () => {
             expect(countries[0].posts).toHaveLength(2)
             expect(countries[1].posts).toHaveLength(1)
 
-            expect(countries[0].posts[0].title).toBe('Adonis 101')
+            expect(countries[0].posts[0].title).toBe('tngraphql 101')
             expect(countries[0].posts[0].$extras.through_country_id).toBe(1)
 
             expect(countries[0].posts[1].title).toBe('Lucid 101')
             expect(countries[0].posts[1].$extras.through_country_id).toBe(1)
 
-            expect(countries[1].posts[0].title).toBe('Adonis5')
+            expect(countries[1].posts[0].title).toBe('tngraphql5')
             expect(countries[1].posts[0].$extras.through_country_id).toBe(2)
         })
 
@@ -907,9 +905,9 @@ describe('Model | Has Many Through', () => {
             ])
 
             await db.insertQuery().table('posts').insert([
-                { title: 'Adonis 101', user_id: 1 },
+                { title: 'tngraphql 101', user_id: 1 },
                 { title: 'Lucid 101', user_id: 1 },
-                { title: 'Adonis5', user_id: 2 }
+                { title: 'tngraphql5', user_id: 2 }
             ])
 
             const countries = await Country.query().orderBy('id', 'asc')
@@ -921,13 +919,13 @@ describe('Model | Has Many Through', () => {
             expect(countries[0].posts).toHaveLength(2)
             expect(countries[1].posts).toHaveLength(1)
 
-            expect(countries[0].posts[0].title).toBe('Adonis 101')
+            expect(countries[0].posts[0].title).toBe('tngraphql 101')
             expect(countries[0].posts[0].$extras.through_country_id).toBe(1)
 
             expect(countries[0].posts[1].title).toBe('Lucid 101')
             expect(countries[0].posts[1].$extras.through_country_id).toBe(1)
 
-            expect(countries[1].posts[0].title).toBe('Adonis5')
+            expect(countries[1].posts[0].title).toBe('tngraphql5')
             expect(countries[1].posts[0].$extras.through_country_id).toBe(2)
         })
 
@@ -973,9 +971,9 @@ describe('Model | Has Many Through', () => {
             ])
 
             await db.insertQuery().table('posts').insert([
-                { title: 'Adonis 101', user_id: 1 },
+                { title: 'tngraphql 101', user_id: 1 },
                 { title: 'Lucid 101', user_id: 1 },
-                { title: 'Adonis5', user_id: 2 }
+                { title: 'tngraphql5', user_id: 2 }
             ])
 
             const countries = await Country.query().preload('posts', (builder) => {
@@ -986,13 +984,13 @@ describe('Model | Has Many Through', () => {
             expect(countries[0].posts).toHaveLength(2)
             expect(countries[1].posts).toHaveLength(1)
 
-            expect(countries[0].posts[0].title).toBe('Adonis 101')
+            expect(countries[0].posts[0].title).toBe('tngraphql 101')
             expect(countries[0].posts[0].$extras).toEqual({ through_country_id: 1 })
 
             expect(countries[0].posts[1].title).toBe('Lucid 101')
             expect(countries[0].posts[1].$extras).toEqual({ through_country_id: 1 })
 
-            expect(countries[1].posts[0].title).toBe('Adonis5')
+            expect(countries[1].posts[0].title).toBe('tngraphql5')
             expect(countries[1].posts[0].$extras).toEqual({ through_country_id: 2 })
         })
 
@@ -1038,9 +1036,9 @@ describe('Model | Has Many Through', () => {
             ])
 
             await db.insertQuery().table('posts').insert([
-                { title: 'Adonis 101', user_id: 1 },
+                { title: 'tngraphql 101', user_id: 1 },
                 { title: 'Lucid 101', user_id: 1 },
-                { title: 'Adonis5', user_id: 2 }
+                { title: 'tngraphql5', user_id: 2 }
             ])
 
             try {
@@ -1094,9 +1092,9 @@ describe('Model | Has Many Through', () => {
             ])
 
             await db.insertQuery().table('posts').insert([
-                { title: 'Adonis 101', user_id: 1 },
+                { title: 'tngraphql 101', user_id: 1 },
                 { title: 'Lucid 101', user_id: 1 },
-                { title: 'Adonis5', user_id: 2 }
+                { title: 'tngraphql5', user_id: 2 }
             ])
 
             const profiler = getProfiler(true)
@@ -1513,8 +1511,6 @@ describe('Model | Has Many Through', () => {
                 public countryId: number
             }
 
-
-
             class Post extends BaseModel {
                 @column()
                 public userId: number
@@ -1550,7 +1546,7 @@ describe('Model | Has Many Through', () => {
 
             await db.table('posts').multiInsert([
                 {
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                     user_id: 1
                 },
                 {
@@ -1698,7 +1694,7 @@ describe('Model | Has Many Through', () => {
 
             await db.table('posts').multiInsert([
                 {
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                     user_id: 1
                 },
                 {
@@ -1756,7 +1752,7 @@ describe('Model | Has Many Through', () => {
                 public title: string
 
                 public static adonisOnly = scope((query) => {
-                    query.where('title', 'Adonis 101')
+                    query.where('title', 'tngraphql 101')
                 })
             }
 
@@ -1790,7 +1786,7 @@ describe('Model | Has Many Through', () => {
 
             await db.table('posts').multiInsert([
                 {
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                     user_id: 1
                 },
                 {
@@ -1815,7 +1811,82 @@ describe('Model | Has Many Through', () => {
 
             expect(country.posts).toHaveLength(1)
             expect(countryWithoutScope.posts).toHaveLength(3)
-            expect(country.posts[0].title).toBe('Adonis 101')
+            expect(country.posts[0].title).toBe('tngraphql 101')
+        })
+
+        test('apply scopes2 during eagerload', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public countryId: number
+            }
+
+            class Post extends BaseModel {
+                @column()
+                public userId: number
+
+                @column()
+                public title: string
+
+                public static scopeTngraphqlOnly(query) {
+                    query.where('title', 'tngraphql 101')
+                }
+            }
+
+            class Country extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasManyThrough([() => Post, () => User])
+                public posts: HasManyThrough<typeof Post>
+            }
+
+            await db.table('countries').multiInsert([{ name: 'India' }, { name: 'Switzerland' }])
+            await db.table('users').multiInsert([
+                {
+                    username: 'virk',
+                    country_id: 1
+                },
+                {
+                    username: 'nikk',
+                    country_id: 1
+                },
+                {
+                    username: 'romain',
+                    country_id: 2
+                }
+            ])
+
+            await db.table('posts').multiInsert([
+                {
+                    title: 'tngraphql 101',
+                    user_id: 1
+                },
+                {
+                    title: 'Lucid 101',
+                    user_id: 1
+                },
+                {
+                    title: 'Design 101',
+                    user_id: 2
+                },
+                {
+                    title: 'Dev 101',
+                    user_id: 3
+                }
+            ])
+
+            const country = await Country.query().where('id', 1).preload('posts', (query) => {
+                query.tngraphqlOnly()
+            }).firstOrFail()
+
+            const countryWithoutScope = await Country.query().where('id', 1).preload('posts').firstOrFail()
+
+            expect(country.posts).toHaveLength(1)
+            expect(countryWithoutScope.posts).toHaveLength(3)
+            expect(country.posts[0].title).toBe('tngraphql 101')
         })
 
         test('apply scopes on related query', async () => {
@@ -1837,7 +1908,7 @@ describe('Model | Has Many Through', () => {
                 public title: string
 
                 public static adonisOnly = scope((query) => {
-                    query.where('title', 'Adonis 101')
+                    query.where('title', 'tngraphql 101')
                 })
             }
 
@@ -1871,7 +1942,7 @@ describe('Model | Has Many Through', () => {
 
             await db.table('posts').multiInsert([
                 {
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                     user_id: 1
                 },
                 {
@@ -1894,9 +1965,209 @@ describe('Model | Has Many Through', () => {
 
             expect(posts).toHaveLength(1)
             expect(postsWithoutScope).toHaveLength(3)
-            expect(posts[0].title).toBe('Adonis 101')
+            expect(posts[0].title).toBe('tngraphql 101')
         })
     })
+
+    describe('Model | Has Many Through | global scope', () => {
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+            await setup()
+
+            await db.table('countries').multiInsert([{ name: 'India' }, { name: 'Switzerland' }])
+            await db.table('users').multiInsert([
+                {
+                    username: 'virk',
+                    country_id: 1
+                },
+                {
+                    username: 'nikk',
+                    country_id: 1
+                },
+                {
+                    username: 'romain',
+                    country_id: 2
+                }
+            ])
+
+            await db.table('posts').multiInsert([
+                {
+                    title: 'tngraphql 101',
+                    user_id: 1
+                },
+                {
+                    title: 'Lucid 101',
+                    user_id: 1
+                },
+                {
+                    title: 'Design 101',
+                    user_id: 2
+                },
+                {
+                    title: 'Dev 101',
+                    user_id: 3
+                }
+            ])
+        })
+
+        afterAll(async () => {
+            await cleanup()
+            await resetTables()
+            await db.manager.closeAll()
+        })
+
+        it('apply scopes during eagerload', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public countryId: number;
+            }
+
+            class Post extends BaseModel {
+                @column()
+                public userId: number
+
+                static boot() {
+                    super.boot();
+
+                    this.addGlobalScope('test',builder => builder.where('posts.id', 1))
+                }
+            }
+
+
+            class Country extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasManyThrough([() => Post, () => User])
+                public posts: HasManyThrough<typeof Post>
+            }
+
+            db.enableQueryLog();
+            const countryWithoutScope = await Country.query().where('id', 1).preload('posts').firstOrFail()
+
+            const stack = db.getQueryLog();
+
+            const {sql} = stack[1];
+
+            const {sql: knexSql} = db.from('posts')
+                .select(['posts.*', 'users.country_id as through_country_id'])
+                .join('users', 'users.id', '=', 'posts.user_id')
+                .whereIn('users.country_id', [1])
+                .where('posts.id', 1)
+                .toSQL();
+
+            expect(sql).toEqual(knexSql);
+        });
+
+        it('apply scopes on related query', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public countryId: number;
+            }
+
+            class Post extends BaseModel {
+                @column()
+                public userId: number
+
+                static boot() {
+                    super.boot();
+
+                    this.addGlobalScope('test',builder => builder.where('posts.id', 1))
+                }
+            }
+
+
+            class Country extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasManyThrough([() => Post, () => User])
+                public posts: HasManyThrough<typeof Post>
+            }
+
+            const country = await Country.findOrFail(1)
+            db.enableQueryLog();
+
+            const postsWithoutScope = await country.related('posts').query();
+
+            const {sql} = db.getQueryLog()[0];
+
+            const {sql: knexSql} = db.from('posts')
+                .select(['posts.*', 'users.country_id as through_country_id'])
+                .join('users', 'users.id', '=', 'posts.user_id')
+                .where('users.country_id', 1)
+                .where('posts.id', 1)
+                .toSQL();
+
+            expect(sql).toEqual(knexSql);
+        });
+
+        it('apply scopes on related paginate', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public countryId: number;
+            }
+
+            class Post extends BaseModel {
+                @column()
+                public userId: number
+
+                static boot() {
+                    super.boot();
+
+                    this.addGlobalScope('test',builder => builder.where('posts.id', 1))
+                }
+            }
+
+
+            class Country extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasManyThrough([() => Post, () => User])
+                public posts: HasManyThrough<typeof Post>
+            }
+
+            const country = await Country.find(1)
+            db.enableQueryLog();
+            const posts = await country!.related('posts').query().paginate(1, 2);
+
+            const stack = db.getQueryLog();
+
+            {
+                const {sql} = stack[0];
+                const {sql: knexSql} = db.from('posts')
+                    .join('users', 'users.id', '=', 'posts.user_id')
+                    .where('users.country_id', 1)
+                    .where('posts.id', 1)
+                    .count('* as total')
+                    .toSQL();
+                expect(sql).toEqual(knexSql);
+            }
+
+            {
+                const {sql} = stack[1];
+                const {sql: knexSql} = db.from('posts')
+                    .select(['posts.*', 'users.country_id as through_country_id'])
+                    .join('users', 'users.id', '=', 'posts.user_id')
+                    .where('users.country_id', 1)
+                    .where('posts.id', 1)
+                    .limit(20)
+                    .toSQL();
+                expect(sql).toEqual(knexSql);
+            }
+        });
+    });
 
     describe('Model | Has Many Through | onQuery', () => {
         beforeAll(async () => {
@@ -1940,7 +2211,7 @@ describe('Model | Has Many Through', () => {
                 public id: number
 
                 @hasManyThrough([() => Post, () => User], {
-                    onQuery: (query) => query.where('title', 'Adonis 101')
+                    onQuery: (query) => query.where('title', 'tngraphql 101')
                 })
                 public posts: HasManyThrough<typeof Post>
             }
@@ -1965,7 +2236,7 @@ describe('Model | Has Many Through', () => {
 
             await db.table('posts').multiInsert([
                 {
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                     user_id: 1
                 },
                 {
@@ -1984,7 +2255,7 @@ describe('Model | Has Many Through', () => {
 
             const country = await Country.query().where('id', 1).preload('posts').firstOrFail()
             expect(country.posts).toHaveLength(1)
-            expect(country.posts[0].title).toBe('Adonis 101')
+            expect(country.posts[0].title).toBe('tngraphql 101')
         })
 
         test('do not invoke onQuery method on preloading subqueries', async () => {
@@ -2017,7 +2288,7 @@ describe('Model | Has Many Through', () => {
                 @hasManyThrough([() => Post, () => User], {
                     onQuery: (query) => {
                         expect(true).toBeTruthy()
-                        query.where('title', 'Adonis 101')
+                        query.where('title', 'tngraphql 101')
                     }
                 })
                 public posts: HasManyThrough<typeof Post>
@@ -2043,7 +2314,7 @@ describe('Model | Has Many Through', () => {
 
             await db.table('posts').multiInsert([
                 {
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                     user_id: 1
                 },
                 {
@@ -2067,7 +2338,7 @@ describe('Model | Has Many Through', () => {
                 .firstOrFail()
 
             expect(country.posts).toHaveLength(1)
-            expect(country.posts[0].title).toBe('Adonis 101')
+            expect(country.posts[0].title).toBe('tngraphql 101')
         })
 
         test('invoke onQuery method on related query builder', async () => {
@@ -2096,7 +2367,7 @@ describe('Model | Has Many Through', () => {
                 public id: number
 
                 @hasManyThrough([() => Post, () => User], {
-                    onQuery: (query) => query.where('title', 'Adonis 101')
+                    onQuery: (query) => query.where('title', 'tngraphql 101')
                 })
                 public posts: HasManyThrough<typeof Post>
             }
@@ -2121,7 +2392,7 @@ describe('Model | Has Many Through', () => {
 
             await db.table('posts').multiInsert([
                 {
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                     user_id: 1
                 },
                 {
@@ -2142,7 +2413,7 @@ describe('Model | Has Many Through', () => {
             const posts = await country.related('posts').query()
 
             expect(posts).toHaveLength(1)
-            expect(posts[0].title).toBe('Adonis 101')
+            expect(posts[0].title).toBe('tngraphql 101')
         })
 
         test('do not invoke onQuery method on related query builder subqueries', async () => {
@@ -2171,7 +2442,7 @@ describe('Model | Has Many Through', () => {
                 public id: number
 
                 @hasManyThrough([() => Post, () => User], {
-                    onQuery: (query) => query.where('title', 'Adonis 101')
+                    onQuery: (query) => query.where('title', 'tngraphql 101')
                 })
                 public posts: HasManyThrough<typeof Post>
             }
@@ -2196,7 +2467,7 @@ describe('Model | Has Many Through', () => {
 
             await db.table('posts').multiInsert([
                 {
-                    title: 'Adonis 101',
+                    title: 'tngraphql 101',
                     user_id: 1
                 },
                 {
@@ -2224,7 +2495,7 @@ describe('Model | Has Many Through', () => {
                                                                .from('posts')
                                                                .select('posts.*', 'users.country_id as through_country_id')
                                                                .innerJoin('users', 'users.id', 'posts.user_id')
-                                                               .where('title', 'Adonis 101')
+                                                               .where('title', 'tngraphql 101')
                                                                .where((query) => query.whereNotNull('created_at'))
                                                                .where('users.country_id', 1)
                                                                .toSQL()
@@ -2233,4 +2504,588 @@ describe('Model | Has Many Through', () => {
             expect(bindings).toEqual(knexBindings)
         })
     })
+
+    describe('Model HasQuery', () => {
+        let Profile;
+        let User;
+        let Post;
+        let Country;
+
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+            await setup()
+
+            class UserModel extends BaseModel {
+                static table = 'users'
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public countryId: number
+
+                @belongsTo(() => CountryModel)
+                public country: BelongsTo<typeof CountryModel>;
+            }
+
+            class PostModel extends BaseModel {
+                static table = 'posts'
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public userId: number
+
+                @column()
+                public countryId: number
+
+                @column()
+                public title: string
+            }
+
+            class CountryModel extends BaseModel {
+                static table = 'countries'
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public userId: number
+
+                @column()
+                public countryId: number
+
+                @hasManyThrough([() => PostModel, () => CountryModel])
+                public posts2: HasManyThrough<typeof PostModel>
+
+                @hasManyThrough([() => CountryModel, () => UserModel])
+                public countries: HasManyThrough<typeof CountryModel>
+
+                @hasManyThrough([() => PostModel, () => UserModel])
+                public posts: HasManyThrough<typeof PostModel>
+            }
+
+            User = UserModel;
+            Post = PostModel;
+            Country = CountryModel;
+        })
+
+        afterAll(async () => {
+            await cleanup()
+            await db.manager.closeAll()
+        })
+
+        afterEach(async () => {
+            await resetTables()
+            Relation.$selfJoinCount = 0;
+        })
+
+        it('has query', async () => {
+            const {sql, bindings} = Country.query().has('posts').toSQL();
+
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .whereExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('has nested query', async () => {
+            const {sql, bindings} = Country.query().has('countries').toSQL();
+
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .whereExists(builder => {
+                    builder
+                        .from('countries as lucid_reserved_0')
+                        .select('*')
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'lucid_reserved_0.user_id'
+                        )
+                        .whereRaw('countries.id = lucid_reserved_0.country_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('has nested query', async () => {
+            const {sql, bindings} = Country.query().has('posts2').toSQL();
+
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .whereExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('*')
+                        .innerJoin(
+                            'countries as lucid_reserved_0', // user
+                            'lucid_reserved_0.id',
+                            'posts.country_id'
+                        )
+                        .whereRaw('countries.id = lucid_reserved_0.country_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('withcount query', async () => {
+            const {sql, bindings} = Country.query().withCount('posts').toSQL();
+            const q = db.from('posts')
+                .count('*')
+                .innerJoin(
+                    'users',
+                    'users.id',
+                    'posts.user_id'
+                )
+                .whereRaw('countries.id = users.country_id')
+
+
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('countries.*')
+                .selectSub(q, 'posts_count')
+                .toSQL();
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orHas query', async () => {
+            const {sql, bindings} = Country.query().where('id', 1).orHas('posts').toSQL();
+
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .where('id', 1)
+                .orWhereExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereHas query', async () => {
+            const {sql, bindings} = Country.query().whereHas('posts').toSQL();
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .whereExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereHas use callback query', async () => {
+            const {sql, bindings} = Country.query().whereHas('posts', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .whereExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                        .where('posts.id', 1)
+                })
+                .toSQL();
+
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereHas query', async () => {
+            const {sql, bindings} = Country.query().orWhereHas('posts').toSQL();
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .orWhereExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereHas using callback query', async () => {
+            const {sql, bindings} = Country.query().orWhereHas('posts', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .orWhereExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                        .where('posts.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('doesntHave query', async () => {
+            const {sql, bindings} = Country.query().doesntHave('posts').toSQL();
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .whereNotExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orDoesntHave query', async () => {
+            const {sql, bindings} = Country.query().where('id', 1).orDoesntHave('posts').toSQL();
+
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .where('id', 1)
+                .orWhereNotExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereDoesntHave query', async () => {
+            const {sql, bindings} = Country.query().where('id', 1).whereDoesntHave('posts').toSQL();
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .where('id', 1)
+                .whereNotExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereDoesntHave using callback query', async () => {
+            const {sql, bindings} = Country.query().where('id', 1).whereDoesntHave('posts', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .where('id', 1)
+                .whereNotExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                        .where('posts.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereDoesntHave query', async () => {
+            const {sql, bindings} = Country.query().where('id', 1).orWhereDoesntHave('posts').toSQL();
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .where('id', 1)
+                .orWhereNotExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                        // .where('posts.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereDoesntHave using callback query', async () => {
+            const {sql, bindings} = Country.query().where('id', 1).orWhereDoesntHave('posts', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('countries')
+                .select('*')
+                .where('id', 1)
+                .orWhereNotExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                        .where('posts.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('has query when have global scope', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public countryId: number;
+
+                static boot() {
+                    super.boot();
+
+                    this.addGlobalScope('test',builder => builder.where('posts.id', 1))
+                }
+            }
+
+            class Post extends BaseModel {
+                @column()
+                public userId: number
+
+                static boot() {
+                    super.boot();
+
+                    this.addGlobalScope('test',builder => builder.where('posts.id', 1))
+                }
+            }
+
+            class Country extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasManyThrough([() => Post, () => User])
+                public posts: HasManyThrough<typeof Post>
+            }
+
+            const {sql, bindings} = Country.query().has('posts').toSQL();
+            const {sql: knexSql, bindings: knexBindings} = db
+                .from('countries')
+                .select('*')
+                .whereExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereRaw('countries.id = users.country_id')
+                        .where('posts.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+            expect(bindings).toEqual(knexBindings);
+        });
+
+        it('has query when have softdelete', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public countryId: number;
+
+                @column.dateTime({autoCreate: true})
+                public createdAt: DateTime
+
+                @column.dateTime({autoCreate: true, autoUpdate: true})
+                public updatedAt: DateTime;
+
+                @column.dateTime()
+                public deletedAt: DateTime;
+
+                static boot() {
+                    this.use(SoftDeletes);
+                }
+            }
+
+            class Post extends BaseModel {
+                @column()
+                public userId: number
+
+                @column.dateTime({autoCreate: true})
+                public createdAt: DateTime
+
+                @column.dateTime({autoCreate: true, autoUpdate: true})
+                public updatedAt: DateTime;
+
+                @column.dateTime()
+                public deletedAt: DateTime;
+
+                static boot() {
+                    this.use(SoftDeletes);
+                }
+            }
+
+            class Country extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @hasManyThrough([() => Post, () => User])
+                public posts: HasManyThrough<typeof Post>
+            }
+
+            const {sql, bindings} = Country.query().has('posts').toSQL();
+            const {sql: knexSql, bindings: knexBindings} = db
+                .from('countries')
+                .select('*')
+                .whereExists(builder => {
+                    builder
+                        .from('posts')
+                        .select('posts.*')
+                        .select({
+                            'through_country_id': 'users.country_id'
+                        })
+                        .innerJoin(
+                            'users',
+                            'users.id',
+                            'posts.user_id'
+                        )
+                        .whereNull('users.deleted_at')
+                        .whereRaw('countries.id = users.country_id')
+                        .whereNull('posts.deleted_at')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+            expect(bindings).toEqual(knexBindings);
+        });
+    });
 })

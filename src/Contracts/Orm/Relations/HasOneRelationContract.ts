@@ -9,7 +9,7 @@
  */
 
 import { QueryClientContract } from '../../Database/QueryClientContract';
-import { HasOneClientContract } from '../../Model/HasOneClientContract';
+import { HasOneClientContract } from './HasOneClientContract';
 import { LucidModel } from '../../Model/LucidModel';
 import { BaseRelationContract } from './BaseRelationContract';
 

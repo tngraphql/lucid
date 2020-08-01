@@ -16,7 +16,7 @@ import {QueryClientContract} from "../../src/Contracts/Database/QueryClientContr
 import {ISOLATION_LEVELS} from "../../src/Database/customTransaction";
 import {RawBuilder} from "../../src/Database/StaticBuilder/RawBuilder";
 import {ReferenceBuilder} from "../../src/Database/StaticBuilder/ReferenceBuilder";
-import { resolveClientNameWithAliases } from 'knex/lib/helpers'
+import {resolveClientNameWithAliases} from 'knex/lib/helpers'
 
 const delay = require('delay')
 
@@ -70,7 +70,7 @@ describe('Transaction | query | ' + process.env.DB, () => {
         const trx = await db.transaction();
 
         const tables = await trx.getAllTables(['public'])
-        if ( !hasMysql(process.env.DB) ) {
+        if (!hasMysql(process.env.DB)) {
             expect(tables).toEqual([
                 'comments',
                 'countries',
@@ -80,6 +80,8 @@ describe('Transaction | query | ' + process.env.DB, () => {
                 'profiles',
                 'skill_user',
                 'skills',
+                "taggables",
+                "tags",
                 'users'
             ])
         } else {
@@ -92,6 +94,8 @@ describe('Transaction | query | ' + process.env.DB, () => {
                 'profiles',
                 'skills',
                 'skill_user',
+                "taggables",
+                "tags",
                 'users'
             ])
         }
@@ -192,7 +196,7 @@ describe('Transaction | query | ' + process.env.DB, () => {
         await connection.disconnect()
     });
 
-    if ( ! ['sqlite', 'mssql'].includes(process.env.DB as string) ) {
+    if (!['sqlite', 'mssql'].includes(process.env.DB as string)) {
         describe('advisory locks', () => {
             it('get advisory lock', async () => {
                 const connection = new Connection('primary', getConfig(), getLogger())
@@ -221,7 +225,7 @@ describe('Transaction | query | ' + process.env.DB, () => {
 
                 const trx = await db.transaction();
 
-                if ( trx.dialect.name === 'sqlite3' ) {
+                if (trx.dialect.name === 'sqlite3') {
                     await connection.disconnect()
                     return
                 }

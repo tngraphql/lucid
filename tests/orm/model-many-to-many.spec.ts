@@ -8,9 +8,9 @@
  * file that was distributed with this source code.
  */
 
-import { ManyToMany } from '../../src/Contracts/Orm/Relations/types';
+import {HasMany, HasOne, ManyToMany} from '../../src/Contracts/Orm/Relations/types';
 import { scope } from '../../src/Helpers/scope';
-import { column, manyToMany } from '../../src/Orm/Decorators';
+import {column, hasMany, hasOne, manyToMany} from '../../src/Orm/Decorators';
 import { ManyToManyQueryBuilder } from '../../src/Orm/Relations/ManyToMany/QueryBuilder';
 import { cleanup, getBaseModel, getDb, getProfiler, ormAdapter, resetTables, setup } from '../helpers';
 
@@ -3999,6 +3999,163 @@ describe('Model | ManyToMany', () => {
         })
     })
 
+    describe('Model | ManyToMany | global scopes', () => {
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+            await setup()
+            await db.table('users').insert({ username: 'virk' })
+            await db.insertQuery().table('skills').insert([
+                { name: 'Programming' },
+                { name: 'Dancing' },
+                { name: 'Singing' },
+            ])
+            await db.insertQuery().table('skill_user').insert([
+                {
+                    user_id: 1,
+                    skill_id: 1,
+                },
+                {
+                    user_id: 1,
+                    skill_id: 2,
+                },
+            ])
+        })
+
+        afterAll(async () => {
+            await cleanup()
+            await db.manager.closeAll()
+        })
+
+        it('apply scopes during eagerload', async () => {
+            class Skill extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public name: string
+
+                public static boot() {
+                    this.addGlobalScope(query => query.where('name', 'Programming'))
+                }
+            }
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @manyToMany(() => Skill)
+                public skills: ManyToMany<typeof Skill>
+            }
+
+            db.enableQueryLog();
+            await User.query().preload('skills').firstOrFail();
+
+            const {sql} = db.getQueryLog()[1];
+            const {sql: knexSql} = db.from('skills')
+                .select([
+                    'skills.*',
+                    'skill_user.user_id as pivot_user_id',
+                    'skill_user.skill_id as pivot_skill_id'
+                ])
+                .join('skill_user', 'skills.id', '=', 'skill_user.skill_id')
+                .whereIn('skill_user.user_id', [1])
+                .where('name', 'Programming').toSQL();
+            expect(sql).toEqual(knexSql);
+        });
+
+        it('apply scopes on related query', async () => {
+            class Skill extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public name: string
+
+                public static boot() {
+                    this.addGlobalScope(query => query.where('name', 'Programming'))
+                }
+            }
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @manyToMany(() => Skill)
+                public skills: ManyToMany<typeof Skill>
+            }
+
+            db.enableQueryLog();
+            const user = await User.findOrFail(1)
+            const skills = await user.related('skills').query();
+
+            const {sql} = db.getQueryLog()[1];
+            const {sql: knexSql} = db.from('skills')
+                .select([
+                    'skills.*',
+                    'skill_user.user_id as pivot_user_id',
+                    'skill_user.skill_id as pivot_skill_id'
+                ])
+                .join('skill_user', 'skills.id', '=', 'skill_user.skill_id')
+                .where('skill_user.user_id', 1)
+                .where('name', 'Programming').toSQL();
+            expect(sql).toEqual(knexSql);
+        });
+
+        it('apply scopes on related paginate', async () => {
+            class Skill extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public name: string
+
+                public static boot() {
+                    this.addGlobalScope(query => query.where('name', 'Programming'))
+                }
+            }
+
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @manyToMany(() => Skill)
+                public skills: ManyToMany<typeof Skill>
+            }
+
+            const user = await User.findOrFail(1);
+            db.enableQueryLog();
+            await user.related('skills').query().paginate(1, 20);
+
+            {
+                const {sql} = db.getQueryLog()[0];
+                const {sql: knexSql} = db.from('skills')
+                    .join('skill_user', 'skills.id', '=', 'skill_user.skill_id')
+                    .where('skill_user.user_id', 1)
+                    .where('name', 'Programming')
+                    .count('* as total')
+                    .toSQL();
+                expect(sql).toEqual(knexSql);
+            }
+
+            {
+                const {sql} = db.getQueryLog()[1];
+                const {sql: knexSql} = db.from('skills')
+                    .select([
+                        'skills.*',
+                        'skill_user.user_id as pivot_user_id',
+                        'skill_user.skill_id as pivot_skill_id'
+                    ])
+                    .join('skill_user', 'skills.id', '=', 'skill_user.skill_id')
+                    .where('skill_user.user_id', 1)
+                    .where('name', 'Programming')
+                    .limit(20)
+                    .toSQL();
+                expect(sql).toEqual(knexSql);
+            }
+        });
+    });
+
     describe('Model | ManyToMany | onQuery', () => {
         beforeAll(async () => {
             db = getDb()
@@ -4191,4 +4348,515 @@ describe('Model | ManyToMany', () => {
             await user.related('skills').pivotQuery()
         })
     })
+
+    describe('Model HasQuery', () => {
+        let Skill;
+        let User;
+
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+            await setup()
+
+            class SkillModel extends BaseModel {
+                static table = 'skills';
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public uid: number
+
+                @column()
+                public name: string
+
+                @manyToMany(() => SkillModel, {pivotRelatedForeignKey: 'user_id', localKey: 'uid', pivotTable: 'skill_user'})
+                public skills: ManyToMany<typeof SkillModel>
+            }
+
+            class UserModel extends BaseModel {
+                static table = 'users';
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public uid: number
+
+                @manyToMany(() => SkillModel, {localKey: 'uid'})
+                public skills: ManyToMany<typeof SkillModel>
+            }
+
+            User = UserModel;
+            Skill = SkillModel;
+        })
+
+        afterAll(async () => {
+            await cleanup()
+            await db.manager.closeAll()
+        })
+
+        afterEach(async () => {
+            await resetTables()
+        })
+
+        it('has query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).has('skills').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .whereExists(builder => {
+                    builder
+                        .from('skills')
+                        .select('skills.*')
+                        .select({
+                            'pivot_user_id': 'skill_user.user_id',
+                            'pivot_skill_id': 'skill_user.skill_id'
+                        })
+                        .innerJoin(
+                            'skill_user',
+                            'skills.id',
+                            'skill_user.skill_id'
+                        )
+                        .whereRaw('users.uid = skills.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('has nested query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).has('skills.skills.skills').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .whereExists(builder => {
+                    builder
+                        .from('skills')
+                        .select('skills.*')
+                        .select({
+                            'pivot_user_id': 'skill_user.user_id',
+                            'pivot_skill_id': 'skill_user.skill_id'
+                        })
+                        .innerJoin(
+                            'skill_user',
+                            'skills.id',
+                            'skill_user.skill_id'
+                        )
+                        .whereRaw('users.uid = skills.user_id')
+                        .whereExists(builder => {
+                            builder
+                                .from('skills as lucid_reserved_0')
+                                .select('lucid_reserved_0.*')
+                                .select({
+                                    'pivot_skill_id': 'skill_user.skill_id',
+                                    'pivot_user_id': 'skill_user.user_id'
+                                })
+                                .innerJoin(
+                                    'skill_user',
+                                    'lucid_reserved_0.id',
+                                    'skill_user.user_id'
+                                )
+                                .whereRaw('skills.uid = lucid_reserved_0.skill_id')
+                                .whereExists(builder => {
+                                    builder
+                                        .from('skills')
+                                        .select('skills.*')
+                                        .select({
+                                            'pivot_skill_id': 'skill_user.skill_id',
+                                            'pivot_user_id': 'skill_user.user_id'
+                                        })
+                                        .innerJoin(
+                                            'skill_user',
+                                            'skills.id',
+                                            'skill_user.user_id'
+                                        )
+                                        .whereRaw('lucid_reserved_0.uid = skills.skill_id')
+                                })
+                        })
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('withcount query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).withCount('skills').toSQL();
+            const q = db.from('skills')
+                .count('*')
+                .innerJoin(
+                    'skill_user',
+                    'skills.id',
+                    'skill_user.skill_id'
+                )
+                .whereRaw('users.uid = skills.user_id')
+
+            const {sql: knexSql} = db
+                .from('users')
+                .select('users.*')
+                .where('id', 1)
+                .selectSub(q, 'skills_count')
+                .toSQL();
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orHas query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).orHas('skills').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .orWhereExists(builder => {
+                    builder
+                        .from('skills')
+                        .select('skills.*')
+                        .select({
+                            'pivot_user_id': 'skill_user.user_id',
+                            'pivot_skill_id': 'skill_user.skill_id'
+                        })
+                        .innerJoin(
+                            'skill_user',
+                            'skills.id',
+                            'skill_user.skill_id'
+                        )
+                        .whereRaw('users.uid = skills.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereHas query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).whereHas('skills').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .whereExists(builder => {
+                    builder
+                        .from('skills')
+                        .select('skills.*')
+                        .select({
+                            'pivot_user_id': 'skill_user.user_id',
+                            'pivot_skill_id': 'skill_user.skill_id'
+                        })
+                        .innerJoin(
+                            'skill_user',
+                            'skills.id',
+                            'skill_user.skill_id'
+                        )
+                        .whereRaw('users.uid = skills.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereHas use callback query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).whereHas('skills', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .whereExists(builder => {
+                    builder
+                        .from('skills')
+                        .select('skills.*')
+                        .select({
+                            'pivot_user_id': 'skill_user.user_id',
+                            'pivot_skill_id': 'skill_user.skill_id'
+                        })
+                        .innerJoin(
+                            'skill_user',
+                            'skills.id',
+                            'skill_user.skill_id'
+                        )
+                        .whereRaw('users.uid = skills.user_id')
+                        .where('skills.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereHas query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).orWhereHas('skills').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .orWhereExists(builder => {
+                    builder
+                        .from('skills')
+                        .select('skills.*')
+                        .select({
+                            'pivot_user_id': 'skill_user.user_id',
+                            'pivot_skill_id': 'skill_user.skill_id'
+                        })
+                        .innerJoin(
+                            'skill_user',
+                            'skills.id',
+                            'skill_user.skill_id'
+                        )
+                        .whereRaw('users.uid = skills.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereHas using callback query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).orWhereHas('skills', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .orWhereExists(builder => {
+                    builder
+                        .from('skills')
+                        .select('skills.*')
+                        .select({
+                            'pivot_user_id': 'skill_user.user_id',
+                            'pivot_skill_id': 'skill_user.skill_id'
+                        })
+                        .innerJoin(
+                            'skill_user',
+                            'skills.id',
+                            'skill_user.skill_id'
+                        )
+                        .whereRaw('users.uid = skills.user_id')
+                        .where('skills.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('doesntHave query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).doesntHave('skills').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .whereNotExists(builder => {
+                    builder
+                        .from('skills')
+                        .select('skills.*')
+                        .select({
+                            'pivot_user_id': 'skill_user.user_id',
+                            'pivot_skill_id': 'skill_user.skill_id'
+                        })
+                        .innerJoin(
+                            'skill_user',
+                            'skills.id',
+                            'skill_user.skill_id'
+                        )
+                        .whereRaw('users.uid = skills.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orDoesntHave query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).orDoesntHave('skills').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .orWhereNotExists(builder => {
+                    builder
+                        .from('skills')
+                        .select('skills.*')
+                        .select({
+                            'pivot_user_id': 'skill_user.user_id',
+                            'pivot_skill_id': 'skill_user.skill_id'
+                        })
+                        .innerJoin(
+                            'skill_user',
+                            'skills.id',
+                            'skill_user.skill_id'
+                        )
+                        .whereRaw('users.uid = skills.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereDoesntHave query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).whereDoesntHave('skills').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .whereNotExists(builder => {
+                    builder
+                        .from('skills')
+                        .select('skills.*')
+                        .select({
+                            'pivot_user_id': 'skill_user.user_id',
+                            'pivot_skill_id': 'skill_user.skill_id'
+                        })
+                        .innerJoin(
+                            'skill_user',
+                            'skills.id',
+                            'skill_user.skill_id'
+                        )
+                        .whereRaw('users.uid = skills.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereDoesntHave using callback query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).whereDoesntHave('skills', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .whereNotExists(builder => {
+                    builder
+                        .from('skills')
+                        .select('skills.*')
+                        .select({
+                            'pivot_user_id': 'skill_user.user_id',
+                            'pivot_skill_id': 'skill_user.skill_id'
+                        })
+                        .innerJoin(
+                            'skill_user',
+                            'skills.id',
+                            'skill_user.skill_id'
+                        )
+                        .whereRaw('users.uid = skills.user_id')
+                        .where('skills.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereDoesntHave query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).orWhereDoesntHave('skills').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .orWhereNotExists(builder => {
+                    builder
+                        .from('skills')
+                        .select('skills.*')
+                        .select({
+                            'pivot_user_id': 'skill_user.user_id',
+                            'pivot_skill_id': 'skill_user.skill_id'
+                        })
+                        .innerJoin(
+                            'skill_user',
+                            'skills.id',
+                            'skill_user.skill_id'
+                        )
+                        .whereRaw('users.uid = skills.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereDoesntHave using callback query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).orWhereDoesntHave('skills', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .orWhereNotExists(builder => {
+                    builder
+                        .from('skills')
+                        .select('skills.*')
+                        .select({
+                            'pivot_user_id': 'skill_user.user_id',
+                            'pivot_skill_id': 'skill_user.skill_id'
+                        })
+                        .innerJoin(
+                            'skill_user',
+                            'skills.id',
+                            'skill_user.skill_id'
+                        )
+                        .whereRaw('users.uid = skills.user_id')
+                        .where('skills.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('has query when have global scope', async () => {
+            class Skill extends BaseModel {
+                static table = 'skills';
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public uid: number
+
+                @column()
+                public name: string
+
+                static boot() {
+                    this.addGlobalScope('name', query => {
+                        query.where(query.qualifyColumn('type'), 'twitter')
+                    });
+                }
+            }
+
+            class User extends BaseModel {
+                static table = 'users';
+
+                @column({isPrimary: true})
+                public id: number
+
+                @column()
+                public uid: number
+
+                @column()
+                public username: string
+
+                @manyToMany(() => Skill, {localKey: 'uid'})
+                public skills: ManyToMany<typeof Skill>
+            }
+
+            const {sql, bindings} = User.query().has('skills').toSQL();
+            const {sql: knexSql, bindings: knexBindings} = db
+                .from('users')
+                .select('*')
+                .whereExists(builder => {
+                    builder
+                        .from('skills')
+                        .select('skills.*')
+                        .select({
+                            'pivot_user_id': 'skill_user.user_id',
+                            'pivot_skill_id': 'skill_user.skill_id'
+                        })
+                        .innerJoin(
+                            'skill_user',
+                            'skills.id',
+                            'skill_user.skill_id'
+                        )
+                        .whereRaw('users.uid = skills.user_id')
+                        .where('skills.type', 'twitter')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+            expect(bindings).toEqual(knexBindings);
+        });
+    });
 })

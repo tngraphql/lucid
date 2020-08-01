@@ -176,13 +176,15 @@ export interface LucidRow {
      */
     $consumeAdapterResult(adapterResult: ModelObject, sideloadAttributes?: ModelObject): void
 
-    $hydrateOriginals(): void
+    $hydrateOriginals(): void;
+
+    getChanges(): { [key: string]: any }
 
     fill(value: Partial<ModelAttributes<this>>, allowNonExtraProperties?: boolean): void
 
     merge(value: Partial<ModelAttributes<this>>, allowNonExtraProperties?: boolean): void
 
-    save(): Promise<number>
+    save(): Promise<boolean>
 
     delete(): Promise<number>
 
@@ -247,4 +249,6 @@ export interface LucidRow {
     prepareForAdapter(attributes: ModelObject);
 
     newModelQuery(): ModelQueryBuilderContract<LucidModel>
+
+    getConnection(options?: ModelAdapterOptions): QueryClientContract;
 }

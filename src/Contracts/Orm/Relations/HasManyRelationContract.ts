@@ -10,7 +10,7 @@
 
 
 import { QueryClientContract } from '../../Database/QueryClientContract';
-import { HasManyClientContract } from '../../Model/HasManyClientContract';
+import { HasManyClientContract } from './HasManyClientContract';
 import { LucidModel } from '../../Model/LucidModel';
 import { OneOrMany } from '../../Model/types';
 import { BaseRelationContract } from './BaseRelationContract';

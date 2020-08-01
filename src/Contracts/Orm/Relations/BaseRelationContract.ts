@@ -41,4 +41,6 @@ export interface BaseRelationContract<ParentModel extends LucidModel,
         parent: OneOrMany<InstanceType<ParentModel>>,
         client: QueryClientContract
     ): RelationQueryBuilderContract<RelatedModel, InstanceType<RelatedModel>>
+
+    getEager(query): Promise<any>;
 }

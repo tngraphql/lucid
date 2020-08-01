@@ -8,9 +8,9 @@
  * file that was distributed with this source code.
  */
 
-import { BelongsTo } from '../../src/Contracts/Orm/Relations/types';
+import {BelongsTo, HasOne} from '../../src/Contracts/Orm/Relations/types';
 import { scope } from '../../src/Helpers/scope';
-import { belongsTo, column } from '../../src/Orm/Decorators';
+import {belongsTo, column, hasOne} from '../../src/Orm/Decorators';
 import { BelongsToQueryBuilder } from '../../src/Orm/Relations/BelongsTo/QueryBuilder';
 import { cleanup, getBaseModel, getDb, getProfiler, ormAdapter, resetTables, setup } from '../helpers';
 
@@ -1199,15 +1199,13 @@ describe('Model | BelongsTo | Options', () => {
             db = getDb()
             BaseModel = getBaseModel(ormAdapter(db))
             await setup()
+            await db.insertQuery().table('users').insert({ username: 'virk' })
+            await db.insertQuery().table('profiles').insert({ display_name: 'Hvirk', user_id: 1 })
         })
 
         afterAll(async () => {
             await cleanup()
             await db.manager.closeAll()
-        })
-
-        afterEach(async () => {
-            await resetTables()
         })
 
         test('apply scopes during eagerload', async () => {
@@ -1223,8 +1221,6 @@ describe('Model | BelongsTo | Options', () => {
                 })
             }
 
-
-
             class Profile extends BaseModel {
                 @column()
                 public userId: number
@@ -1235,11 +1231,6 @@ describe('Model | BelongsTo | Options', () => {
                 @belongsTo(() => User)
                 public user: BelongsTo<typeof User>
             }
-
-
-
-            await db.insertQuery().table('users').insert({ username: 'virk' })
-            await db.insertQuery().table('profiles').insert({ display_name: 'Hvirk', user_id: 1 })
 
             const profile = await Profile.query().preload('user', (builder) => {
                 builder.apply((scopes) => scopes.fromCountry(1))
@@ -1263,7 +1254,61 @@ describe('Model | BelongsTo | Options', () => {
                 })
             }
 
+            class Profile extends BaseModel {
+                @column()
+                public userId: number
 
+                @column()
+                public displayName: string
+
+                @belongsTo(() => User)
+                public user: BelongsTo<typeof User>
+            }
+
+            const profile = await Profile.query().firstOrFail()
+            const profileUser = await profile.related('user').query().apply((scopes) => {
+                scopes.fromCountry(1)
+            }).first()
+            const profileUserWithoutScopes = await profile.related('user').query().first()
+
+            expect(profileUser).toBeNull()
+            expect(profileUserWithoutScopes).toBeInstanceOf(User)
+        })
+    })
+
+    describe('Model | BelongsTo | gloabl scopes', () => {
+        let UserModel;
+        let ProfileModel;
+
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+            await setup()
+            await db.insertQuery().table('users').insert({ username: 'virk' })
+            await db.insertQuery().table('profiles').insert({ display_name: 'Hvirk', user_id: 1 })
+        })
+
+        afterAll(async () => {
+            await cleanup()
+            await db.manager.closeAll()
+        })
+
+        beforeEach(async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column()
+                public username: string
+
+                public static boot() {
+                    super.boot();
+
+                    this.addGlobalScope(builder => {
+                        builder.where('country_id', 1)
+                    })
+                }
+            }
 
             class Profile extends BaseModel {
                 @column()
@@ -1276,21 +1321,29 @@ describe('Model | BelongsTo | Options', () => {
                 public user: BelongsTo<typeof User>
             }
 
-
-
-            await db.insertQuery().table('users').insert({ username: 'virk' })
-            await db.insertQuery().table('profiles').insert({ display_name: 'Hvirk', user_id: 1 })
-
-            const profile = await Profile.query().firstOrFail()
-            const profileUser = await profile.related('user').query().apply((scopes) => {
-                scopes.fromCountry(1)
-            }).first()
-            const profileUserWithoutScopes = await profile.related('user').query().first()
-
-            expect(profileUser).toBeNull()
-            expect(profileUserWithoutScopes).toBeInstanceOf(User)
+            UserModel = User;
+            ProfileModel = Profile;
         })
-    })
+
+        it('apply scopes during eagerload', async () => {
+            db.enableQueryLog();
+            const profile = await ProfileModel.query().preload('user').first();
+
+            const {sql} = db.getQueryLog()[1];
+            const {sql: knexSql} = db.from('users').whereIn('id', [1]).where('country_id', 1).toSQL();
+            expect(sql).toEqual(knexSql);
+        });
+
+        it('apply scopes on related query', async () => {
+            db.enableQueryLog();
+            const profile = await ProfileModel.query().firstOrFail()
+            const profileUser = await profile.related('user').query().first()
+
+            const {sql} = db.getQueryLog()[1];
+            const {sql: knexSql} = db.from('users').where('country_id', 1).where('id', 1).limit(1).toSQL();
+            expect(sql).toEqual(knexSql);
+        });
+    });
 
     describe('Model | BelongsTo | onQuery', () => {
         beforeAll(async () => {
@@ -1468,4 +1521,372 @@ describe('Model | BelongsTo | Options', () => {
             expect(bindings).toEqual(knexBindings)
         })
     })
+
+    describe('Model HasQuery', () => {
+        let Profile;
+        let User;
+
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+            await setup()
+
+            class ProfileModel extends BaseModel {
+                static table = 'profiles';
+
+                @column({isPrimary: true})
+                public id: number
+
+                @column()
+                public uid: number
+
+                @column()
+                public userId: number
+
+                @column()
+                public displayName: string
+
+                @belongsTo(() => ProfileModel, {foreignKey: 'uid', localKey: 'id'})
+                public user: BelongsTo<typeof ProfileModel>
+
+                // static boot() {
+                //     this.addGlobalScope('name', query => {
+                //         query.where(query.qualifyColumn('type'), 'twitter')
+                //     });
+                //     this.withoutGlobalScope('name');
+                // }
+            }
+
+            class UserModel extends BaseModel {
+                static table = 'users';
+
+                @column({isPrimary: true})
+                public id: number
+
+                @column()
+                public uid: number
+
+                @column()
+                public username: string
+
+                @belongsTo(() => ProfileModel, {localKey: 'userId', foreignKey: 'uid'})
+                public profile: BelongsTo<typeof ProfileModel>
+            }
+
+            User = UserModel;
+            Profile = ProfileModel;
+        })
+
+        afterAll(async () => {
+            await cleanup()
+            await db.manager.closeAll()
+        })
+
+        afterEach(async () => {
+            await resetTables()
+        })
+
+        it('has query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).has('profile').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .whereExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('has nested query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).has('profile.user.user').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .whereExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                        .whereExists(builder => {
+                            builder
+                                .from('profiles as lucid_reserved_0')
+                                .whereRaw('profiles.uid = lucid_reserved_0.id')
+                                .whereExists(builder => {
+                                    builder
+                                        .from('profiles')
+                                        .whereRaw('lucid_reserved_0.uid = profiles.id')
+                                })
+                        })
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('withcount query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).withCount('profile').toSQL();
+            const q = db.from('profiles')
+                .count('*')
+                .whereRaw('users.uid = profiles.user_id')
+            const {sql: knexSql} = db
+                .from('users')
+                .select('users.*')
+                .where('id', 1)
+                // @ts-ignore
+                .selectSub(q, 'profile_count')
+                .toSQL();
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orHas query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).orHas('profile').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .orWhereExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereHas query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).whereHas('profile').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .whereExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereHas use callback query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).whereHas('profile', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .whereExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                        .where('profiles.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereHas query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).orWhereHas('profile').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .orWhereExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereHas using callback query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).orWhereHas('profile', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .orWhereExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                        .where('profiles.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('doesntHave query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).doesntHave('profile').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .whereNotExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orDoesntHave query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).orDoesntHave('profile').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .orWhereNotExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereDoesntHave query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).whereDoesntHave('profile').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .whereNotExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('whereDoesntHave using callback query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).whereDoesntHave('profile', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .whereNotExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                        .where('profiles.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereDoesntHave query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).orWhereDoesntHave('profile').toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .orWhereNotExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('orWhereDoesntHave using callback query', async () => {
+            const {sql, bindings} = User.query().where('id', 1).orWhereDoesntHave('profile', query => {
+                query.where(query.qualifyColumn('id'), 1)
+            }).toSQL();
+            const {sql: knexSql} = db
+                .from('users')
+                .select('*')
+                .where('id', 1)
+                .orWhereNotExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                        .where('profiles.id', 1)
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+        });
+
+        it('has query when have global scope', async () => {
+            class Profile extends BaseModel {
+                static table = 'profiles';
+
+                @column({isPrimary: true})
+                public id: number
+
+                @column()
+                public uid: number
+
+                @column()
+                public userId: number
+
+                @column()
+                public displayName: string
+
+                @belongsTo(() => Profile, {foreignKey: 'uid', localKey: 'id'})
+                public user: BelongsTo<typeof Profile>
+
+                static boot() {
+                    this.addGlobalScope('name', query => {
+                        query.where(query.qualifyColumn('type'), 'twitter')
+                    });
+                }
+            }
+
+            class User extends BaseModel {
+                static table = 'users';
+
+                @column({isPrimary: true})
+                public id: number
+
+                @column()
+                public uid: number
+
+                @column()
+                public username: string
+
+                @belongsTo(() => Profile, {localKey: 'userId', foreignKey: 'uid'})
+                public profile: BelongsTo<typeof Profile>
+            }
+
+            const {sql, bindings} = User.query().has('profile').toSQL();
+            const {sql: knexSql, bindings: knexBindings} = db
+                .from('users')
+                .select('*')
+                .whereExists(builder => {
+                    builder
+                        .from('profiles')
+                        .whereRaw('users.uid = profiles.user_id')
+                        .where('profiles.type', 'twitter')
+                })
+                .toSQL();
+
+            expect(sql).toBe(knexSql);
+            expect(bindings).toEqual(knexBindings);
+        });
+    });
 })

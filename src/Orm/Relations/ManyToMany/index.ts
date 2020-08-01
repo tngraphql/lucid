@@ -17,11 +17,12 @@ import { ensureRelationIsBooted } from '../../../utils'
 
 import { KeysExtractor } from '../KeysExtractor'
 import { ManyToManyQueryClient } from './QueryClient'
+import {Relation} from "../Base/Relation";
 
 /**
  * Manages loading and persisting many to many relationship
  */
-export class ManyToMany implements ManyToManyRelationContract<LucidModel, LucidModel> {
+export class ManyToMany extends Relation implements ManyToManyRelationContract<LucidModel, LucidModel> {
     public type = 'manyToMany' as const
 
     public booted: boolean = false
@@ -56,6 +57,7 @@ export class ManyToMany implements ManyToManyRelationContract<LucidModel, LucidM
         private options: ManyToManyRelationOptions<ModelManyToMany<LucidModel>>,
         public model: LucidModel
     ) {
+        super();
     }
 
     /**
@@ -166,7 +168,7 @@ export class ManyToMany implements ManyToManyRelationContract<LucidModel, LucidM
                 parentModel,
                 related.filter((relatedModel) => {
                     const value = parentModel[this.localKey]
-                    return value !== undefined && relatedModel.$extras[pivotForeignKeyAlias] === value
+                    return value !== undefined && relatedModel.$extras[pivotForeignKeyAlias] == value
                 })
             )
         })

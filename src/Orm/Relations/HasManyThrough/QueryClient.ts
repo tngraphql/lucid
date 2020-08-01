@@ -31,9 +31,17 @@ export class HasManyThroughClient implements HasManyThroughClientContract<HasMan
     /**
      * Generate a related query builder
      */
-    public static query(client: QueryClientContract, relation: HasManyThrough, rows: OneOrMany<LucidRow>) {
-        const query = new HasManyThroughQueryBuilder(client.knexQuery(), client, rows, relation)
+    public static query(client: QueryClientContract, relation: HasManyThrough, rows: OneOrMany<LucidRow>, isEagerQuery = false) {
+        const model = relation.relatedModel();
+
+        let query = new HasManyThroughQueryBuilder(client.knexQuery(), client, rows, relation)
+
+        query = model.registerGlobalScopes(query);
+
+        query.isEagerQuery = isEagerQuery;
+
         typeof (relation.onQueryHook) === 'function' && relation.onQueryHook(query)
+
         return query
     }
 
@@ -41,11 +49,7 @@ export class HasManyThroughClient implements HasManyThroughClientContract<HasMan
      * Generate a related eager query builder
      */
     public static eagerQuery(client: QueryClientContract, relation: HasManyThrough, rows: OneOrMany<LucidRow>) {
-        const query = new HasManyThroughQueryBuilder(client.knexQuery(), client, rows, relation)
-
-        query.isEagerQuery = true
-        typeof (relation.onQueryHook) === 'function' && relation.onQueryHook(query)
-        return query
+        return this.query(client, relation, rows, true);
     }
 
     /**
