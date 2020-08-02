@@ -301,6 +301,10 @@ export class BaseModel implements LucidRow {
             meta: options.meta
         }
 
+        if (options.hasOwnProperty('defaultValue')) {
+            column.defaultValue = options.defaultValue;
+        }
+
         /**
          * Set column as the primary column, when `primary` is to true
          */
@@ -1709,6 +1713,10 @@ export class BaseModel implements LucidRow {
         model.$columnsDefinitions.forEach((column, attributeName) => {
             const value = column.defaultValue;
 
+            if (typeof value === "undefined") {
+                return;
+            }
+
             /**
              * Set the default value when its missing flags are defined.
              */
@@ -1796,7 +1804,9 @@ export class BaseModel implements LucidRow {
         await Model.$hooks.exec('before', 'create', this)
 
         this.initiateAutoCreateColumns();
-        this.initiateDefaultValueColumns()
+        this.initiateDefaultValueColumns();
+
+        console.log('attr', this);
 
         const [result] = (await Model.$adapter.insert(this, this.prepareForAdapter(this.$attributes))) || [null];
 

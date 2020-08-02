@@ -108,4 +108,38 @@ describe('Base model', () => {
             expect(update).toEqual(update2);
         });
     });
+
+    describe('Base model | default value', () => {
+        beforeAll(async () => {
+            db = getDb()
+            BaseModel = getBaseModel(ormAdapter(db))
+            await setup()
+        })
+
+        afterAll(async () => {
+            await cleanup()
+            await db.manager.closeAll()
+        })
+
+        afterEach(async () => {
+            await resetTables()
+        })
+
+        it('should create success', async () => {
+            class User extends BaseModel {
+                @column({ isPrimary: true })
+                public id: number
+
+                @column({
+                    defaultValue: 'nguyen'
+                })
+                public username: string
+            }
+
+            const user = new User()
+            await user.save()
+
+            expect(user.username).toBe('nguyen');
+        });
+    });
 })
