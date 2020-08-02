@@ -34,8 +34,7 @@ export abstract class BaseQueryBuilder extends ModelQueryBuilder implements Rela
         relation: RelationshipsContract,
         dbCallback: DBQueryCallback
     ) {
-        super(builder, relation.relatedModel(), client, dbCallback);
-        this.applyConstraints();
+        super(builder, relation.relatedModel(), client, dbCallback)
     }
 
     /**
@@ -117,6 +116,7 @@ export abstract class BaseQueryBuilder extends ModelQueryBuilder implements Rela
      * Get query sql
      */
     public toSQL() {
+        this.applyConstraints()
         return super.toSQL()
     }
 
@@ -124,6 +124,7 @@ export abstract class BaseQueryBuilder extends ModelQueryBuilder implements Rela
      * Execute query
      */
     public exec() {
+        this.applyConstraints()
         return super.exec()
     }
 
