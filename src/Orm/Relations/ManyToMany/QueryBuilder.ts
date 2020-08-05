@@ -451,6 +451,6 @@ export class ManyToManyQueryBuilder extends BaseQueryBuilder implements ManyToMa
     }
 
     public getExistenceCompareKey() {
-        return this.qualifyColumn(this.relation.pivotForeignKey);
+        return this.relation.pivotTable + '.' + this.relation.pivotForeignKey;
     }
 }

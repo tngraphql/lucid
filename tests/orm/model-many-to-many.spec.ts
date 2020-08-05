@@ -4417,7 +4417,7 @@ describe('Model | ManyToMany', () => {
                             'skills.id',
                             'skill_user.skill_id'
                         )
-                        .whereRaw('users.uid = skills.user_id')
+                        .whereRaw('users.uid = skill_user.user_id')
                 })
                 .toSQL();
 
@@ -4443,7 +4443,7 @@ describe('Model | ManyToMany', () => {
                             'skills.id',
                             'skill_user.skill_id'
                         )
-                        .whereRaw('users.uid = skills.user_id')
+                        .whereRaw('users.uid = skill_user.user_id')
                         .whereExists(builder => {
                             builder
                                 .from('skills as lucid_reserved_0')
@@ -4457,7 +4457,7 @@ describe('Model | ManyToMany', () => {
                                     'lucid_reserved_0.id',
                                     'skill_user.user_id'
                                 )
-                                .whereRaw('skills.uid = lucid_reserved_0.skill_id')
+                                .whereRaw('skills.uid = skill_user.skill_id')
                                 .whereExists(builder => {
                                     builder
                                         .from('skills')
@@ -4471,7 +4471,7 @@ describe('Model | ManyToMany', () => {
                                             'skills.id',
                                             'skill_user.user_id'
                                         )
-                                        .whereRaw('lucid_reserved_0.uid = skills.skill_id')
+                                        .whereRaw('lucid_reserved_0.uid = skill_user.skill_id')
                                 })
                         })
                 })
@@ -4489,7 +4489,7 @@ describe('Model | ManyToMany', () => {
                     'skills.id',
                     'skill_user.skill_id'
                 )
-                .whereRaw('users.uid = skills.user_id')
+                .whereRaw('users.uid = skill_user.user_id')
 
             const {sql: knexSql} = db
                 .from('users')
@@ -4519,7 +4519,7 @@ describe('Model | ManyToMany', () => {
                             'skills.id',
                             'skill_user.skill_id'
                         )
-                        .whereRaw('users.uid = skills.user_id')
+                        .whereRaw('users.uid = skill_user.user_id')
                 })
                 .toSQL();
 
@@ -4545,7 +4545,7 @@ describe('Model | ManyToMany', () => {
                             'skills.id',
                             'skill_user.skill_id'
                         )
-                        .whereRaw('users.uid = skills.user_id')
+                        .whereRaw('users.uid = skill_user.user_id')
                 })
                 .toSQL();
 
@@ -4573,7 +4573,7 @@ describe('Model | ManyToMany', () => {
                             'skills.id',
                             'skill_user.skill_id'
                         )
-                        .whereRaw('users.uid = skills.user_id')
+                        .whereRaw('users.uid = skill_user.user_id')
                         .where('skills.id', 1)
                 })
                 .toSQL();
@@ -4600,7 +4600,7 @@ describe('Model | ManyToMany', () => {
                             'skills.id',
                             'skill_user.skill_id'
                         )
-                        .whereRaw('users.uid = skills.user_id')
+                        .whereRaw('users.uid = skill_user.user_id')
                 })
                 .toSQL();
 
@@ -4628,7 +4628,7 @@ describe('Model | ManyToMany', () => {
                             'skills.id',
                             'skill_user.skill_id'
                         )
-                        .whereRaw('users.uid = skills.user_id')
+                        .whereRaw('users.uid = skill_user.user_id')
                         .where('skills.id', 1)
                 })
                 .toSQL();
@@ -4655,7 +4655,7 @@ describe('Model | ManyToMany', () => {
                             'skills.id',
                             'skill_user.skill_id'
                         )
-                        .whereRaw('users.uid = skills.user_id')
+                        .whereRaw('users.uid = skill_user.user_id')
                 })
                 .toSQL();
 
@@ -4681,7 +4681,7 @@ describe('Model | ManyToMany', () => {
                             'skills.id',
                             'skill_user.skill_id'
                         )
-                        .whereRaw('users.uid = skills.user_id')
+                        .whereRaw('users.uid = skill_user.user_id')
                 })
                 .toSQL();
 
@@ -4707,7 +4707,7 @@ describe('Model | ManyToMany', () => {
                             'skills.id',
                             'skill_user.skill_id'
                         )
-                        .whereRaw('users.uid = skills.user_id')
+                        .whereRaw('users.uid = skill_user.user_id')
                 })
                 .toSQL();
 
@@ -4735,7 +4735,7 @@ describe('Model | ManyToMany', () => {
                             'skills.id',
                             'skill_user.skill_id'
                         )
-                        .whereRaw('users.uid = skills.user_id')
+                        .whereRaw('users.uid = skill_user.user_id')
                         .where('skills.id', 1)
                 })
                 .toSQL();
@@ -4762,7 +4762,7 @@ describe('Model | ManyToMany', () => {
                             'skills.id',
                             'skill_user.skill_id'
                         )
-                        .whereRaw('users.uid = skills.user_id')
+                        .whereRaw('users.uid = skill_user.user_id')
                 })
                 .toSQL();
 
@@ -4790,7 +4790,7 @@ describe('Model | ManyToMany', () => {
                             'skills.id',
                             'skill_user.skill_id'
                         )
-                        .whereRaw('users.uid = skills.user_id')
+                        .whereRaw('users.uid = skill_user.user_id')
                         .where('skills.id', 1)
                 })
                 .toSQL();
@@ -4850,7 +4850,7 @@ describe('Model | ManyToMany', () => {
                             'skills.id',
                             'skill_user.skill_id'
                         )
-                        .whereRaw('users.uid = skills.user_id')
+                        .whereRaw('users.uid = skill_user.user_id')
                         .where('skills.type', 'twitter')
                 })
                 .toSQL();
