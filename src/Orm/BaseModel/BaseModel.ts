@@ -1806,8 +1806,6 @@ export class BaseModel implements LucidRow {
         this.initiateAutoCreateColumns();
         this.initiateDefaultValueColumns();
 
-        console.log('attr', this);
-
         const [result] = (await Model.$adapter.insert(this, this.prepareForAdapter(this.$attributes))) || [null];
 
         if (result) {
