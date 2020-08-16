@@ -283,7 +283,7 @@ export class MorphTo extends Relation implements MorphToRelationContract<LucidMo
         }
 
         for (let model of models) {
-            const type = getValue(model, this.morphType, this, 'select');
+            const type = model[this.morphType];
             if (type) {
                 const Model = model.constructor as LucidModel;
 
