@@ -213,7 +213,7 @@ export class MorphTo extends Relation implements MorphToRelationContract<LucidMo
 
     protected matchToMorphParents(type, results) {
         for (const result of results) {
-            const localKey = 'id'+ (this.options.localKey ? result[this.localKey] : result.$primaryKeyValue);
+            const localKey = (this.options.localKey ? result[this.localKey] : result.$primaryKeyValue);
             if (this.dictionary[type][localKey]) {
                 const models: any[] = Object.values(this.dictionary[type][localKey]);
                 for (let model of models) {
@@ -290,10 +290,10 @@ export class MorphTo extends Relation implements MorphToRelationContract<LucidMo
                 if (!this.dictionary[type]) {
                     this.dictionary[type] = {};
                 }
-                if (!this.dictionary[type]['id' + model[this.foreignKey]]) {
-                    this.dictionary[type]['id' + model[this.foreignKey]] = [];
+                if (!this.dictionary[type][model[this.foreignKey]]) {
+                    this.dictionary[type][model[this.foreignKey]] = [];
                 }
-                this.dictionary[type]['id' + model[this.foreignKey]].push(model);
+                this.dictionary[type][model[this.foreignKey]].push(model);
             }
         }
     }
