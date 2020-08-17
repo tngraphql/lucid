@@ -382,7 +382,7 @@ describe('Model | MorphTo', () => {
             const { sql: knexSql, bindings: knexBindings } = db.connection()
                 .getWriteClient()
                 .from('posts')
-                .whereIn('posts.id', [2,1])
+                .whereIn('posts.id', [1,2])
                 .toSQL()
 
             expect(sql).toBe(knexSql)
