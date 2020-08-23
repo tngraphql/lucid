@@ -132,15 +132,15 @@ export class MorphToManyQueryBuilder extends BaseQueryBuilder implements MorphTo
             return this.transformRelatedTableColumns(columns[0]);
         }
 
-        const relatedTable = this.getTable();
+
         return columns.map((column) => {
             if ( typeof (column) === 'string' ) {
-                return `${ relatedTable }.${ this.resolveKey(column) }`
+                return this.select(this.qualifyColumn(this.resolveKey(column)))
             }
 
             if ( column.constructor === Object ) {
                 return Object.keys(column).reduce((result, alias) => {
-                    result[alias] = `${ relatedTable }.${ this.resolveKey(column[alias]) }`
+                    result[alias] = this.qualifyColumn(this.resolveKey(column[alias]));
                     return result
                 }, {})
             }
