@@ -135,7 +135,7 @@ export class MorphToManyQueryBuilder extends BaseQueryBuilder implements MorphTo
 
         return columns.map((column) => {
             if ( typeof (column) === 'string' ) {
-                return this.select(this.qualifyColumn(this.resolveKey(column)))
+                return this.qualifyColumn(this.resolveKey(column));
             }
 
             if ( column.constructor === Object ) {
