@@ -30,6 +30,12 @@ export class Relation {
     }
 
     public getActualClassNameForMorph(type) {
+        const maps = this.getMorphMap();
+
+        if (!maps[type]) {
+            return null;
+        }
+
         return this.getMorphMap()[type]();
     }
 

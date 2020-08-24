@@ -205,7 +205,8 @@ export class MorphTo extends Relation implements MorphToRelationContract<LucidMo
 
     async getEager(query: RelationQueryBuilderContract<any, any>) {
         for (const type in this.dictionary) {
-            this.matchToMorphParents(type, await this.getResultsByType(type));
+            const res = await this.getResultsByType(type);
+            res && this.matchToMorphParents(type, res);
         }
 
         return [];
@@ -225,6 +226,10 @@ export class MorphTo extends Relation implements MorphToRelationContract<LucidMo
 
     protected async getResultsByType(type) {
         const instance = this.createModelByType(type);
+        if (!instance) {
+            return null;
+        }
+
         const localKey = this.options.localKey || instance.primaryKey;
 
         const query = MorphToQueryClient.eagerQuery(this._client, {
