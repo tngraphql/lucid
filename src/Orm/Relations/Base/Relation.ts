@@ -18,7 +18,11 @@ export class Relation {
     }
 
     public static morphMap(map: {[key: string]: () => LucidModel}): void {
-        Reflect.defineMetadata(MORPH_METADATA_KEY, map, this);
+        const maps = Reflect.getMetadata(MORPH_METADATA_KEY, Relation) || {};
+
+        const data = {...maps, ...map};
+
+        Reflect.defineMetadata(MORPH_METADATA_KEY, data, this);
     }
 
     public getMorphMap() {
