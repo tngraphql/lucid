@@ -32,6 +32,8 @@ import { resolveClientNameWithAliases } from 'knex/lib/helpers'
  * and executes queries inside a given transaction.
  */
 export class TransactionClient extends EventEmitter implements TransactionClientContract {
+    static defaultMaxListeners = 30;
+
     /**
      * Always true
      */

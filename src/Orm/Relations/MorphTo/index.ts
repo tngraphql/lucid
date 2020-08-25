@@ -71,13 +71,13 @@ export class MorphTo extends Relation implements MorphToRelationContract<LucidMo
          */
         const { foreignKey, morphType } = new KeysExtractor(this.model, this.relationName, {
             foreignKey: {
-                model: relatedModel,
+                model: this.model,
                 key: (
                     this.options.id
                 )
             },
             morphType: {
-                model: relatedModel,
+                model: this.model,
                 key: (
                     this.options.type
                 )
@@ -205,6 +205,13 @@ export class MorphTo extends Relation implements MorphToRelationContract<LucidMo
 
     async getEager(query: RelationQueryBuilderContract<any, any>) {
         for (const type in this.dictionary) {
+            if (this.model !== this.relatedModel()) {
+                const model = this.createModelByType(type);
+                if (this.relatedModel() === model) {
+                    this.matchToMorphParents(type, await this.getResultsByType(type));
+                }
+                continue;
+            }
             const res = await this.getResultsByType(type);
             res && this.matchToMorphParents(type, res);
         }
@@ -238,6 +245,9 @@ export class MorphTo extends Relation implements MorphToRelationContract<LucidMo
             localKey,
             type: this.type
         } as any, null);
+
+        query.preloader = this._query.preloader;
+        query.sideloaded = this._query.sideloaded;
 
         query.mergeConstraintsFrom(
             this._query
